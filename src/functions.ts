@@ -6,6 +6,7 @@ import {
   CoinRequirement,
   EvilRequirement,
   Item,
+  Task,
 } from "./classes";
 import {
   baseLifespan,
@@ -158,6 +159,9 @@ export function applyExpenses() {
 }
 
 export function getExpense() {
+  if (!GameData.currentProperty || !GameData.currentMisc) {
+    return;
+  }
   let expense = 0;
   expense += GameData.currentProperty.getExpense();
   for (let misc of GameData.currentMisc) {
@@ -215,199 +219,6 @@ export function createEntity(data, entity) {
   data[entity.name].id = "row " + entity.name;
 }
 
-// export function updateRequiredRows(data, categoryType) {
-//   let requiredRows = document.getElementsByClassName("requiredRow");
-//   for (requiredRow of requiredRows) {
-//     let nextEntity = null;
-//     let category = categoryType[requiredRow.id];
-//     if (category == null) {
-//       continue;
-//     }
-//     for (i = 0; i < category.length; i++) {
-//       let entityName = category[i];
-//       if (i >= category.length - 1) break;
-//       let requirements = GameData.requirements[entityName];
-//       if (requirements && i == 0) {
-//         if (!requirements.isCompleted()) {
-//           nextEntity = data[entityName];
-//           break;
-//         }
-//       }
-
-//       let nextIndex = i + 1;
-//       if (nextIndex >= category.length) {
-//         break;
-//       }
-//       let nextEntityName = category[nextIndex];
-//       nextEntityRequirements = GameData.requirements[nextEntityName];
-
-//       if (!nextEntityRequirements.isCompleted()) {
-//         nextEntity = data[nextEntityName];
-//         break;
-//       }
-//     }
-
-//     if (nextEntity == null) {
-//       requiredRow.classList.add("hiddenTask");
-//     } else {
-//       requiredRow.classList.remove("hiddenTask");
-//       let requirementObject = GameData.requirements[nextEntity.name];
-//       let requirements = requirementObject.requirements;
-
-//       let coinElement = requiredRow.getElementsByClassName("coins")[0];
-//       let levelElement = requiredRow.getElementsByClassName("levels")[0];
-//       let evilElement = requiredRow.getElementsByClassName("evil")[0];
-
-//       coinElement.classList.add("hiddenTask");
-//       levelElement.classList.add("hiddenTask");
-//       evilElement.classList.add("hiddenTask");
-
-//       let finalText = "";
-//       if (data == GameData.taskData) {
-//         if (requirementObject instanceof EvilRequirement) {
-//           evilElement.classList.remove("hiddenTask");
-//           evilElement.textContent =
-//             format(requirements[0].requirement) + " evil";
-//         } else {
-//           levelElement.classList.remove("hiddenTask");
-//           for (requirement of requirements) {
-//             let task = GameData.taskData[requirement.task];
-//             if (task.level >= requirement.requirement) continue;
-//             let text =
-//               " " +
-//               requirement.task +
-//               " level " +
-//               format(task.level) +
-//               "/" +
-//               format(requirement.requirement) +
-//               ",";
-//             finalText += text;
-//           }
-//           finalText = finalText.substring(0, finalText.length - 1);
-//           levelElement.textContent = finalText;
-//         }
-//       } else if (data == GameData.itemData) {
-//         coinElement.classList.remove("hiddenTask");
-//         formatCoins(requirements[0].requirement, coinElement);
-//       }
-//     }
-//   }
-// }
-
-// export function updateTaskRows() {
-//   for (key in GameData.taskData) {
-//     let task = GameData.taskData[key];
-//     let row = document.getElementById("row " + task.name);
-//     row.getElementsByClassName("level")[0].textContent = task.level;
-//     row.getElementsByClassName("xpGain")[0].textContent = format(
-//       task.getXpGain()
-//     );
-//     row.getElementsByClassName("xpLeft")[0].textContent = format(
-//       task.getXpLeft()
-//     );
-
-//     let maxLevel = row.getElementsByClassName("maxLevel")[0];
-//     maxLevel.textContent = task.maxLevel;
-//     GameData.rebirthOneCount > 0
-//       ? maxLevel.classList.remove("hidden")
-//       : maxLevel.classList.add("hidden");
-
-//     let progressFill = row.getElementsByClassName("progressFill")[0];
-//     progressFill.style.width = (task.xp / task.getMaxXp()) * 100 + "%";
-//     task == GameData.currentJob || task == GameData.currentSkill
-//       ? progressFill.classList.add("current")
-//       : progressFill.classList.remove("current");
-
-//     let valueElement = row.getElementsByClassName("value")[0];
-//     valueElement.getElementsByClassName("income")[0].style.display =
-//       task instanceof Job;
-//     valueElement.getElementsByClassName("effect")[0].style.display =
-//       task instanceof Skill;
-
-//     let skipSkillElement = row.getElementsByClassName("skipSkill")[0];
-//     skipSkillElement.style.display =
-//       task instanceof Skill && autoLearnElement.checked ? "block" : "none";
-
-//     if (task instanceof Job) {
-//       formatCoins(
-//         task.getIncome(),
-//         valueElement.getElementsByClassName("income")[0]
-//       );
-//     } else {
-//       valueElement.getElementsByClassName("effect")[0].textContent =
-//         task.getEffectDescription();
-//     }
-//   }
-// }
-
-// export function updateItemRows() {
-//   for (key in GameData.itemData) {
-//     let item = GameData.itemData[key];
-//     let row = document.getElementById("row " + item.name);
-//     let button = row.getElementsByClassName("button")[0];
-//     button.disabled = GameData.coins < item.getExpense();
-//     let active = row.getElementsByClassName("active")[0];
-//     let color = itemCategories["Properties"].includes(item.name)
-//       ? headerRowColors["Properties"]
-//       : headerRowColors["Misc"];
-//     active.style.backgroundColor =
-//       GameData.currentMisc.includes(item) || item == GameData.currentProperty
-//         ? color
-//         : "white";
-//     row.getElementsByClassName("effect")[0].textContent =
-//       item.getEffectDescription();
-//     formatCoins(item.getExpense(), row.getElementsByClassName("expense")[0]);
-//   }
-// }
-
-// export function updateHeaderRows(categories) {
-//   for (categoryName in categories) {
-//     let className = removeSpaces(categoryName);
-//     let headerRow = document.getElementsByClassName(className)[0];
-//     let maxLevelElement = headerRow.getElementsByClassName("maxLevel")[0];
-//     GameData.rebirthOneCount > 0
-//       ? maxLevelElement.classList.remove("hidden")
-//       : maxLevelElement.classList.add("hidden");
-//     let skipSkillElement = headerRow.getElementsByClassName("skipSkill")[0];
-//     skipSkillElement.style.display =
-//       categories == skillCategories && autoLearnElement.checked
-//         ? "block"
-//         : "none";
-//   }
-// }
-
-// export function updateText() {
-//   //Sidebar
-//   document.getElementById("ageDisplay").textContent = daysToYears(
-//     GameData.days
-//   );
-//   document.getElementById("dayDisplay").textContent = getDay();
-//   document.getElementById("lifespanDisplay").textContent = daysToYears(
-//     getLifespan()
-//   );
-//   document.getElementById("pauseButton").textContent = GameData.paused
-//     ? "Play"
-//     : "Pause";
-
-//   formatCoins(GameData.coins, document.getElementById("coinDisplay"));
-//   setSignDisplay();
-//   formatCoins(getNet(), document.getElementById("netDisplay"));
-//   formatCoins(getIncome(), document.getElementById("incomeDisplay"));
-//   formatCoins(getExpense(), document.getElementById("expenseDisplay"));
-
-//   document.getElementById("happinessDisplay").textContent =
-//     getHappiness().toFixed(1);
-
-//   document.getElementById("evilDisplay").textContent = GameData.evil.toFixed(1);
-//   document.getElementById("evilGainDisplay").textContent =
-//     getEvilGain().toFixed(1);
-
-//   document.getElementById("timeWarpingDisplay").textContent =
-//     "x" + GameData.taskData["Time warping"].getEffect().toFixed(2);
-//   document.getElementById("timeWarpingButton").textContent =
-//     GameData.timeWarpingEnabled ? "Disable warp" : "Enable warp";
-// }
-
 export function getNet() {
   let net = Math.abs(getIncome() - getExpense());
   return net;
@@ -419,7 +230,10 @@ export function createItemData(baseData) {
   }
 }
 
-export function doCurrentTask(task) {
+export function doCurrentTask(task: Job) {
+  if (!task) {
+    return;
+  }
   task.increaseXp();
   if (task instanceof Job) {
     increaseCoins();
@@ -493,7 +307,7 @@ export function format(number) {
   return scaled.toFixed(1) + suffix;
 }
 
-export function formatCoins(coins, element) {
+export function formatCoins(coins) {
   let tiers = ["p", "g", "s"];
   let colors = {
     p: "#79b9c7",
@@ -510,29 +324,9 @@ export function formatCoins(coins, element) {
     i += 1;
   }
   if (leftOver == 0 && coins > 0) {
-    element.children[3].textContent = "";
     return;
   }
   let text = String(Math.floor(leftOver)) + "c";
-  element.children[3].textContent = text;
-  element.children[3].style.color = colors["c"];
-}
-
-export function getTaskElement(taskName) {
-  let task = GameData.taskData[taskName];
-  let element = document.getElementById(task.id);
-  return element;
-}
-
-export function getItemElement(itemName) {
-  let item = GameData.itemData[itemName];
-  let element = document.getElementById(item.id);
-  return element;
-}
-
-export function getElementsByClass(className) {
-  let elements = document.getElementsByClassName(removeSpaces(className));
-  return elements;
 }
 
 export function setLightDarkMode() {
@@ -657,9 +451,9 @@ export function assignMethods() {
     GameData.requirements[key] = requirement;
   }
 
-  GameData.currentJob = GameData.taskData[GameData.currentJob.name];
-  GameData.currentSkill = GameData.taskData[GameData.currentSkill.name];
-  GameData.currentProperty = GameData.itemData[GameData.currentProperty.name];
+  //   GameData.currentJob = GameData.taskData[GameData.currentJob.name];
+  //   GameData.currentSkill = GameData.taskData[GameData.currentSkill.name];
+  //   GameData.currentProperty = GameData.itemData[GameData.currentProperty.name];
   let newArray = [];
   for (let misc of GameData.currentMisc) {
     newArray.push(GameData.itemData[misc.name]);
