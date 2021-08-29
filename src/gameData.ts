@@ -4,7 +4,6 @@ import {
   EvilRequirement,
   CoinRequirement,
   AgeRequirement,
-  Item,
 } from "./classes";
 
 import type {
@@ -18,10 +17,11 @@ import type {
 export let GameData: GameDataType = {
   day: 0,
   coins: 0,
-  fishingData: {},
-  skillsData: {},
-  itemData: {},
-  requirements: {},
+  fishingData: new Map(),
+  skillsData: new Map(),
+  itemData: new Map(),
+  boatData: new Map(),
+  requirements: new Map(),
   paused: false,
 
   rebirthOneCount: 0,

@@ -3,10 +3,12 @@ import { GameData, itemCategories } from "./gameData";
 
 export class Task {
   baseData: {
+    name: string;
+    income?: number;
     maxXp: number;
-    income: number;
     effect: number;
     description: string;
+    category: string;
   };
   name: string;
   level: number;
@@ -94,7 +96,12 @@ export class Skill extends Task {
 }
 
 export class Item {
-  baseData: { effect: number; description: string; expense: number };
+  baseData: {
+    name: string;
+    effect: number;
+    description: string;
+    expense: number;
+  };
   name: string;
   expenseMultipliers: number[];
   constructor(baseData) {
@@ -120,6 +127,13 @@ export class Item {
   getExpense() {
     // return applyMultipliers(this.baseData.expense, this.expenseMultipliers);
     return this.baseData.expense;
+  }
+}
+
+export class Boat {
+  baseData: { name: string; price: number; bought: boolean };
+  constructor(baseData) {
+    this.baseData = baseData;
   }
 }
 
@@ -195,6 +209,17 @@ export class AgeRequirement extends Requirement {
 
   getCondition(requirement) {
     return daysToYears(GameData.day) >= requirement.requirement;
+  }
+}
+export class BoatRequirement extends Requirement {
+  type: string;
+  constructor(requirements) {
+    super(requirements);
+    this.type = "boat";
+  }
+
+  getCondition(requirement) {
+    return GameData.boatData >= requirement.requirement;
   }
 }
 

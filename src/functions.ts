@@ -1,4 +1,14 @@
-import type { CurrentlyFishing, CurrentSkill } from "src/Entities";
+import type {
+  Bases,
+  BoatBaseData,
+  Classes,
+  CurrentlyFishing,
+  CurrentSkill,
+  FishBaseData,
+  ItemBaseData,
+  SkillBaseData,
+} from "src/Entities";
+import { identity } from "svelte/internal";
 import {
   Fishing,
   Skill,
@@ -9,6 +19,7 @@ import {
   EvilRequirement,
   Item,
   Task,
+  Boat,
 } from "./classes";
 import {
   baseLifespan,
@@ -22,7 +33,12 @@ import {
   units,
   tempData,
   setGameData,
+  boatBaseData,
 } from "./gameData";
+
+export function togglePause() {
+  GameData.paused = !GameData.paused;
+}
 
 export function calculatedAge(day: number): string {
   return `${14 + Math.floor(day / 365)} years and ${day % 365} days`;
@@ -123,30 +139,58 @@ export function replaceSaveDict(dict, saveDict) {
   }
 }
 
-export function createData(data, baseData) {
-  for (let key in baseData) {
-    var entity = baseData[key];
-    createEntity(data, entity);
+export function createData(
+  data: Map<string, Classes>,
+  baseData: Map<string, Bases>
+) {
+  baseData.forEach((base: Bases, key) => {
+    createEntity(data, base);
+  });
+}
+
+export function createEntity(data: Map<string, Classes>, entity: Bases) {
+  if ("income" in entity) {
+    GameData.fishingData.set(entity.name, new Fishing(entity));
+    console.log(`GameData.fishingData`, GameData.fishingData);
+  } else if ("maxXp" in entity) {
+    console.log(`entitiy skill`, entity);
+    data.set(entity.name, new Skill(entity));
+  } else if ("bought" in entity) {
+    data.set(entity.name, new Boat(entity));
+  } else {
+    data.set(entity.name, new Item(entity));
   }
 }
 
-export function createEntity(data, entity) {
-  if ("income" in entity) {
-    data[entity.name] = new Fishing(entity);
-  } else if ("maxXp" in entity) {
-    data[entity.name] = new Skill(entity);
+function replacer(key, value) {
+  if (value instanceof Map) {
+    return {
+      dataType: "Map",
+      value: Array.from(value.entries()), // or with spread: value: [...value]
+    };
   } else {
-    data[entity.name] = new Item(entity);
+    return value;
   }
-  data[entity.name].id = "row " + entity.name;
+}
+function reviver(key, value) {
+  if (typeof value === "object" && value !== null) {
+    if (value.dataType === "Map") {
+      return new Map(value.value);
+    }
+  }
+  return value;
 }
 
 export function saveGameData() {
-  localStorage.setItem("GameDataSave", JSON.stringify(GameData));
+  if (!GameData.paused) {
+    console.log(`GameData`, GameData.fishingData);
+    console.log(`JSON.stringify(GameData)`, JSON.stringify(GameData, replacer));
+    localStorage.setItem("GameDataSave", JSON.stringify(GameData, replacer));
+  }
 }
 
 export function loadGameData() {
-  let GameDataSave = JSON.parse(localStorage.getItem("GameDataSave"));
+  let GameDataSave = JSON.parse(localStorage.getItem("GameDataSave"), reviver);
 
   if (GameDataSave !== null) {
     replaceSaveDict(GameData, GameDataSave);
