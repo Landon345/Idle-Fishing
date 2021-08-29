@@ -5,8 +5,8 @@
 	import Skills from "src/tabs/Skills.svelte";
 	import Settings from "src/tabs/Settings.svelte";
 
-	import {calculatedAge, loadGameData, saveGameData, update} from "./functions";
-	import {GameData} from "./gameData";
+	import {calculatedAge, createData, loadGameData, saveGameData, update} from "./functions";
+	import {fishBaseData, GameData, itemBaseData, skillBaseData} from "./gameData";
 	
 
 	type Tab = "goneFishing" | "skills" | "shop" | "achievements" | "settings";
@@ -16,8 +16,19 @@
 	const selectTab = (selected: Tab) => {
 		selectedTab = selected;
 	}
+	createData(gameData.fishingData, fishBaseData)
+	createData(gameData.skillsData, skillBaseData)
+	createData(gameData.itemData, itemBaseData) 
 
 	loadGameData();
+
+
+	GameData.currentlyFishing = GameData.fishingData["blackDrum"];
+	GameData.currentSkill = GameData.skillsData["Concentration"];
+	GameData.currentProperty = GameData.itemData["Homeless"];
+	GameData.currentMisc = [];
+
+	GameData.requirements = {};
 	
 	const masterInterval = window.setInterval(() => {
 		gameData = GameData;

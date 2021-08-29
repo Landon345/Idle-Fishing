@@ -1,4 +1,4 @@
-import { applyMultipliers, daysToYears } from "./functions";
+import { daysToYears } from "./functions";
 import { GameData, itemCategories } from "./gameData";
 
 export class Task {
@@ -25,7 +25,7 @@ export class Task {
   }
 
   getMaxXp() {
-    var maxXp = Math.round(
+    let maxXp = Math.round(
       this.baseData.maxXp * (this.level + 1) * Math.pow(1.01, this.level)
     );
     return maxXp;
@@ -36,18 +36,19 @@ export class Task {
   }
 
   getMaxLevelMultiplier() {
-    var maxLevelMultiplier = 1 + this.maxLevel / 10;
+    let maxLevelMultiplier = 1 + this.maxLevel / 10;
     return maxLevelMultiplier;
   }
 
   getXpGain() {
-    return applyMultipliers(10, this.xpMultipliers);
+    // return applyMultipliers(10, this.xpMultipliers);
+    return 10;
   }
 
   increaseXp() {
     this.xp += this.getXpGain();
     if (this.xp >= this.getMaxXp()) {
-      var excess = this.xp - this.getMaxXp();
+      let excess = this.xp - this.getMaxXp();
       while (excess >= 0) {
         this.level += 1;
         excess -= this.getMaxXp();
@@ -57,7 +58,7 @@ export class Task {
   }
 }
 
-export class Job extends Task {
+export class Fishing extends Task {
   incomeMultipliers: number[];
   constructor(baseData) {
     super(baseData);
@@ -65,12 +66,13 @@ export class Job extends Task {
   }
 
   getLevelMultiplier() {
-    var levelMultiplier = 1 + Math.log10(this.level + 1);
+    let levelMultiplier = 1 + Math.log10(this.level + 1);
     return levelMultiplier;
   }
 
   getIncome() {
-    return applyMultipliers(this.baseData.income, this.incomeMultipliers);
+    // return applyMultipliers(this.baseData.income, this.incomeMultipliers);
+    return this.baseData.income;
   }
 }
 
@@ -80,13 +82,13 @@ export class Skill extends Task {
   }
 
   getEffect() {
-    var effect = 1 + this.baseData.effect * this.level;
+    let effect = 1 + this.baseData.effect * this.level;
     return effect;
   }
 
   getEffectDescription() {
-    var description = this.baseData.description;
-    var text = "x" + String(this.getEffect().toFixed(2)) + " " + description;
+    let description = this.baseData.description;
+    let text = "x" + String(this.getEffect().toFixed(2)) + " " + description;
     return text;
   }
 }
@@ -102,25 +104,22 @@ export class Item {
   }
 
   getEffect() {
-    if (
-      GameData.currentProperty != this &&
-      !GameData.currentMisc.includes(this)
-    )
-      return 1;
-    var effect = this.baseData.effect;
+    if (!GameData.currentMisc.includes(this)) return 1;
+    let effect = this.baseData.effect;
     return effect;
   }
 
   getEffectDescription() {
-    var description = this.baseData.description;
+    let description = this.baseData.description;
     if (itemCategories["Properties"].includes(this.name))
       description = "Happiness";
-    var text = "x" + this.baseData.effect.toFixed(1) + " " + description;
+    let text = "x" + this.baseData.effect.toFixed(1) + " " + description;
     return text;
   }
 
   getExpense() {
-    return applyMultipliers(this.baseData.expense, this.expenseMultipliers);
+    // return applyMultipliers(this.baseData.expense, this.expenseMultipliers);
+    return this.baseData.expense;
   }
 }
 
@@ -149,15 +148,29 @@ export class Requirement {
   }
 }
 
-export class TaskRequirement extends Requirement {
+export class FishingRequirement extends Requirement {
   type: string;
   constructor(requirements) {
     super(requirements);
-    this.type = "task";
+    this.type = "fishing";
   }
-
   getCondition(requirement) {
-    return GameData.taskData[requirement.task].level >= requirement.requirement;
+    return (
+      GameData.skillsData[requirement.fishing].level >= requirement.requirement
+    );
+  }
+}
+
+export class SkillRequirement extends Requirement {
+  type: string;
+  constructor(requirements) {
+    super(requirements);
+    this.type = "skill";
+  }
+  getCondition(requirement) {
+    return (
+      GameData.skillsData[requirement.skill].level >= requirement.requirement
+    );
   }
 }
 

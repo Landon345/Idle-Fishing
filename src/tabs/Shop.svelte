@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type {GameDataType} from "src/gameData";
+     import type {GameDataType} from "src/Entities";
     export let gameData: GameDataType;
 
 </script>

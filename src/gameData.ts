@@ -1,35 +1,25 @@
-import { Writable, writable, Readable, readable, derived } from "svelte/store";
-
 import {
-  TaskRequirement,
+  FishingRequirement,
+  SkillRequirement,
   EvilRequirement,
   CoinRequirement,
   AgeRequirement,
   Item,
 } from "./classes";
 
-export interface GameDataType {
-  day: number;
-  coins: number;
-  taskData: any;
-  itemData: any;
-  requirements: any;
-  paused: boolean;
-
-  rebirthOneCount: number;
-  rebirthTwoCount: number;
-
-  currentJob: string | null;
-  currentSkill: string | null;
-  currentProperty: string | null;
-  currentMisc: any[];
-  evil: number;
-}
+import type {
+  BoatBaseData,
+  FishBaseData,
+  GameDataType,
+  ItemBaseData,
+  SkillBaseData,
+} from "src/Entities";
 
 export let GameData: GameDataType = {
   day: 0,
   coins: 0,
-  taskData: {},
+  fishingData: {},
+  skillsData: {},
   itemData: {},
   requirements: {},
   paused: false,
@@ -37,7 +27,7 @@ export let GameData: GameDataType = {
   rebirthOneCount: 0,
   rebirthTwoCount: 0,
 
-  currentJob: null,
+  currentlyFishing: null,
   currentSkill: null,
   currentProperty: null,
   currentMisc: null,
@@ -47,13 +37,6 @@ export let GameData: GameDataType = {
 export const setGameData = (savedGameData) => {
   GameData = savedGameData;
 };
-
-GameData.currentJob = GameData.taskData["Beggar"];
-GameData.taskData["Concentration"];
-GameData.currentProperty = GameData.itemData["Homeless"];
-GameData.currentMisc = [];
-
-GameData.requirements = {};
 
 export let tempData = {
   requirements: {},
@@ -69,13 +52,128 @@ export const baseGameSpeed = 4;
 
 export const permanentUnlocks = [];
 
-export const jobBaseData = {};
+export const fishBaseData: Map<string, FishBaseData> = new Map([
+  [
+    "Black Drum",
+    {
+      name: "Black Drum",
+      maxXp: 50,
+      income: 5,
+      effect: 0.01,
+      description: "Coins/day",
+      category: "ocean",
+    },
+  ],
+  [
+    "Blue Marlin",
+    {
+      name: "Blue Marlin",
+      maxXp: 100,
+      income: 9,
+      effect: 0.01,
+      description: "Coins/day",
+      category: "ocean",
+    },
+  ],
+  [
+    "Sun Fish",
+    {
+      name: "Sun Fish",
+      maxXp: 50,
+      income: 5,
+      effect: 0.01,
+      description: "Coins/day",
+      category: "lake",
+    },
+  ],
+  [
+    "Waleye",
+    {
+      name: "Waleye",
+      maxXp: 100,
+      income: 9,
+      effect: 0.01,
+      description: "Coins/day",
+      category: "lake",
+    },
+  ],
+]);
 
-export const skillBaseData = {};
+export const skillBaseData: Map<string, SkillBaseData> = new Map([
+  [
+    "Strength",
+    {
+      name: "Strength",
+      maxXp: 100,
+      effect: 0.01,
+      description: "Fishing Effects",
+      category: "fundamentals",
+    },
+  ],
+  [
+    "Concentration",
+    {
+      name: "Concentration",
+      maxXp: 100,
+      effect: 0.01,
+      description: "Skill Xp",
+      category: "fundamentals",
+    },
+  ],
+]);
 
-export const itemBaseData = {};
+export const boatBaseData: Map<string, BoatBaseData> = new Map([
+  [
+    "Row Boat",
+    {
+      name: "Row Boat",
+      price: 300,
+      bought: false,
+    },
+  ],
+  [
+    "Silver Bullet",
+    {
+      name: "Silver Bullet",
+      price: 1500,
+      bought: false,
+    },
+  ],
+  [
+    "Bass Boat",
+    {
+      name: "Bass Boat",
+      price: 30000,
+      bought: false,
+    },
+  ],
+]);
 
-export const jobCategories = {};
+export const itemBaseData: Map<string, ItemBaseData> = new Map([
+  [
+    "Rod",
+    {
+      name: "Rod",
+      expense: 15,
+      effect: 1.5,
+      description: "Coins/day",
+    },
+  ],
+  [
+    "Book",
+    {
+      name: "Book",
+      expense: 50,
+      effect: 1.5,
+      description: "Skill xp",
+    },
+  ],
+]);
+
+export const fishCategories = {
+  ocean: ["blackDrum", "blueMarlin"],
+  lake: ["sunFish", "waleye"],
+};
 
 export const skillCategories = {};
 
