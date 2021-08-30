@@ -175,7 +175,9 @@ export const fishCategories = {
   lake: ["sunFish", "waleye"],
 };
 
-export const skillCategories = {};
+export const skillCategories = {
+  fundamentals: ["Strength", "Concentration"],
+};
 
 export const itemCategories = {};
 

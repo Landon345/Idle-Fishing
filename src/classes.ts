@@ -90,14 +90,14 @@ export class Skill extends Task {
     super(baseData, level, maxLevel, xp, xpMultipliers);
   }
 
-  get getEffect() {
+  get effect() {
     let effect = 1 + this.baseData.effect * this.level;
     return effect;
   }
 
-  get getEffectDescription() {
+  get effectDescription() {
     let description = this.baseData.description;
-    let text = "x" + String(this.getEffect.toFixed(2)) + " " + description;
+    let text = "x" + String(this.effect.toFixed(2)) + " " + description;
     return text;
   }
 }

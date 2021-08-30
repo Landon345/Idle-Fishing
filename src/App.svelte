@@ -40,9 +40,8 @@
 	loadGameData();
 	
 	
-	GameData.currentlyFishing = GameData.fishingData["blackDrum"];
-	GameData.currentSkill = GameData.skillsData["Concentration"];
-	GameData.currentProperty = GameData.itemData["Homeless"];
+	GameData.currentlyFishing = GameData.fishingData.get("blackdrum");
+	GameData.currentSkill = GameData.skillsData.get("Concentration");
 	GameData.currentMisc = [];
 	
 	GameData.requirements = new Map();
@@ -83,7 +82,7 @@
 
 			<div class="flex flex-col">
 				{#if selectedTab == "skills"}
-					<Skills gameData={{...gameData}}/>
+					<Skills gameData={{...gameData}} currentSkill={gameData.skillsData.get("Concentration")}/>
 				{:else if selectedTab == "goneFishing"}
 					<GoneFishing gameData={{...gameData}}/>
 				{:else if selectedTab == "achievements"}

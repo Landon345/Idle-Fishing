@@ -2,8 +2,6 @@ import type {
   Bases,
   BoatBaseData,
   Classes,
-  CurrentlyFishing,
-  CurrentSkill,
   FishBaseData,
   ItemBaseData,
   SkillBaseData,
@@ -53,46 +51,57 @@ export function addMultipliers() {
   GameData.skillsData.forEach((skill, id) => {});
 }
 
-export function selectCurrent(entity: Bases) {
-  if ("income" in entity) {
-    GameData.currentlyFishing = GameData.fishingData.get(entity.name);
-  } else if ("maxXp" in entity) {
-    GameData.currentSkill = GameData.skillsData.get(entity.name);
-  } else if ("bought" in entity) {
-    // check if able to purchase
-    // then set bought to true
-    let boat = GameData.boatData.get(entity.name).baseData;
-    if (boat.price < GameData.coins) {
-      GameData.coins -= boat.price;
-      boat.bought = true;
-      GameData.boatData.set(boat.name, new Boat(boat));
-    }
-  } else {
-    let misc = GameData.itemData.get(entity.name);
-    if (GameData.currentMisc.includes(misc)) {
-      for (let i = 0; i < GameData.currentMisc.length; i++) {
-        if (GameData.currentMisc[i] == misc) {
-          GameData.currentMisc.splice(i, 1);
-        }
-      }
-    } else {
-      GameData.currentMisc.push(misc);
-    }
-  }
-}
+// export function selectCurrent(entity: Bases) {
+//   if ("income" in entity) {
+//     GameData.currentlyFishing = GameData.fishingData.get(entity.name);
+//   } else if ("maxXp" in entity) {
+//     GameData.currentSkill = GameData.skillsData.get(entity.name);
+//   } else if ("bought" in entity) {
+//     // check if able to purchase
+//     // then set bought to true
+//     let boat = GameData.boatData.get(entity.name).baseData;
+//     if (boat.price < GameData.coins) {
+//       GameData.coins -= boat.price;
+//       boat.bought = true;
+//       GameData.boatData.set(boat.name, new Boat(boat));
+//     }
+//   } else {
+//     let misc = GameData.itemData.get(entity.name);
+//     if (GameData.currentMisc.includes(misc)) {
+//       for (let i = 0; i < GameData.currentMisc.length; i++) {
+//         if (GameData.currentMisc[i] == misc) {
+//           GameData.currentMisc.splice(i, 1);
+//         }
+//       }
+//     } else {
+//       GameData.currentMisc.push(misc);
+//     }
+//   }
+// }
 
 export function setSkill(skillName: string): void {
   GameData.currentSkill = GameData.skillsData.get(skillName);
 }
 
 export function setFishing(fishName: string): void {
+  console.log(`fishName`, fishName);
   GameData.currentlyFishing = GameData.fishingData.get(fishName);
 }
 
-export function applySkillData(baseSkill: SkillBaseData): SkillBaseData {
-  const skill = GameData.skillsData.get(baseSkill.name);
+export function applySkillData(skill: Skill): any {
+  let barInfo: any = {};
+  barInfo.xpBar = { name: skill.name, width: skill.xp / skill.maxXp };
+  barInfo.level = skill.level;
+  barInfo.effect = skill.effectDescription;
+  barInfo.xpPerDay = skill.xpGain;
+  barInfo.xpLeft = skill.xpLeft;
+  barInfo.maxLevel = skill.maxLevel;
+  console.log(`barInfo`, barInfo);
+  return barInfo;
+}
 
-  return baseSkill;
+export function capitalize(str: string): string {
+  return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
 export function applySpeed(value: number) {

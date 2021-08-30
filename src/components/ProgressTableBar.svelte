@@ -1,15 +1,24 @@
 <script lang="ts">
-    import {selectCurrent} from "src/functions";
+    import type { GameDataType } from "src/Entities";
+    import {setSkill} from "src/functions";
     import XpBar from "src/components/XpBar.svelte";
+    import type { Skill } from "src/classes";
+
+    export let gameData: GameDataType;
     export let barInfo: any;
+    export let currentSkill: Skill;
+
+    let values:any = Object.values(barInfo);
+    console.log(`currentSkill`, currentSkill)
+    console.log(`values[0].name`, values[0].name)
+    let current = currentSkill === values[0].name;
 
 </script>
 
-<tr class="cursor-pointer" on:click={() => selectCurrent(barInfo)}>
-    {#each Object.values(barInfo) as value, idx }
-        {#if idx == 0}
-            <XpBar value={value}/>
-        {:else}
+<tr class="cursor-pointer" class:bg-red-600="{current}" on:click={() => setSkill(barInfo.xpBar.name)}>
+    <XpBar name={values[0].name} width={values[0].width}/>
+    {#each values as value, idx }
+        {#if idx > 0}
             <td>{value}</td>
         {/if}
     {/each}

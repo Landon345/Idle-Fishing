@@ -33,25 +33,6 @@ export interface SkillBaseData {
 export type Bases = SkillBaseData | FishBaseData | BoatBaseData | ItemBaseData;
 export type Classes = Fishing | Item | Boat | Skill;
 
-export interface CurrentlyFishing {
-  baseData: FishBaseData;
-  incomeMultipliers: number[];
-  xpMultipliers: number[];
-  level: number;
-  maxLevel: number;
-  name: string;
-  xp: number;
-}
-
-export interface CurrentSkill {
-  baseData: SkillBaseData;
-  xpMultipliers: number[];
-  level: number;
-  maxLevel: number;
-  name: string;
-  xp: number;
-}
-
 export interface GameDataType {
   day: number;
   coins: number;
@@ -65,8 +46,8 @@ export interface GameDataType {
   rebirthOneCount: number;
   rebirthTwoCount: number;
 
-  currentlyFishing: CurrentlyFishing | null;
-  currentSkill: CurrentSkill | null;
+  currentlyFishing: Fishing | null;
+  currentSkill: Skill | null;
   currentProperty: string | null;
   currentMisc: any[];
   evil: number;

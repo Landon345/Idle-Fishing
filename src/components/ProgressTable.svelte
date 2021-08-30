@@ -1,12 +1,14 @@
 <script lang="ts">
+    import App from "src/App.svelte";
+import type { Skill } from "src/classes";
     import TableBar from "src/components/ProgressTableBar.svelte";
     import type {Bases, GameDataType} from "src/Entities";
 import Achievements from "src/tabs/Achievements.svelte";
 
-    let keys = {};
     export let gameData: GameDataType;
-
+    export let currentSkill: Skill;
     export let tableInfo: Bases[] = [];
+    export let firstHeader: string;
 
     // headers I need: 
     // ["Fundamentals", "Level", "Effect", "Xp/day", "Xp left", "Max Level"]
@@ -19,13 +21,17 @@ import Achievements from "src/tabs/Achievements.svelte";
 
 <table class="w-full mb-5">
     <tr class="mt-4 mb-1">
-        {#each grabHeaders() as header}
-            <th>{header}</th>
+        {#each grabHeaders() as header, idx}
+            {#if idx == 0}
+                <th>{firstHeader}</th>
+            {:else}
+                <th>{header}</th>
+            {/if}
         {/each}
     </tr>
     {#each tableInfo as bar}
 
-        <TableBar barInfo={{...bar}} />
+        <TableBar gameData={{...gameData}} barInfo={{...bar}} currentSkill={currentSkill}/>
         
     {/each}
 </table>

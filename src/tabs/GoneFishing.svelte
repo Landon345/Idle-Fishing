@@ -24,8 +24,8 @@
 
 <div class="bg-gray-white w-full h-full">
     <p class="p-10 bg-blue-500 text-white text-xl font-bold w-full">Gone Fishing!</p>
-    <ProgressTable gameData={{...gameData}} tableInfo={tableInfo1} />
-    <ProgressTable gameData={{...gameData}} tableInfo={tableInfo2} />
-    <ProgressTable gameData={{...gameData}} tableInfo={tableInfo3} />
+    <ProgressTable gameData={{...gameData}} tableInfo={tableInfo1} firstHeader="ocean"/>
+    <ProgressTable gameData={{...gameData}} tableInfo={tableInfo2} firstHeader="lake"/>
+    <ProgressTable gameData={{...gameData}} tableInfo={tableInfo3} firstHeader="river"/>
     
 </div>

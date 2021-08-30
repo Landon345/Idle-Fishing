@@ -1,27 +1,29 @@
 <script lang="ts">
     import type {GameDataType, SkillBaseData} from "src/Entities";
     import ProgressTable from "src/components/ProgressTable.svelte";
-    import {applySkillData} from "src/functions";
-    import type { Boat, Item, Skill } from "src/classes";
-    export let gameData: GameDataType;
+    import {applySkillData, capitalize} from "src/functions";
+    import type { Skill } from "src/classes";
+    import { skillCategories } from "src/gameData";
 
+    export let gameData: GameDataType;
+    export let currentSkill: Skill;
 
     const makeTableInfo = (skillData: Map<string, Skill>) => {
-        let table: SkillBaseData[] = [];
-        skillData.forEach((skillData, id) => {
-            let baseData = applySkillData(skillData.baseData);
-            table.push(baseData)
+        let table: any[] = [];
+        skillData.forEach((skill: Skill, id) => {
+            let rowObj = applySkillData(skill);
+            table.push(rowObj)
         })
         return table;
     }
 
-    let tableInfo = makeTableInfo(gameData.skillsData)
-    let tableInfo1 = tableInfo.filter(data => data.category == "fundamentals");
+    const tableInfo = makeTableInfo(gameData.skillsData)
+    const tableInfo1 = tableInfo.filter(data => skillCategories.fundamentals.some((element) => element == capitalize(data.xpBar.name)));
 
 </script>
 
 <div class="bg-gray-white w-full h-full">
     <p class="p-10 bg-green-500 text-white text-xl font-bold w-full">Skills!</p>
-    <ProgressTable gameData={{...gameData}} tableInfo={tableInfo1} />
+    <ProgressTable gameData={{...gameData}} tableInfo={tableInfo1} firstHeader="Fundamentals" currentSkill={currentSkill}/>
     
 </div>
