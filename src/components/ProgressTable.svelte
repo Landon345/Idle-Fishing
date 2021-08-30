@@ -1,12 +1,16 @@
 <script lang="ts">
-    import TableBar from "src/components/TableBar.svelte";
-    import type {GameDataType} from "src/Entities";
+    import TableBar from "src/components/ProgressTableBar.svelte";
+    import type {Bases, GameDataType} from "src/Entities";
 import Achievements from "src/tabs/Achievements.svelte";
 
     let keys = {};
     export let gameData: GameDataType;
 
-    export let tableInfo = []
+    export let tableInfo: Bases[] = [];
+
+    // headers I need: 
+    // ["Fundamentals", "Level", "Effect", "Xp/day", "Xp left", "Max Level"]
+    // ["Ocean", "Level", "Income/day", "Effect", "Xp/day", "Xp left", "Max Level"]
     
     const grabHeaders = (): string[] => {
         return tableInfo.length == 0 ? [] : Object.keys(tableInfo[0]);
@@ -21,7 +25,7 @@ import Achievements from "src/tabs/Achievements.svelte";
     </tr>
     {#each tableInfo as bar}
 
-        <TableBar barInfo={{...bar}}/>
+        <TableBar barInfo={{...bar}} />
         
     {/each}
 </table>

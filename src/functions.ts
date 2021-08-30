@@ -8,7 +8,6 @@ import type {
   ItemBaseData,
   SkillBaseData,
 } from "src/Entities";
-import { identity } from "svelte/internal";
 import {
   Fishing,
   Skill,
@@ -34,23 +33,70 @@ import {
   tempData,
   setGameData,
   boatBaseData,
+  updateSpeed,
 } from "./gameData";
 
-export function togglePause() {
-  GameData.paused = !GameData.paused;
-}
+export const togglePause = () => (GameData.paused = !GameData.paused);
+export const daysToYears = (days: number) => Math.floor(days / 365);
+export const days = (day) => Math.floor(day % 365);
 
 export function calculatedAge(day: number): string {
-  return `${14 + Math.floor(day / 365)} years and ${day % 365} days`;
+  return `${14 + daysToYears(day)} years and ${days(day)} days`;
 }
 
 export function getBaseLog(x, y) {
   return Math.log(y) / Math.log(x);
 }
 
-export function daysToYears(days) {
-  let years = Math.floor(days / 365);
-  return years;
+export function addMultipliers() {
+  GameData.fishingData.forEach((task, id) => {});
+  GameData.skillsData.forEach((skill, id) => {});
+}
+
+export function selectCurrent(entity: Bases) {
+  if ("income" in entity) {
+    GameData.currentlyFishing = GameData.fishingData.get(entity.name);
+  } else if ("maxXp" in entity) {
+    GameData.currentSkill = GameData.skillsData.get(entity.name);
+  } else if ("bought" in entity) {
+    // check if able to purchase
+    // then set bought to true
+    let boat = GameData.boatData.get(entity.name).baseData;
+    if (boat.price < GameData.coins) {
+      GameData.coins -= boat.price;
+      boat.bought = true;
+      GameData.boatData.set(boat.name, new Boat(boat));
+    }
+  } else {
+    let misc = GameData.itemData.get(entity.name);
+    if (GameData.currentMisc.includes(misc)) {
+      for (let i = 0; i < GameData.currentMisc.length; i++) {
+        if (GameData.currentMisc[i] == misc) {
+          GameData.currentMisc.splice(i, 1);
+        }
+      }
+    } else {
+      GameData.currentMisc.push(misc);
+    }
+  }
+}
+
+export function setSkill(skillName: string): void {
+  GameData.currentSkill = GameData.skillsData.get(skillName);
+}
+
+export function setFishing(fishName: string): void {
+  GameData.currentlyFishing = GameData.fishingData.get(fishName);
+}
+
+export function applySkillData(baseSkill: SkillBaseData): SkillBaseData {
+  const skill = GameData.skillsData.get(baseSkill.name);
+
+  return baseSkill;
+}
+
+export function applySpeed(value: number) {
+  return value / updateSpeed;
 }
 
 export function getCategoryFromEntityName(categoryType, entityName) {
@@ -71,13 +117,8 @@ export function getNextEntity(data, categoryType, entityName) {
   return nextEntity;
 }
 
-export function getDay() {
-  let day = Math.floor(GameData.day - daysToYears(GameData.day) * 365);
-  return day;
-}
-
 export function increaseDays() {
-  let increase = 1;
+  let increase = applySpeed(1);
   GameData.day += increase;
 }
 
@@ -139,6 +180,59 @@ export function replaceSaveDict(dict, saveDict) {
   }
 }
 
+export function replaceSavedItems(
+  map: Map<string, Item>,
+  saveMap: Map<string, Item>
+) {
+  map.forEach((val, key) => {
+    let { baseData, expenseMultipliers } = saveMap.get(key);
+    saveMap.set(key, new Item(baseData, expenseMultipliers));
+  });
+  return saveMap;
+}
+export function replaceSavedBoats(
+  map: Map<string, Boat>,
+  saveMap: Map<string, Boat>
+) {
+  map.forEach((val, key) => {
+    let { baseData } = saveMap.get(key);
+    saveMap.set(key, new Boat(baseData));
+  });
+  return saveMap;
+}
+
+export function replaceSavedFishing(
+  map: Map<string, Fishing>,
+  saveMap: Map<string, Fishing>
+) {
+  map.forEach((val, key) => {
+    let { baseData, level, maxLevel, xp, xpMultipliers, incomeMultipliers } =
+      saveMap.get(key);
+    saveMap.set(
+      key,
+      new Fishing(
+        baseData,
+        level,
+        maxLevel,
+        xp,
+        xpMultipliers,
+        incomeMultipliers
+      )
+    );
+  });
+  return saveMap;
+}
+export function replaceSavedSkills(
+  map: Map<string, Skill>,
+  saveMap: Map<string, Skill>
+) {
+  map.forEach((val, key) => {
+    let { baseData, level, maxLevel, xp, xpMultipliers } = saveMap.get(key);
+    saveMap.set(key, new Skill(baseData, level, maxLevel, xp, xpMultipliers));
+  });
+  return saveMap;
+}
+
 export function createData(
   data: Map<string, Classes>,
   baseData: Map<string, Bases>
@@ -150,10 +244,8 @@ export function createData(
 
 export function createEntity(data: Map<string, Classes>, entity: Bases) {
   if ("income" in entity) {
-    GameData.fishingData.set(entity.name, new Fishing(entity));
-    console.log(`GameData.fishingData`, GameData.fishingData);
+    data.set(entity.name, new Fishing(entity));
   } else if ("maxXp" in entity) {
-    console.log(`entitiy skill`, entity);
     data.set(entity.name, new Skill(entity));
   } else if ("bought" in entity) {
     data.set(entity.name, new Boat(entity));
@@ -183,8 +275,6 @@ function reviver(key, value) {
 
 export function saveGameData() {
   if (!GameData.paused) {
-    console.log(`GameData`, GameData.fishingData);
-    console.log(`JSON.stringify(GameData)`, JSON.stringify(GameData, replacer));
     localStorage.setItem("GameDataSave", JSON.stringify(GameData, replacer));
   }
 }
@@ -195,9 +285,14 @@ export function loadGameData() {
   if (GameDataSave !== null) {
     replaceSaveDict(GameData, GameDataSave);
     replaceSaveDict(GameData.requirements, GameDataSave.requirements);
-    replaceSaveDict(GameData.fishingData, GameDataSave.fishingData);
-    replaceSaveDict(GameData.skillsData, GameDataSave.skillsData);
-    replaceSaveDict(GameData.itemData, GameDataSave.itemData);
+    replaceSavedFishing(GameData.fishingData, GameDataSave.fishingData);
+    replaceSavedSkills(GameData.skillsData, GameDataSave.skillsData);
+    GameDataSave.itemData = replaceSavedItems(
+      GameData.itemData,
+      GameDataSave.itemData
+    );
+
+    console.log(`GameDataSave`, GameDataSave);
 
     setGameData(GameDataSave);
   }

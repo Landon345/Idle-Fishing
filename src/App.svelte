@@ -7,12 +7,12 @@
 	import Settings from "src/tabs/Settings.svelte";
 
 	import {calculatedAge, createData, loadGameData, saveGameData, update, togglePause} from "./functions";
-	import {boatBaseData, fishBaseData, GameData, itemBaseData, skillBaseData} from "./gameData";
+	import {boatBaseData, fishBaseData, GameData, itemBaseData, skillBaseData, updateSpeed} from "./gameData";
 	import {onMount } from "svelte";
 	
 
 	type Tab = "goneFishing" | "skills" | "shop" | "achievements" | "settings";
-	let selectedTab: Tab = "goneFishing";
+	let selectedTab: Tab = "skills";
 	let gameData: GameDataType = GameData;
 	
 	
@@ -25,7 +25,7 @@
 			update()
 		}
 	}
-	const masterInterval: number = window.setInterval(updateGame, 1000)
+	const masterInterval: number = window.setInterval(updateGame, 1000 / updateSpeed)
 	const saveInterval: number = window.setInterval(saveGameData, 3000)
 	
 	const selectTab = (selected: Tab) => {
@@ -71,16 +71,14 @@
 
 		<div class="flex flex-col mr-2 w-3/4 overflow-x-auto">
 
-			<div class="flex flex-row bg-gray-800 text-white p-5">
-				<div class="flex flex-row justify-between w-2/3">
-					<button on:click={() => selectTab("skills")}>Skills</button>
-					<button on:click={() => selectTab("goneFishing")}>Gone Fishing</button>
-					<button on:click={() => selectTab("achievements")}>Achievements</button>
-					<button on:click={() => selectTab("shop")}>Shop</button>
+			<div class="flex flex-row bg-gray-800 text-white justify-between">
+				<div class="flex flex-row">
+					<button class="btn" on:click={() => selectTab("skills")}>Skills</button>
+					<button class="btn" on:click={() => selectTab("goneFishing")}>Gone Fishing</button>
+					<button class="btn" on:click={() => selectTab("achievements")}>Achievements</button>
+					<button class="btn" on:click={() => selectTab("shop")}>Shop</button>
 				</div>
-				<div class="flex justify-end w-1/3" >
-					<button on:click={() => selectTab("settings")}>Settings</button>	
-				</div>
+				<button class="btn" on:click={() => selectTab("settings")}>Settings</button>	
 			</div>
 
 			<div class="flex flex-col">
@@ -108,10 +106,20 @@
 	@tailwind components;
 	@tailwind utilities;
 
-	tr:nth-child(even){background-color: #f2f2f2;}
-	tr:nth-child(odd){background-color: #eee;}
+	.btn {
+		@apply hover:bg-gray-900 py-5 px-10
+	}
+
+	/* tr:nth-child(even){background-color: #f2f2f2;}
+	tr:nth-child(odd){background-color: #eee;} */
 
 	tr:hover {background-color: #ddd;}
 	
-
+    tr{ 
+        border-bottom: 1px solid #ddd
+    }
+	td{
+		border: 1px solid #ddd;
+        padding: 8px;;
+	}
 </style>

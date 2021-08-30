@@ -4,7 +4,7 @@ import { GameData, itemCategories } from "./gameData";
 export class Task {
   baseData: {
     name: string;
-    income?: number;
+    income: number;
     maxXp: number;
     effect: number;
     description: string;
@@ -16,55 +16,62 @@ export class Task {
   xp: number;
   xpMultipliers: number[];
 
-  constructor(baseData) {
+  constructor(baseData, level = 0, maxLevel = 0, xp = 0, xpMultipliers = []) {
     this.baseData = baseData;
     this.name = baseData.name;
-    this.level = 0;
-    this.maxLevel = 0;
-    this.xp = 0;
+    this.level = level;
+    this.maxLevel = maxLevel;
+    this.xp = xp;
 
-    this.xpMultipliers = [];
+    this.xpMultipliers = xpMultipliers;
   }
 
-  getMaxXp() {
+  get maxXp(): number {
     let maxXp = Math.round(
       this.baseData.maxXp * (this.level + 1) * Math.pow(1.01, this.level)
     );
     return maxXp;
   }
 
-  getXpLeft() {
-    return Math.round(this.getMaxXp() - this.xp);
+  get xpLeft(): number {
+    return Math.round(this.maxXp - this.xp);
   }
 
-  getMaxLevelMultiplier() {
+  get maxLevelMultiplier() {
     let maxLevelMultiplier = 1 + this.maxLevel / 10;
     return maxLevelMultiplier;
   }
 
-  getXpGain() {
+  get xpGain() {
     // return applyMultipliers(10, this.xpMultipliers);
     return 10;
   }
 
   increaseXp() {
-    this.xp += this.getXpGain();
-    if (this.xp >= this.getMaxXp()) {
-      let excess = this.xp - this.getMaxXp();
+    this.xp += this.xpGain;
+    if (this.xp >= this.maxXp) {
+      let excess = this.xp - this.maxXp;
       while (excess >= 0) {
         this.level += 1;
-        excess -= this.getMaxXp();
+        excess -= this.maxXp;
       }
-      this.xp = this.getMaxXp() + excess;
+      this.xp = this.maxXp + excess;
     }
   }
 }
 
 export class Fishing extends Task {
   incomeMultipliers: number[];
-  constructor(baseData) {
-    super(baseData);
-    this.incomeMultipliers = [];
+  constructor(
+    baseData,
+    level = 0,
+    maxLevel = 0,
+    xp = 0,
+    xpMultipliers = [],
+    incomeMultipliers = []
+  ) {
+    super(baseData, level, maxLevel, xp, xpMultipliers);
+    this.incomeMultipliers = incomeMultipliers;
   }
 
   getLevelMultiplier() {
@@ -79,18 +86,18 @@ export class Fishing extends Task {
 }
 
 export class Skill extends Task {
-  constructor(baseData) {
-    super(baseData);
+  constructor(baseData, level = 0, maxLevel = 0, xp = 0, xpMultipliers = []) {
+    super(baseData, level, maxLevel, xp, xpMultipliers);
   }
 
-  getEffect() {
+  get getEffect() {
     let effect = 1 + this.baseData.effect * this.level;
     return effect;
   }
 
-  getEffectDescription() {
+  get getEffectDescription() {
     let description = this.baseData.description;
-    let text = "x" + String(this.getEffect().toFixed(2)) + " " + description;
+    let text = "x" + String(this.getEffect.toFixed(2)) + " " + description;
     return text;
   }
 }
@@ -104,10 +111,10 @@ export class Item {
   };
   name: string;
   expenseMultipliers: number[];
-  constructor(baseData) {
+  constructor(baseData, expenseMultipliers = []) {
     this.baseData = baseData;
     this.name = baseData.name;
-    this.expenseMultipliers = [];
+    this.expenseMultipliers = expenseMultipliers;
   }
 
   getEffect() {
@@ -135,6 +142,8 @@ export class Boat {
   constructor(baseData) {
     this.baseData = baseData;
   }
+
+  buy() {}
 }
 
 export class Requirement {
