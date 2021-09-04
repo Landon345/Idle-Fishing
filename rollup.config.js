@@ -46,11 +46,11 @@ export default {
     file: "public/build/bundle.js",
   },
   plugins: [
+    typescript({ sourceMap: !production }),
     svelte({
       preprocess: sveltePreprocess({
-        sourceMap: !production,
         postcss: {
-          plugins: [require("tailwindcss"), require("autoprefixer")],
+          plugins: [require("tailwindcss"), require("autoprefixer")()],
         },
       }),
       compilerOptions: {
@@ -72,10 +72,6 @@ export default {
       dedupe: ["svelte"],
     }),
     commonjs(),
-    typescript({
-      sourceMap: !production,
-      inlineSources: !production,
-    }),
     alias({
       entries: [
         {

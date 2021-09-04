@@ -1,5 +1,6 @@
+import type { GameDataType } from "src/Entities";
 import { daysToYears } from "./functions";
-import { GameData, itemCategories } from "./gameData";
+import { GameData, getGameData, itemCategories } from "./gameData";
 
 export class Task {
   baseData: {
@@ -74,12 +75,12 @@ export class Fishing extends Task {
     this.incomeMultipliers = incomeMultipliers;
   }
 
-  getLevelMultiplier() {
+  get levelMultiplier() {
     let levelMultiplier = 1 + Math.log10(this.level + 1);
     return levelMultiplier;
   }
 
-  getIncome() {
+  get income() {
     // return applyMultipliers(this.baseData.income, this.incomeMultipliers);
     return this.baseData.income;
   }
@@ -118,7 +119,7 @@ export class Item {
   }
 
   getEffect() {
-    if (!GameData.currentMisc.includes(this)) return 1;
+    if (!getGameData().currentMisc.includes(this)) return 1;
     let effect = this.baseData.effect;
     return effect;
   }
@@ -179,7 +180,8 @@ export class FishingRequirement extends Requirement {
   }
   getCondition(requirement) {
     return (
-      GameData.skillsData[requirement.fishing].level >= requirement.requirement
+      getGameData().skillsData[requirement.fishing].level >=
+      requirement.requirement
     );
   }
 }
@@ -192,7 +194,8 @@ export class SkillRequirement extends Requirement {
   }
   getCondition(requirement) {
     return (
-      GameData.skillsData[requirement.skill].level >= requirement.requirement
+      getGameData().skillsData[requirement.skill].level >=
+      requirement.requirement
     );
   }
 }
@@ -205,7 +208,7 @@ export class CoinRequirement extends Requirement {
   }
 
   getCondition(requirement) {
-    return GameData.coins >= requirement.requirement;
+    return getGameData().coins >= requirement.requirement;
   }
 }
 
@@ -217,7 +220,7 @@ export class AgeRequirement extends Requirement {
   }
 
   getCondition(requirement) {
-    return daysToYears(GameData.day) >= requirement.requirement;
+    return daysToYears(getGameData().day) >= requirement.requirement;
   }
 }
 export class BoatRequirement extends Requirement {
@@ -228,7 +231,7 @@ export class BoatRequirement extends Requirement {
   }
 
   getCondition(requirement) {
-    return GameData.boatData >= requirement.requirement;
+    return getGameData().boatData >= requirement.requirement;
   }
 }
 
@@ -240,6 +243,6 @@ export class EvilRequirement extends Requirement {
   }
 
   getCondition(requirement) {
-    return GameData.evil >= requirement.requirement;
+    return getGameData().evil >= requirement.requirement;
   }
 }

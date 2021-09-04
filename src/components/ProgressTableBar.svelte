@@ -1,7 +1,7 @@
 <script lang="ts">
     import type { GameDataType } from "src/Entities";
-    import {setSkill} from "src/functions";
     import XpBar from "src/components/XpBar.svelte";
+    import {setCurrentlyFishing} from "src/gameData";
     import type { Skill } from "src/classes";
 
     export let gameData: GameDataType;
@@ -15,7 +15,7 @@
 
 </script>
 
-<tr class="cursor-pointer" class:bg-red-600="{current}" on:click={() => setSkill(barInfo.xpBar.name)}>
+<tr class="cursor-pointer" class:bg-red-600="{current}" on:click={() => setCurrentlyFishing(barInfo.xpBar.name)}>
     <XpBar name={values[0].name} width={values[0].width}/>
     {#each values as value, idx }
         {#if idx > 0}

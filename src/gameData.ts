@@ -6,6 +6,8 @@ import {
   AgeRequirement,
 } from "./classes";
 
+import { applySpeed } from "src/functions";
+
 import type {
   BoatBaseData,
   FishBaseData,
@@ -14,7 +16,9 @@ import type {
   SkillBaseData,
 } from "src/Entities";
 
-export let GameData: GameDataType = {
+import { writable, Writable } from "svelte/store";
+
+export let GameData: Writable<GameDataType> = writable({
   day: 0,
   coins: 0,
   fishingData: new Map(),
@@ -32,10 +36,39 @@ export let GameData: GameDataType = {
   currentProperty: null,
   currentMisc: null,
   evil: 0,
+});
+
+export const update = (paused: boolean) => {
+  if (paused) {
+    return;
+  }
+  increaseDay();
+};
+export const getGameData = (): GameDataType => {
+  let data_value;
+  GameData.subscribe((data) => {
+    data_value = data;
+  });
+  return data_value;
+};
+export const setGameData = (savedGameData) => {
+  GameData.set(savedGameData);
 };
 
-export const setGameData = (savedGameData) => {
-  GameData = savedGameData;
+export const increaseDay = () => {
+  GameData.update((data: GameDataType) => {
+    return { ...data, day: data.day + applySpeed(1) };
+  });
+};
+export const togglePause = () => {
+  GameData.update((data: GameDataType) => {
+    return { ...data, paused: !data.paused };
+  });
+};
+export const setCurrentlyFishing = (fishingKey: string) => {
+  GameData.update((data) => {
+    return { ...data, currentlyFishing: data.fishingData.get(fishingKey) };
+  });
 };
 
 export let tempData = {
@@ -171,8 +204,8 @@ export const itemBaseData: Map<string, ItemBaseData> = new Map([
 ]);
 
 export const fishCategories = {
-  ocean: ["blackDrum", "blueMarlin"],
-  lake: ["sunFish", "waleye"],
+  ocean: ["Black Drum", "Blue Marlin"],
+  lake: ["Sun Fish", "Waleye"],
 };
 
 export const skillCategories = {
@@ -185,8 +218,8 @@ export const units = ["", "k", "M", "B", "T", "q", "Q", "Sx", "Sp", "Oc"];
 
 export const jobTabButton = document.getElementById("jobTabButton");
 
-tempData["requirements"] = {};
-for (let key in GameData.requirements) {
-  var requirement = GameData.requirements[key];
-  tempData["requirements"][key] = requirement;
-}
+// tempData["requirements"] = {};
+// for (let key in GameData.requirements) {
+//   var requirement = GameData.requirements[key];
+//   tempData["requirements"][key] = requirement;
+// }

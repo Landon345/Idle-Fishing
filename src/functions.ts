@@ -3,6 +3,7 @@ import type {
   BoatBaseData,
   Classes,
   FishBaseData,
+  GameDataType,
   ItemBaseData,
   SkillBaseData,
 } from "src/Entities";
@@ -34,7 +35,6 @@ import {
   updateSpeed,
 } from "./gameData";
 
-export const togglePause = () => (GameData.paused = !GameData.paused);
 export const daysToYears = (days: number) => Math.floor(days / 365);
 export const days = (day) => Math.floor(day % 365);
 
@@ -44,48 +44,6 @@ export function calculatedAge(day: number): string {
 
 export function getBaseLog(x, y) {
   return Math.log(y) / Math.log(x);
-}
-
-export function addMultipliers() {
-  GameData.fishingData.forEach((task, id) => {});
-  GameData.skillsData.forEach((skill, id) => {});
-}
-
-// export function selectCurrent(entity: Bases) {
-//   if ("income" in entity) {
-//     GameData.currentlyFishing = GameData.fishingData.get(entity.name);
-//   } else if ("maxXp" in entity) {
-//     GameData.currentSkill = GameData.skillsData.get(entity.name);
-//   } else if ("bought" in entity) {
-//     // check if able to purchase
-//     // then set bought to true
-//     let boat = GameData.boatData.get(entity.name).baseData;
-//     if (boat.price < GameData.coins) {
-//       GameData.coins -= boat.price;
-//       boat.bought = true;
-//       GameData.boatData.set(boat.name, new Boat(boat));
-//     }
-//   } else {
-//     let misc = GameData.itemData.get(entity.name);
-//     if (GameData.currentMisc.includes(misc)) {
-//       for (let i = 0; i < GameData.currentMisc.length; i++) {
-//         if (GameData.currentMisc[i] == misc) {
-//           GameData.currentMisc.splice(i, 1);
-//         }
-//       }
-//     } else {
-//       GameData.currentMisc.push(misc);
-//     }
-//   }
-// }
-
-export function setSkill(skillName: string): void {
-  GameData.currentSkill = GameData.skillsData.get(skillName);
-}
-
-export function setFishing(fishName: string): void {
-  console.log(`fishName`, fishName);
-  GameData.currentlyFishing = GameData.fishingData.get(fishName);
 }
 
 export function applySkillData(skill: Skill): any {
@@ -124,11 +82,6 @@ export function getNextEntity(data, categoryType, entityName) {
   let nextEntityName = category[nextIndex];
   let nextEntity = data[nextEntityName];
   return nextEntity;
-}
-
-export function increaseDays() {
-  let increase = applySpeed(1);
-  GameData.day += increase;
 }
 
 export function format(number) {
@@ -172,10 +125,14 @@ export function formatCoins(coins) {
 }
 
 export function replaceSaveDict(dict, saveDict) {
+  let requirements;
+  GameData.subscribe((data) => {
+    requirements = data.requirements;
+  });
   for (let key in dict) {
     if (!(key in saveDict)) {
       saveDict[key] = dict[key];
-    } else if (dict == GameData.requirements) {
+    } else if (dict == requirements) {
       if (saveDict[key].type != tempData["requirements"][key].type) {
         saveDict[key] = tempData["requirements"][key];
       }
@@ -282,9 +239,9 @@ function reviver(key, value) {
   return value;
 }
 
-export function saveGameData() {
-  if (!GameData.paused) {
-    localStorage.setItem("GameDataSave", JSON.stringify(GameData, replacer));
+export function saveGameData(data_value) {
+  if (!data_value.paused) {
+    localStorage.setItem("GameDataSave", JSON.stringify(data_value, replacer));
   }
 }
 
@@ -292,23 +249,29 @@ export function loadGameData() {
   let GameDataSave = JSON.parse(localStorage.getItem("GameDataSave"), reviver);
 
   if (GameDataSave !== null) {
-    replaceSaveDict(GameData, GameDataSave);
-    replaceSaveDict(GameData.requirements, GameDataSave.requirements);
-    replaceSavedFishing(GameData.fishingData, GameDataSave.fishingData);
-    replaceSavedSkills(GameData.skillsData, GameDataSave.skillsData);
-    GameDataSave.itemData = replaceSavedItems(
-      GameData.itemData,
-      GameDataSave.itemData
-    );
+    let data_value: GameDataType;
+    let requirements;
+    let fishingData;
+    let skillsData;
+    let itemData;
+
+    GameData.subscribe((data) => {
+      data_value = data;
+      requirements = data.requirements;
+      fishingData = data.fishingData;
+      skillsData = data.skillsData;
+      itemData = data.itemData;
+    });
+    replaceSaveDict(data_value, GameDataSave);
+    replaceSaveDict(requirements, GameDataSave.requirements);
+    replaceSavedFishing(fishingData, GameDataSave.fishingData);
+    replaceSavedSkills(skillsData, GameDataSave.skillsData);
+    GameDataSave.itemData = replaceSavedItems(itemData, GameDataSave.itemData);
 
     console.log(`GameDataSave`, GameDataSave);
 
     setGameData(GameDataSave);
   }
-}
-
-export function update() {
-  increaseDays();
 }
 
 export function resetGameData() {
