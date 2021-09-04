@@ -75,9 +75,14 @@ export const setCurrentlyFishing = (fishingKey: string) => {
 export const updateCurrentFish = () => {
   GameData.update((data) => {
     let fish = data.currentlyFishing || data.fishingData.get("Black Drum");
-    // fish.increaseXp();
     data.fishingData.get(fish.name).increaseXp();
-    return { ...data, fishingData: data.fishingData, currentlyFishing: fish };
+
+    return {
+      ...data,
+      fishingData: data.fishingData,
+      currentlyFishing: fish,
+      coins: (data.coins += applySpeed(fish.income)),
+    };
   });
 };
 
