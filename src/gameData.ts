@@ -4,6 +4,7 @@ import {
   EvilRequirement,
   CoinRequirement,
   AgeRequirement,
+  Fishing,
 } from "./classes";
 
 import { applySpeed } from "src/functions";
@@ -43,6 +44,7 @@ export const update = (paused: boolean) => {
     return;
   }
   increaseDay();
+  updateCurrentFish();
 };
 export const getGameData = (): GameDataType => {
   let data_value;
@@ -68,6 +70,14 @@ export const togglePause = () => {
 export const setCurrentlyFishing = (fishingKey: string) => {
   GameData.update((data) => {
     return { ...data, currentlyFishing: data.fishingData.get(fishingKey) };
+  });
+};
+export const updateCurrentFish = () => {
+  GameData.update((data) => {
+    let fish = data.currentlyFishing || data.fishingData.get("Black Drum");
+    // fish.increaseXp();
+    data.fishingData.get(fish.name).increaseXp();
+    return { ...data, fishingData: data.fishingData, currentlyFishing: fish };
   });
 };
 

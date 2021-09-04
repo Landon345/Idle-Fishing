@@ -6,11 +6,17 @@
   import type { FishBaseData } from "src/Entities";
   import { GameData, setCurrentlyFishing } from "src/gameData";
   import XpBar from "src/components/XpBar.svelte";
+  import FishingBar from "src/components/FishingBar.svelte";
+  import { get } from "svelte/store";
 
   let data_value: GameDataType;
+  let blackDrum: Fishing;
+  let blueMarlin: Fishing;
 
   GameData.subscribe((data) => {
     data_value = data;
+    blackDrum = data.fishingData.get("Black Drum");
+    blueMarlin = data.fishingData.get("Blue Marlin");
   });
 
   let selected: string = data_value.currentlyFishing?.name || "Black Drum";
@@ -31,27 +37,24 @@
 
   const setCurrent = (name: string) => {
     setCurrentlyFishing(name);
-    console.log(`selected`, selected);
     selected = name;
   };
 
-  const getValues = (name: string): any[] => {
+  const getValues = (fish: Fishing): any[] => {
     // ["Level", "Income/day", "Effect", "Xp/day", "Xp left", "Max Level"]
-    const fish: Fishing = data_value.fishingData.get(name);
 
     return [
       fish.level,
       fish.income,
-      fish.levelMultiplier + fish.baseData.description,
+      `x${fish.levelMultiplier.toFixed(2)} ${fish.baseData.description}`,
       fish.xpGain,
       fish.xpLeft,
       fish.maxLevel,
     ];
   };
 
-  const findWidth = (name: string): number => {
-    const fish: Fishing = data_value.fishingData.get(name);
-    return (fish.xpLeft / fish.maxXp) * 100;
+  const findWidth = (fish: Fishing): number => {
+    return ((fish.maxXp - fish.xpLeft) / fish.maxXp) * 100;
   };
 </script>
 
@@ -65,8 +68,8 @@
       class:bg-blue-200={selected === "Black Drum"}
       on:click={() => setCurrent("Black Drum")}
     >
-      <XpBar name={"Black Drum"} width={findWidth("Black Drum")} />
-      {#each getValues("Black Drum") as value, idx}
+      <XpBar name={"Black Drum"} width={findWidth(blackDrum)} />
+      {#each getValues(blackDrum) as value, idx}
         <td>{value}</td>
       {/each}
     </tr>
@@ -75,8 +78,8 @@
       class:bg-blue-200={selected === "Blue Marlin"}
       on:click={() => setCurrent("Blue Marlin")}
     >
-      <XpBar name={"Blue Marlin"} width={findWidth("Blue Marlin")} />
-      {#each getValues("Blue Marlin") as value}
+      <XpBar name={"Blue Marlin"} width={findWidth(blueMarlin)} />
+      {#each getValues(blueMarlin) as value}
         <td>{value}</td>
       {/each}
     </tr>

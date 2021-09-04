@@ -1,5 +1,5 @@
 import type { GameDataType } from "src/Entities";
-import { daysToYears } from "./functions";
+import { applySpeed, daysToYears } from "./functions";
 import { GameData, getGameData, itemCategories } from "./gameData";
 
 export class Task {
@@ -49,7 +49,7 @@ export class Task {
   }
 
   increaseXp() {
-    this.xp += this.xpGain;
+    this.xp += applySpeed(this.xpGain);
     if (this.xp >= this.maxXp) {
       let excess = this.xp - this.maxXp;
       while (excess >= 0) {
