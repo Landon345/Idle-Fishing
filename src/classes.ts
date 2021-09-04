@@ -84,6 +84,17 @@ export class Fishing extends Task {
     // return applyMultipliers(this.baseData.income, this.incomeMultipliers);
     return this.baseData.income;
   }
+
+  get effect() {
+    let effect = 1 + this.baseData.effect * this.level;
+    return effect;
+  }
+
+  get effectDescription() {
+    let description = this.baseData.description;
+    let text = "x" + String(this.effect.toFixed(2)) + " " + description;
+    return text;
+  }
 }
 
 export class Skill extends Task {

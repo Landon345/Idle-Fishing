@@ -120,7 +120,6 @@ export function coinAmounts(coins: number): {
     i += 1;
   }
   coinsObj["c"] = leftOver;
-  console.log(`coinsObj`, coinsObj);
   return coinsObj;
 }
 

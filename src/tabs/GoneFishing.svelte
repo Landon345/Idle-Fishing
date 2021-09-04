@@ -1,13 +1,9 @@
 <script lang="ts">
   import type { GameDataType } from "src/Entities";
   import ProgressTable from "src/components/ProgressTable.svelte";
-  import TableBar from "src/components/ProgressTableBar.svelte";
   import type { Fishing } from "src/classes";
-  import type { FishBaseData } from "src/Entities";
   import { GameData, setCurrentlyFishing } from "src/gameData";
   import XpBar from "src/components/XpBar.svelte";
-  import FishingBar from "src/components/FishingBar.svelte";
-  import { get } from "svelte/store";
 
   let data_value: GameDataType;
   let blackDrum: Fishing;
@@ -32,9 +28,6 @@
   let lakeHeaders: string[] = ["Lake", ...commonHeaders];
   let riverHeaders: string[] = ["River", ...commonHeaders];
 
-  let blackDrumValues: any[] = [];
-  let blueMarlinValues: any[] = [];
-
   const setCurrent = (name: string) => {
     setCurrentlyFishing(name);
     selected = name;
@@ -46,7 +39,7 @@
     return [
       fish.level,
       fish.income,
-      `x${fish.levelMultiplier.toFixed(2)} ${fish.baseData.description}`,
+      fish.effectDescription,
       fish.xpGain,
       fish.xpLeft,
       fish.maxLevel,
