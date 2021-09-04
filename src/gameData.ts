@@ -45,6 +45,7 @@ export const update = (paused: boolean) => {
   }
   increaseDay();
   updateCurrentFish();
+  updateCurrentSkill();
 };
 export const getGameData = (): GameDataType => {
   let data_value;
@@ -82,6 +83,25 @@ export const updateCurrentFish = () => {
       fishingData: data.fishingData,
       currentlyFishing: fish,
       coins: (data.coins += applySpeed(fish.income)),
+    };
+  });
+};
+
+export const setCurrentSkill = (skillKey: string) => {
+  GameData.update((data) => {
+    return { ...data, currentSkill: data.skillsData.get(skillKey) };
+  });
+};
+
+export const updateCurrentSkill = () => {
+  GameData.update((data) => {
+    let skill = data.currentSkill || data.skillsData.get("Strength");
+    data.skillsData.get(skill.name).increaseXp();
+
+    return {
+      ...data,
+      skillsData: data.skillsData,
+      currentSkill: skill,
     };
   });
 };
