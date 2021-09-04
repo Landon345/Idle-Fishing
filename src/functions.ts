@@ -102,26 +102,26 @@ export function format(number) {
   return scaled.toFixed(1) + suffix;
 }
 
-export function formatCoins(coins) {
+export function coinAmounts(coins: number): {
+  p: number;
+  g: number;
+  s: number;
+  c: number;
+} {
+  let coinsObj: any = {};
+
   let tiers = ["p", "g", "s"];
-  let colors = {
-    p: "#79b9c7",
-    g: "#E5C100",
-    s: "#a8a8a8",
-    c: "#a15c2f",
-  };
   let leftOver = coins;
   let i = 0;
   for (let tier of tiers) {
     let x = Math.floor(leftOver / Math.pow(10, (tiers.length - i) * 2));
     leftOver = Math.floor(leftOver - x * Math.pow(10, (tiers.length - i) * 2));
-    let text = format(String(x)) + tier + " ";
+    coinsObj[tier] = x;
     i += 1;
   }
-  if (leftOver == 0 && coins > 0) {
-    return;
-  }
-  let text = String(Math.floor(leftOver)) + "c";
+  coinsObj["c"] = leftOver;
+  console.log(`coinsObj`, coinsObj);
+  return coinsObj;
 }
 
 export function replaceSaveDict(dict, saveDict) {
