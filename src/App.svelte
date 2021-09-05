@@ -5,6 +5,7 @@
   import Shop from "src/tabs/Shop.svelte";
   import Skills from "src/tabs/Skills.svelte";
   import Settings from "src/tabs/Settings.svelte";
+  import Coins from "src/components/Coins.svelte";
 
   import {
     calculatedAge,
@@ -29,11 +30,11 @@
   let selectedTab: Tab = "skills";
 
   let data_value: GameDataType;
-  let coins;
+  let coins: number;
 
   GameData.subscribe((data) => {
     data_value = data;
-    coins = coinAmounts(data.coins);
+    coins = data.coins;
   });
 
   const updateGame = () => {
@@ -79,18 +80,7 @@
       </div>
       <div class="m-3 flex flex-col">
         <p class="text-lg">Coins</p>
-        <span class="flex">
-          {#if coins.p > 0}
-            <p class="text-lg text-blue-500 w-1/4">{coins.p}g</p>
-          {/if}
-          {#if coins.g > 0}
-            <p class="text-lg text-yellow-400 w-1/4">{coins.g}g</p>
-          {/if}
-          {#if coins.s > 0}
-            <p class="text-lg text-gray-300 w-1/4">{coins.s}s</p>
-          {/if}
-          <p class="text-lg text-yellow-800 w-1/4">{coins.c}c</p>
-        </span>
+        <Coins amount={coins} />
       </div>
     </div>
 
@@ -118,12 +108,12 @@
           <Skills />
         {:else if selectedTab == "goneFishing"}
           <GoneFishing />
-          <!-- {:else if selectedTab == "achievements"}
-					<Achievements/>
-				{:else if selectedTab == "shop"}
-					<Shop />
-				{:else}
-					<Settings /> -->
+        {:else if selectedTab == "achievements"}
+          <Achievements />
+        {:else if selectedTab == "shop"}
+          <Shop />
+        {:else}
+          <Settings />
         {/if}
       </div>
     </div>

@@ -74,6 +74,9 @@ export const needRequirements = (
   requiredFor: any
 ): boolean => {
   let reqs = data_value.requirements.get(requiredFor.name);
+  if (reqs == undefined) {
+    return false;
+  }
   for (let i = 0; i < reqs.length; i++) {
     if (!reqs[i].isCompleted()) {
       return true;
@@ -151,6 +154,9 @@ export function coinAmounts(coins: number): {
   c: number;
 } {
   let coinsObj: any = {};
+  if (coins < 0) {
+    return { p: 0, g: 0, s: 0, c: 0 };
+  }
 
   let tiers = ["p", "g", "s"];
   let leftOver = coins;
@@ -192,8 +198,8 @@ export function replaceSavedItems(
   saveMap: Map<string, Item>
 ) {
   map.forEach((val, key) => {
-    let { baseData, expenseMultipliers } = saveMap.get(key);
-    saveMap.set(key, new Item(baseData, expenseMultipliers));
+    let { baseData, expenseMultipliers, level } = saveMap.get(key);
+    saveMap.set(key, new Item(baseData, expenseMultipliers, level));
   });
   return saveMap;
 }

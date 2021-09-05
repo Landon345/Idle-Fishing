@@ -1,6 +1,6 @@
-import type { GameDataType, RequirementObj } from "src/Entities";
+import type { RequirementObj } from "src/Entities";
 import { applySpeed, daysToYears } from "./functions";
-import { GameData, getGameData, itemCategories } from "./gameData";
+import { getGameData, itemCategories, subtractCoins } from "./gameData";
 
 export class Task {
   baseData: {
@@ -23,7 +23,6 @@ export class Task {
     this.level = level;
     this.maxLevel = maxLevel;
     this.xp = xp;
-
     this.xpMultipliers = xpMultipliers;
   }
 
@@ -120,32 +119,57 @@ export class Item {
     effect: number;
     description: string;
     expense: number;
+    selected: boolean;
+    upgradePrice: number;
   };
+  level: number;
   name: string;
   expenseMultipliers: number[];
-  constructor(baseData, expenseMultipliers = []) {
+  constructor(baseData, expenseMultipliers = [], level = 0) {
     this.baseData = baseData;
     this.name = baseData.name;
     this.expenseMultipliers = expenseMultipliers;
+    this.level = level;
   }
 
-  getEffect() {
-    if (!getGameData().currentMisc.includes(this)) return 1;
+  get selected() {
+    return this.baseData.selected;
+  }
+
+  select() {
+    this.baseData.selected = !this.baseData.selected;
+  }
+
+  deselect() {
+    this.baseData.selected = false;
+  }
+
+  get upgradePrice() {
+    return this.baseData.upgradePrice * (1 + this.level);
+  }
+
+  get effect() {
+    if (!this.selected) return 1;
     let effect = this.baseData.effect;
     return effect;
   }
 
-  getEffectDescription() {
+  get effectDescription() {
     let description = this.baseData.description;
-    if (itemCategories["Properties"].includes(this.name))
-      description = "Happiness";
-    let text = "x" + this.baseData.effect.toFixed(1) + " " + description;
+    let text = "x" + String(this.effect.toFixed(2)) + " " + description;
     return text;
   }
 
-  getExpense() {
+  get expense() {
     // return applyMultipliers(this.baseData.expense, this.expenseMultipliers);
     return this.baseData.expense;
+  }
+
+  upgrade() {
+    if (this.baseData.upgradePrice <= getGameData().coins) {
+      subtractCoins(this.upgradePrice);
+      this.level += 1;
+    }
   }
 }
 
@@ -155,7 +179,19 @@ export class Boat {
     this.baseData = baseData;
   }
 
-  buy() {}
+  get bought() {
+    return this.baseData.bought;
+  }
+
+  buy() {
+    if (this.bought) {
+      return;
+    }
+    if (this.baseData.price <= getGameData().coins) {
+      subtractCoins(this.baseData.price);
+      this.baseData.bought = true;
+    }
+  }
 }
 
 export class Requirement {
@@ -191,8 +227,8 @@ export class FishingRequirement extends Requirement {
   }
   getCondition(requirement) {
     return (
-      +getGameData().fishingData.get(requirement.name).level >=
-      +requirement.requirement
+      getGameData().fishingData.get(requirement.name).level >=
+      requirement.requirement
     );
   }
 }
