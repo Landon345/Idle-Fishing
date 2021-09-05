@@ -3,6 +3,7 @@
   import ProgressTable from "src/components/ProgressTable.svelte";
   import type { Fishing } from "src/classes";
   import { GameData, setCurrentlyFishing } from "src/gameData";
+  import { getRequiredString, needRequirements } from "src/functions";
   import XpBar from "src/components/XpBar.svelte";
 
   let data_value: GameDataType;
@@ -56,6 +57,7 @@
     Gone Fishing!
   </p>
   <ProgressTable headers={oceanHeaders}>
+    <!-- BLACK DRUM -->
     <tr
       class="cursor-pointer"
       class:bg-blue-200={selected === "Black Drum"}
@@ -66,15 +68,23 @@
         <td>{value}</td>
       {/each}
     </tr>
-    <tr
-      class="cursor-pointer"
-      class:bg-blue-200={selected === "Blue Marlin"}
-      on:click={() => setCurrent("Blue Marlin")}
-    >
-      <XpBar name={"Blue Marlin"} width={findWidth(blueMarlin)} />
-      {#each getValues(blueMarlin) as value}
-        <td>{value}</td>
-      {/each}
-    </tr>
+    <!-- BLUE MARLIN -->
+    {#if !needRequirements(data_value, blueMarlin)}
+      <tr
+        class="cursor-pointer"
+        class:bg-blue-200={selected === "Blue Marlin"}
+        on:click={() => setCurrent("Blue Marlin")}
+      >
+        <XpBar name={"Blue Marlin"} width={findWidth(blueMarlin)} />
+        {#each getValues(blueMarlin) as value}
+          <td>{value}</td>
+        {/each}
+      </tr>
+    {/if}
   </ProgressTable>
+  {#if needRequirements(data_value, blueMarlin)}
+    <div class="w-full">
+      {getRequiredString(data_value, blueMarlin)}
+    </div>
+  {/if}
 </div>

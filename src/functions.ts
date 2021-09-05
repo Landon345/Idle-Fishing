@@ -5,6 +5,7 @@ import type {
   FishBaseData,
   GameDataType,
   ItemBaseData,
+  RequirementObj,
   SkillBaseData,
 } from "src/Entities";
 import {
@@ -18,6 +19,8 @@ import {
   Item,
   Task,
   Boat,
+  Requirement,
+  BoatRequirement,
 } from "./classes";
 import {
   baseLifespan,
@@ -65,6 +68,45 @@ export function capitalize(str: string): string {
 export function applySpeed(value: number) {
   return value / updateSpeed;
 }
+
+export const needRequirements = (
+  data_value: GameDataType,
+  requiredFor: any
+): boolean => {
+  let reqs = data_value.requirements.get(requiredFor.name);
+  for (let i = 0; i < reqs.length; i++) {
+    if (!reqs[i].isCompleted()) {
+      return true;
+    }
+  }
+  return false;
+};
+
+export const getRequiredString = (
+  data_value: GameDataType,
+  requiredFor: any
+): string => {
+  let reqs: Requirement[] = data_value.requirements.get(requiredFor.name);
+  let requiredString = `Required: `;
+  for (let i = 0; i < reqs.length; i++) {
+    let sameTypeReqs: RequirementObj[] = reqs[i].requirements;
+    let type = reqs[i].type;
+    for (let j = 0; j < sameTypeReqs.length; j++) {
+      if (["fishing", "skill"].includes(type)) {
+        let name = sameTypeReqs[j].name;
+        let levelNow =
+          type == "skill"
+            ? data_value.skillsData.get(name).level
+            : data_value.fishingData.get(name).level;
+        requiredString += `${name} level ${levelNow}/${sameTypeReqs[j].requirement}, `;
+      }
+      if (type == "age") {
+        requiredString += `${daysToYears(data_value.day)} years old `;
+      }
+    }
+  }
+  return requiredString;
+};
 
 export function getCategoryFromEntityName(categoryType, entityName) {
   for (let categoryName in categoryType) {
@@ -198,6 +240,35 @@ export function replaceSavedSkills(
   return saveMap;
 }
 
+export function replaceSavedRequirements(
+  map: Map<string, Requirement[]>,
+  saveMap: Map<string, Requirement[]>
+) {
+  map.forEach((val, key) => {
+    let reqArr = saveMap.get(key);
+    let newReqArr = reqArr.map((req: Requirement) => {
+      let requirements = req.requirements as RequirementObj[];
+      if (req.type == "fishing") {
+        return new FishingRequirement(requirements);
+      } else if (req.type == "skill") {
+        return new SkillRequirement(requirements);
+      } else if (req.type == "coins") {
+        return new CoinRequirement(requirements);
+      } else if (req.type == "evil") {
+        return new EvilRequirement(requirements);
+      } else if (req.type == "boat") {
+        return new BoatRequirement(requirements);
+      } else if (req.type == "age") {
+        return new AgeRequirement(requirements);
+      } else {
+        return new Requirement(requirements, "Unknown");
+      }
+    });
+    saveMap.set(key, newReqArr);
+  });
+  return saveMap;
+}
+
 export function createData(
   data: Map<string, Classes>,
   baseData: Map<string, Bases>
@@ -253,6 +324,7 @@ export function loadGameData() {
     let fishingData;
     let skillsData;
     let itemData;
+    let boatData;
 
     GameData.subscribe((data) => {
       data_value = data;
@@ -260,12 +332,14 @@ export function loadGameData() {
       fishingData = data.fishingData;
       skillsData = data.skillsData;
       itemData = data.itemData;
+      boatData = data.boatData;
     });
     replaceSaveDict(data_value, GameDataSave);
-    replaceSaveDict(requirements, GameDataSave.requirements);
+    replaceSavedRequirements(requirements, GameDataSave.requirements);
     replaceSavedFishing(fishingData, GameDataSave.fishingData);
     replaceSavedSkills(skillsData, GameDataSave.skillsData);
-    GameDataSave.itemData = replaceSavedItems(itemData, GameDataSave.itemData);
+    replaceSavedItems(itemData, GameDataSave.itemData);
+    replaceSavedBoats(boatData, GameDataSave.boatData);
 
     console.log(`GameDataSave`, GameDataSave);
 

@@ -30,6 +30,11 @@ export interface SkillBaseData {
   category: string;
 }
 
+export interface RequirementObj {
+  name: string;
+  requirement: number;
+}
+
 export type Bases = SkillBaseData | FishBaseData | BoatBaseData | ItemBaseData;
 export type Classes = Fishing | Item | Boat | Skill;
 
@@ -40,7 +45,7 @@ export interface GameDataType {
   skillsData: Map<string, Skill>;
   boatData: Map<string, Boat>;
   itemData: Map<string, Item>;
-  requirements: Map<string, Requirement>;
+  requirements: Map<string, Requirement[]>;
   paused: boolean;
 
   rebirthOneCount: number;

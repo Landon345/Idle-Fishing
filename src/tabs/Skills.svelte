@@ -8,6 +8,7 @@
   import XpBar from "src/components/XpBar.svelte";
   import FishingBar from "src/components/FishingBar.svelte";
   import { get } from "svelte/store";
+  import { getRequiredString, needRequirements } from "src/functions";
 
   let data_value: GameDataType;
   let strength: Skill;
@@ -55,6 +56,7 @@
 <div class="bg-gray-white w-full h-full">
   <p class="p-10 bg-green-500 text-white text-xl font-bold w-full">Skills</p>
   <ProgressTable headers={fundamentalHeaders}>
+    <!-- Strength -->
     <tr
       class="cursor-pointer"
       class:bg-green-200={selected === "Strength"}
@@ -65,15 +67,23 @@
         <td>{value}</td>
       {/each}
     </tr>
-    <tr
-      class="cursor-pointer"
-      class:bg-green-200={selected === "Concentration"}
-      on:click={() => setCurrent("Concentration")}
-    >
-      <XpBar name={"Concentration"} width={findWidth(concentration)} />
-      {#each getValues(concentration) as value}
-        <td>{value}</td>
-      {/each}
-    </tr>
+    <!-- Concentration -->
+    {#if !needRequirements(data_value, concentration)}
+      <tr
+        class="cursor-pointer"
+        class:bg-green-200={selected === "Concentration"}
+        on:click={() => setCurrent("Concentration")}
+      >
+        <XpBar name={"Concentration"} width={findWidth(concentration)} />
+        {#each getValues(concentration) as value}
+          <td>{value}</td>
+        {/each}
+      </tr>
+    {/if}
   </ProgressTable>
+  {#if needRequirements(data_value, concentration)}
+    <div class="w-full">
+      {getRequiredString(data_value, concentration)}
+    </div>
+  {/if}
 </div>
