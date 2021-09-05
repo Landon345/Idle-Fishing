@@ -1,13 +1,9 @@
 <script lang="ts">
   import type { GameDataType } from "src/Entities";
   import ProgressTable from "src/components/ProgressTable.svelte";
-  import TableBar from "src/components/ProgressTableBar.svelte";
-  import type { Fishing, Skill } from "src/classes";
-  import type { FishBaseData } from "src/Entities";
-  import { GameData, setCurrentlyFishing, setCurrentSkill } from "src/gameData";
+  import type { Skill } from "src/classes";
+  import { GameData, setCurrentSkill } from "src/gameData";
   import XpBar from "src/components/XpBar.svelte";
-  import FishingBar from "src/components/FishingBar.svelte";
-  import { get } from "svelte/store";
   import { getRequiredString, needRequirements } from "src/functions";
 
   let data_value: GameDataType;

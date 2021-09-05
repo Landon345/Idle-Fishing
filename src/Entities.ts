@@ -11,6 +11,8 @@ export interface ItemBaseData {
   expense: number;
   effect: number;
   description: string;
+  selected: boolean;
+  upgradePrice: number;
 }
 
 export interface FishBaseData {

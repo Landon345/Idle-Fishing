@@ -20,6 +20,7 @@ import type {
 } from "src/Entities";
 
 import { writable, Writable } from "svelte/store";
+import { dataset_dev } from "svelte/internal";
 export const requirements = new Map<string, Requirement[]>([
   [
     "Blue Marlin",
@@ -61,6 +62,7 @@ export const update = (paused: boolean) => {
   increaseDay();
   updateCurrentFish();
   updateCurrentSkill();
+  updateItemExpenses();
 };
 export const getGameData = (): GameDataType => {
   let data_value;
@@ -118,6 +120,32 @@ export const updateCurrentSkill = () => {
       skillsData: data.skillsData,
       currentSkill: skill,
     };
+  });
+};
+
+export const subtractCoins = (amount: number) => {
+  GameData.update((data) => {
+    return { ...data, coins: (data.coins -= amount) };
+  });
+};
+
+export const getTotalExpenses = (): number => {
+  let totalExpense = 0;
+  getGameData().itemData.forEach((item) => {
+    if (item.selected) {
+      totalExpense += item.expense;
+    }
+  });
+  return totalExpense;
+};
+
+export const updateItemExpenses = () => {
+  GameData.update((data) => {
+    if (data.coins <= 0) {
+      data.itemData.forEach((item) => item.deselect());
+      return { ...data, coins: 0, itemData: data.itemData };
+    }
+    return { ...data, coins: (data.coins -= applySpeed(getTotalExpenses())) };
   });
 };
 
@@ -240,6 +268,8 @@ export const itemBaseData: Map<string, ItemBaseData> = new Map([
       expense: 15,
       effect: 1.5,
       description: "Coins/day",
+      selected: false,
+      upgradePrice: 200,
     },
   ],
   [
@@ -249,6 +279,8 @@ export const itemBaseData: Map<string, ItemBaseData> = new Map([
       expense: 50,
       effect: 1.5,
       description: "Skill xp",
+      selected: false,
+      upgradePrice: 1000,
     },
   ],
 ]);
