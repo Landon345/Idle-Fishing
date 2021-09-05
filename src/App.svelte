@@ -62,11 +62,6 @@
   GameData.update((data) => {
     return { ...data, currentlyFishing: data.fishingData.get("blackdrum") };
   });
-  // GameData.currentlyFishing = GameData.fishingData.get("blackdrum");
-  // GameData.currentSkill = GameData.skillsData.get("Concentration");
-  // GameData.currentMisc = [];
-
-  // GameData.requirements = new Map();
 </script>
 
 <main>

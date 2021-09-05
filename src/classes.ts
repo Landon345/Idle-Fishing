@@ -1,4 +1,4 @@
-import type { GameDataType } from "src/Entities";
+import type { GameDataType, RequirementObj } from "src/Entities";
 import { applySpeed, daysToYears } from "./functions";
 import { GameData, getGameData, itemCategories } from "./gameData";
 
@@ -159,11 +159,13 @@ export class Boat {
 }
 
 export class Requirement {
-  requirements: Object[];
+  requirements: RequirementObj[];
   completed: boolean;
-  constructor(requirements) {
+  type: string;
+  constructor(requirements, type) {
     this.requirements = requirements;
     this.completed = false;
+    this.type = type;
   }
   getCondition(requirement) {
     return false;
@@ -184,38 +186,32 @@ export class Requirement {
 }
 
 export class FishingRequirement extends Requirement {
-  type: string;
-  constructor(requirements) {
-    super(requirements);
-    this.type = "fishing";
+  constructor(requirements: RequirementObj[]) {
+    super(requirements, "fishing");
   }
   getCondition(requirement) {
     return (
-      getGameData().skillsData[requirement.fishing].level >=
-      requirement.requirement
+      +getGameData().fishingData.get(requirement.name).level >=
+      +requirement.requirement
     );
   }
 }
 
 export class SkillRequirement extends Requirement {
-  type: string;
   constructor(requirements) {
-    super(requirements);
-    this.type = "skill";
+    super(requirements, "skill");
   }
   getCondition(requirement) {
     return (
-      getGameData().skillsData[requirement.skill].level >=
+      getGameData().skillsData.get(requirement.name).level >=
       requirement.requirement
     );
   }
 }
 
 export class CoinRequirement extends Requirement {
-  type: string;
   constructor(requirements) {
-    super(requirements);
-    this.type = "coins";
+    super(requirements, "coins");
   }
 
   getCondition(requirement) {
@@ -224,10 +220,8 @@ export class CoinRequirement extends Requirement {
 }
 
 export class AgeRequirement extends Requirement {
-  type: string;
   constructor(requirements) {
-    super(requirements);
-    this.type = "age";
+    super(requirements, "age");
   }
 
   getCondition(requirement) {
@@ -235,10 +229,8 @@ export class AgeRequirement extends Requirement {
   }
 }
 export class BoatRequirement extends Requirement {
-  type: string;
   constructor(requirements) {
-    super(requirements);
-    this.type = "boat";
+    super(requirements, "boat");
   }
 
   getCondition(requirement) {
@@ -247,10 +239,8 @@ export class BoatRequirement extends Requirement {
 }
 
 export class EvilRequirement extends Requirement {
-  type: string;
   constructor(requirements) {
-    super(requirements);
-    this.type = "evil";
+    super(requirements, "evil");
   }
 
   getCondition(requirement) {

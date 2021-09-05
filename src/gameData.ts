@@ -5,6 +5,8 @@ import {
   CoinRequirement,
   AgeRequirement,
   Fishing,
+  Requirement,
+  Skill,
 } from "./classes";
 
 import { applySpeed } from "src/functions";
@@ -18,6 +20,19 @@ import type {
 } from "src/Entities";
 
 import { writable, Writable } from "svelte/store";
+export const requirements = new Map<string, Requirement[]>([
+  [
+    "Blue Marlin",
+    [
+      new FishingRequirement([{ name: "Black Drum", requirement: 5 }]),
+      new SkillRequirement([{ name: "Strength", requirement: 5 }]),
+    ],
+  ],
+  [
+    "Concentration",
+    [new SkillRequirement([{ name: "Strength", requirement: 10 }])],
+  ],
+]);
 
 export let GameData: Writable<GameDataType> = writable({
   day: 0,
@@ -26,7 +41,7 @@ export let GameData: Writable<GameDataType> = writable({
   skillsData: new Map(),
   itemData: new Map(),
   boatData: new Map(),
-  requirements: new Map(),
+  requirements,
   paused: false,
 
   rebirthOneCount: 0,
@@ -252,9 +267,3 @@ export const itemCategories = {};
 export const units = ["", "k", "M", "B", "T", "q", "Q", "Sx", "Sp", "Oc"];
 
 export const jobTabButton = document.getElementById("jobTabButton");
-
-// tempData["requirements"] = {};
-// for (let key in GameData.requirements) {
-//   var requirement = GameData.requirements[key];
-//   tempData["requirements"][key] = requirement;
-// }
