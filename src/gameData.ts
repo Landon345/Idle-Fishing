@@ -150,7 +150,7 @@ export let tempData = {
 
 export let skillWithLowestMaxXp = null;
 
-export const updateSpeed = 200;
+export const updateSpeed = 60;
 
 export const baseLifespan = 365 * 70;
 

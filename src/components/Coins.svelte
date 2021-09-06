@@ -11,7 +11,7 @@
 
 <span class="flex justify-end">
   {#if coins.p > 0}
-    <p class="text-lg text-blue-500 w-1/4">{coins.p}g</p>
+    <p class="text-lg text-blue-500 w-1/4">{coins.p}p</p>
   {/if}
   {#if coins.g > 0}
     <p class="text-lg text-yellow-400 w-1/4">{coins.g}g</p>
