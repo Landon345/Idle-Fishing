@@ -314,10 +314,12 @@ export const itemBaseData: Map<string, ItemBaseData> = new Map([
 export const fishCategories = {
   ocean: ["Black Drum", "Blue Marlin"],
   lake: ["Sun Fish", "Waleye"],
+  river: [],
 };
 
 export const skillCategories = {
   fundamentals: ["Strength", "Concentration"],
+  fishing: [],
 };
 
 export const itemCategories = {};
