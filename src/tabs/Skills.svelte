@@ -47,10 +47,6 @@
       skill.maxLevel,
     ];
   };
-
-  const findWidth = (skill: Skill): number => {
-    return ((skill.maxXp - skill.xpLeft) / skill.maxXp) * 100;
-  };
 </script>
 
 <div class="bg-gray-white w-full h-full">
@@ -62,7 +58,7 @@
       class:bg-green-200={selected === "Strength"}
       on:click={() => setCurrent("Strength")}
     >
-      <XpBar name={"Strength"} width={findWidth(strength)} />
+      <XpBar name={"Strength"} width={strength.barWidth} />
       {#each getValues(strength) as value, idx}
         <td>{value}</td>
       {/each}
@@ -74,7 +70,7 @@
         class:bg-green-200={selected === "Concentration"}
         on:click={() => setCurrent("Concentration")}
       >
-        <XpBar name={"Concentration"} width={findWidth(concentration)} />
+        <XpBar name={"Concentration"} width={concentration.barWidth} />
         {#each getValues(concentration) as value}
           <td>{value}</td>
         {/each}
