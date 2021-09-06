@@ -25,12 +25,7 @@ import {
 import {
   baseLifespan,
   GameData,
-  itemBaseData,
-  fishBaseData,
-  fishCategories,
-  permanentUnlocks,
-  skillBaseData,
-  skillCategories,
+  getGameData,
   units,
   tempData,
   setGameData,
@@ -44,6 +39,16 @@ export const days = (day) => Math.floor(day % 365);
 export function calculatedAge(day: number): string {
   return `${14 + daysToYears(day)} years and ${days(day)} days`;
 }
+
+export const getTotalExpenses = (game_data: GameDataType): number => {
+  let totalExpense = 0;
+  game_data.itemData.forEach((item) => {
+    if (item.selected) {
+      totalExpense += item.expense;
+    }
+  });
+  return totalExpense;
+};
 
 export function getBaseLog(x, y) {
   return Math.log(y) / Math.log(x);
@@ -66,7 +71,8 @@ export function capitalize(str: string): string {
 }
 
 export function applySpeed(value: number) {
-  return value / updateSpeed;
+  // Make sure to divide by updateSpeed
+  return value;
 }
 
 export const needRequirements = (
@@ -129,8 +135,11 @@ export function getNextEntity(data, categoryType, entityName) {
   return nextEntity;
 }
 
-export function format(number) {
+export function formatNumber(number): string {
   // what tier? (determines SI symbol)
+  if (number < 1000) {
+    return number.toFixed(1);
+  }
   let tier = (Math.log10(number) / 3) | 0;
 
   // if zero, we don't need a suffix
@@ -142,10 +151,101 @@ export function format(number) {
 
   // scale the number
   let scaled = number / scale;
-
   // format number and add suffix
-  return scaled.toFixed(1) + suffix;
+  return scaled.toFixed(2) + suffix;
 }
+
+export function applyMultipliers(
+  value: number,
+  multipliers: { [key: string]: number }
+): number {
+  let totalAfter = Object.values(multipliers).reduce(
+    (num, total) => (total *= num),
+    value
+  );
+  return totalAfter;
+}
+
+export const getIncomeMultipliers = (task: Task): { [key: string]: number } => {
+  let multipliers = {};
+  getGameData().fishingData.forEach((fish) => {
+    multipliers[fish.name] = kind(task, fish.baseData.description, fish.effect);
+  });
+  getGameData().skillsData.forEach((skill) => {
+    multipliers[skill.name] = kind(
+      task,
+      skill.baseData.description,
+      skill.effect
+    );
+  });
+  getGameData().itemData.forEach((item) => {
+    multipliers[item.name] = kind(task, item.baseData.description, item.effect);
+  });
+
+  function kind(task: Task, description: string, effect: number) {
+    switch (description) {
+      case "Fishing Pay":
+        return effect;
+      case "Lake Pay":
+        if (task.baseData.category == "lake") return effect;
+        break;
+      case "Ocean Pay":
+        if (task.baseData.category == "ocean") return effect;
+        break;
+      case "River Pay":
+        if (task.baseData.category == "river") return effect;
+        break;
+      default:
+        return 1;
+    }
+    return 1;
+  }
+
+  return multipliers;
+};
+
+export const getXpMultipliers = (task: Task): { [key: string]: number } => {
+  let multipliers = {};
+  getGameData().fishingData.forEach((fish) => {
+    multipliers[fish.name] = kind(task, fish.baseData.description, fish.effect);
+  });
+  getGameData().skillsData.forEach((skill) => {
+    multipliers[skill.name] = kind(
+      task,
+      skill.baseData.description,
+      skill.effect
+    );
+  });
+  getGameData().itemData.forEach((item) => {
+    multipliers[item.name] = kind(task, item.baseData.description, item.effect);
+  });
+  function kind(task: Task, description: string, effect: number) {
+    switch (description) {
+      case "All Xp":
+        return effect;
+      case "Lake Xp":
+        if (task.baseData.category == "lake") return effect;
+        break;
+      case "Ocean Xp":
+        if (task.baseData.category == "ocean") return effect;
+        break;
+      case "River Xp":
+        if (task.baseData.category == "river") return effect;
+        break;
+      case "Strength Xp":
+        if (task.name == "Strength") return effect;
+        break;
+      case "Skill Xp":
+        if (task instanceof Skill) return effect;
+        break;
+      default:
+        return 1;
+    }
+    return 1;
+  }
+
+  return multipliers;
+};
 
 export function coinAmounts(coins: number): {
   p: number;

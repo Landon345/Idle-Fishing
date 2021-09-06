@@ -4,7 +4,11 @@
   import type { Skill } from "src/classes";
   import { GameData, setCurrentSkill } from "src/gameData";
   import XpBar from "src/components/XpBar.svelte";
-  import { getRequiredString, needRequirements } from "src/functions";
+  import {
+    formatNumber,
+    getRequiredString,
+    needRequirements,
+  } from "src/functions";
 
   let data_value: GameDataType;
   let strength: Skill;
@@ -38,8 +42,8 @@
     return [
       skill.level,
       skill.effectDescription,
-      skill.xpGain,
-      skill.xpLeft,
+      formatNumber(skill.xpGain),
+      formatNumber(skill.xpLeft),
       skill.maxLevel,
     ];
   };
