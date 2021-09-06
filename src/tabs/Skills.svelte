@@ -35,6 +35,7 @@
     setCurrentSkill(name);
     selected = name;
   };
+  setCurrent(selected);
 
   const getValues = (skill: Skill): any[] => {
     // ["Level", "Income/day", "Effect", "Xp/day", "Xp left", "Max Level"]
