@@ -25,6 +25,7 @@
     update,
   } from "./gameData";
   import { onMount } from "svelte";
+  import Sidebar from "src/Sidebar.svelte";
 
   type Tab = "goneFishing" | "skills" | "shop" | "achievements" | "settings";
   let selectedTab: Tab = "skills";
@@ -68,21 +69,7 @@
 <main>
   <h1 class="text-6xl">Idle Fishing</h1>
   <div class="flex flex-row">
-    <div class="flex flex-col w-1/4">
-      <div class="m-3 flex">
-        <p class="text-lg">{calculatedAge(data_value.day)}</p>
-      </div>
-      <div class="m-3 flex flex-col">
-        <button
-          class="px-9 py-4 bg-gray-700 hover:bg-gray-800 text-white"
-          on:click={togglePause}>{data_value.paused ? "Play" : "Pause"}</button
-        >
-      </div>
-      <div class="m-3 flex flex-col">
-        <p class="text-lg">Coins</p>
-        <Coins amount={coins} />
-      </div>
-    </div>
+    <Sidebar />
 
     <div class="flex flex-col mr-2 w-3/4 overflow-x-auto">
       <div class="flex flex-row bg-gray-800 text-white justify-between">

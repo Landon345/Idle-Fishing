@@ -51,10 +51,6 @@
       fish.maxLevel,
     ];
   };
-
-  const findWidth = (fish: Fishing): number => {
-    return ((fish.maxXp - fish.xpLeft) / fish.maxXp) * 100;
-  };
 </script>
 
 <div class="bg-gray-white w-full h-full">
@@ -68,7 +64,7 @@
       class:bg-blue-200={selected === "Black Drum"}
       on:click={() => setCurrent("Black Drum")}
     >
-      <XpBar name={"Black Drum"} width={findWidth(blackDrum)} />
+      <XpBar name={"Black Drum"} width={blackDrum.barWidth} />
       {#each getValues(blackDrum) as value, idx}
         {#if idx == 1}
           <td><Coins amount={value} /></td>
@@ -84,7 +80,7 @@
         class:bg-blue-200={selected === "Blue Marlin"}
         on:click={() => setCurrent("Blue Marlin")}
       >
-        <XpBar name={"Blue Marlin"} width={findWidth(blueMarlin)} />
+        <XpBar name={"Blue Marlin"} width={blueMarlin.barWidth} />
         {#each getValues(blueMarlin) as value, idx}
           {#if idx == 1}
             <td><Coins amount={value} /></td>

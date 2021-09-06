@@ -53,6 +53,10 @@ export class Task {
     return applyMultipliers(10, this.xpMultipliers);
   }
 
+  get barWidth(): number {
+    return ((this.maxXp - this.xpLeft) / this.maxXp) * 100;
+  }
+
   increaseXp() {
     this.xp += applySpeed(this.xpGain);
     if (this.xp >= this.maxXp) {
