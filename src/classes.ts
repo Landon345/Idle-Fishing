@@ -151,12 +151,12 @@ export class Item {
   }
 
   get upgradePrice() {
-    return this.baseData.upgradePrice * (1 + this.level);
+    return this.baseData.upgradePrice * Math.pow(2, 0.5 * this.level);
   }
 
   get effect() {
     if (!this.selected) return 1;
-    let effect = this.baseData.effect;
+    let effect = this.baseData.effect * (1 + this.level / 100);
     return effect;
   }
 
