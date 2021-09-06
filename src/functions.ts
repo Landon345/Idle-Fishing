@@ -37,7 +37,7 @@ export const daysToYears = (days: number) => Math.floor(days / 365);
 export const days = (day) => Math.floor(day % 365);
 
 export function calculatedAge(day: number): string {
-  return `${14 + daysToYears(day)} years and ${days(day)} days`;
+  return `Age ${14 + daysToYears(day)} Day ${days(day)}`;
 }
 
 export const getTotalExpenses = (game_data: GameDataType): number => {
@@ -448,7 +448,6 @@ export function loadGameData() {
     replaceSavedBoats(boatData, GameDataSave.boatData);
 
     console.log(`GameDataSave`, GameDataSave);
-
     setGameData(GameDataSave);
   }
 }

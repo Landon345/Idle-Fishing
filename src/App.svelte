@@ -60,10 +60,6 @@
   createData(data_value.boatData, boatBaseData);
 
   loadGameData();
-
-  GameData.update((data) => {
-    return { ...data, currentlyFishing: data.fishingData.get("blackdrum") };
-  });
 </script>
 
 <main>

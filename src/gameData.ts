@@ -74,7 +74,25 @@ export const getGameData = (): GameDataType => {
   return data_value;
 };
 export const setGameData = (savedGameData) => {
-  GameData.set(savedGameData);
+  let skill = savedGameData.currentSkill;
+  let fish = savedGameData.currentlyFishing;
+  GameData.set({
+    ...savedGameData,
+    currentSkill: new Skill(
+      skill.baseData,
+      skill.level,
+      skill.maxLevel,
+      skill.xp,
+      skill.xpMultipliers
+    ),
+    currentlyFishing: new Fishing(
+      fish.baseData,
+      fish.level,
+      fish.maxLevel,
+      fish.xp,
+      fish.xpMultipliers
+    ),
+  });
 };
 
 export const increaseDay = () => {
@@ -96,6 +114,7 @@ export const updateCurrentFish = () => {
   GameData.update((data) => {
     let fish = data.currentlyFishing || data.fishingData.get("Black Drum");
     data.fishingData.get(fish.name).increaseXp();
+    fish.increaseXp();
 
     return {
       ...data,
@@ -116,6 +135,7 @@ export const updateCurrentSkill = () => {
   GameData.update((data) => {
     let skill = data.currentSkill || data.skillsData.get("Strength");
     data.skillsData.get(skill.name).increaseXp();
+    skill.increaseXp();
 
     return {
       ...data,

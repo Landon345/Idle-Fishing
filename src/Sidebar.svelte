@@ -16,13 +16,14 @@
   let coins: number;
   let currentlyFishing: Fishing;
   let currentSkill: Skill;
+
   GameData.subscribe((data) => {
     data_value = data;
     coins = data.coins;
     currentlyFishing = data.currentlyFishing;
     currentSkill = data.currentSkill;
   });
-  console.log(currentSkill);
+
   const getNet = (income, expense): number => {
     if (negative(income, expense)) {
       return expense - income;
