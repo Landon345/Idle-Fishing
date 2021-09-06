@@ -1,5 +1,17 @@
 import type { Fishing, Item, Boat, Skill, Requirement } from "src/classes";
 
+export type Description =
+  | "Fishing Pay"
+  | "Fishing Effects"
+  | "Skill Xp"
+  | "Ocean Pay"
+  | "Ocean Xp"
+  | "Lake Pay"
+  | "Lake Xp"
+  | "River Pay"
+  | "River Xp"
+  | "Strength Xp"
+  | "All Xp";
 export interface BoatBaseData {
   name: string;
   price: number;
@@ -10,7 +22,7 @@ export interface ItemBaseData {
   name: string;
   expense: number;
   effect: number;
-  description: string;
+  description: Description;
   selected: boolean;
   upgradePrice: number;
 }
@@ -20,7 +32,7 @@ export interface FishBaseData {
   maxXp: number;
   income: number;
   effect: number;
-  description: string;
+  description: Description;
   category: string;
 }
 
@@ -28,7 +40,7 @@ export interface SkillBaseData {
   name: string;
   maxXp: number;
   effect: number;
-  description: string;
+  description: Description;
   category: string;
 }
 

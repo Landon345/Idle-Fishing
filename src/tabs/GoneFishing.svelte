@@ -3,8 +3,13 @@
   import ProgressTable from "src/components/ProgressTable.svelte";
   import type { Fishing } from "src/classes";
   import { GameData, setCurrentlyFishing } from "src/gameData";
-  import { getRequiredString, needRequirements } from "src/functions";
+  import {
+    formatNumber,
+    getRequiredString,
+    needRequirements,
+  } from "src/functions";
   import XpBar from "src/components/XpBar.svelte";
+  import Coins from "src/components/Coins.svelte";
 
   let data_value: GameDataType;
   let blackDrum: Fishing;
@@ -41,8 +46,8 @@
       fish.level,
       fish.income,
       fish.effectDescription,
-      fish.xpGain,
-      fish.xpLeft,
+      formatNumber(fish.xpGain),
+      formatNumber(fish.xpLeft),
       fish.maxLevel,
     ];
   };
@@ -65,7 +70,11 @@
     >
       <XpBar name={"Black Drum"} width={findWidth(blackDrum)} />
       {#each getValues(blackDrum) as value, idx}
-        <td>{value}</td>
+        {#if idx == 1}
+          <td><Coins amount={value} /></td>
+        {:else}
+          <td>{value}</td>
+        {/if}
       {/each}
     </tr>
     <!-- BLUE MARLIN -->
@@ -76,8 +85,12 @@
         on:click={() => setCurrent("Blue Marlin")}
       >
         <XpBar name={"Blue Marlin"} width={findWidth(blueMarlin)} />
-        {#each getValues(blueMarlin) as value}
-          <td>{value}</td>
+        {#each getValues(blueMarlin) as value, idx}
+          {#if idx == 1}
+            <td><Coins amount={value} /></td>
+          {:else}
+            <td>{value}</td>
+          {/if}
         {/each}
       </tr>
     {/if}

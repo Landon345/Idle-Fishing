@@ -7,11 +7,14 @@ import {
   Fishing,
   Requirement,
   Skill,
+  Task,
+  Item,
 } from "./classes";
 
-import { applySpeed } from "src/functions";
+import { applySpeed, getTotalExpenses } from "src/functions";
 
 import type {
+  Bases,
   BoatBaseData,
   FishBaseData,
   GameDataType,
@@ -128,23 +131,16 @@ export const subtractCoins = (amount: number) => {
   });
 };
 
-export const getTotalExpenses = (): number => {
-  let totalExpense = 0;
-  getGameData().itemData.forEach((item) => {
-    if (item.selected) {
-      totalExpense += item.expense;
-    }
-  });
-  return totalExpense;
-};
-
 export const updateItemExpenses = () => {
   GameData.update((data) => {
     if (data.coins <= 0) {
       data.itemData.forEach((item) => item.deselect());
       return { ...data, coins: 0, itemData: data.itemData };
     }
-    return { ...data, coins: (data.coins -= applySpeed(getTotalExpenses())) };
+    return {
+      ...data,
+      coins: (data.coins -= applySpeed(getTotalExpenses(data))),
+    };
   });
 };
 
@@ -154,7 +150,7 @@ export let tempData = {
 
 export let skillWithLowestMaxXp = null;
 
-export const updateSpeed = 20;
+export const updateSpeed = 200;
 
 export const baseLifespan = 365 * 70;
 
@@ -170,7 +166,7 @@ export const fishBaseData: Map<string, FishBaseData> = new Map([
       maxXp: 50,
       income: 5,
       effect: 0.01,
-      description: "Coins/day",
+      description: "Fishing Pay",
       category: "ocean",
     },
   ],
@@ -181,7 +177,7 @@ export const fishBaseData: Map<string, FishBaseData> = new Map([
       maxXp: 100,
       income: 9,
       effect: 0.01,
-      description: "Coins/day",
+      description: "Fishing Pay",
       category: "ocean",
     },
   ],
@@ -192,7 +188,7 @@ export const fishBaseData: Map<string, FishBaseData> = new Map([
       maxXp: 50,
       income: 5,
       effect: 0.01,
-      description: "Coins/day",
+      description: "Fishing Pay",
       category: "lake",
     },
   ],
@@ -203,7 +199,7 @@ export const fishBaseData: Map<string, FishBaseData> = new Map([
       maxXp: 100,
       income: 9,
       effect: 0.01,
-      description: "Coins/day",
+      description: "Fishing Pay",
       category: "lake",
     },
   ],
@@ -216,7 +212,7 @@ export const skillBaseData: Map<string, SkillBaseData> = new Map([
       name: "Strength",
       maxXp: 100,
       effect: 0.01,
-      description: "Fishing Effects",
+      description: "Ocean Xp",
       category: "fundamentals",
     },
   ],
@@ -266,7 +262,7 @@ export const itemBaseData: Map<string, ItemBaseData> = new Map([
       name: "Rod",
       expense: 15,
       effect: 1.5,
-      description: "Coins/day",
+      description: "Fishing Pay",
       selected: false,
       upgradePrice: 200,
     },
@@ -277,9 +273,20 @@ export const itemBaseData: Map<string, ItemBaseData> = new Map([
       name: "Book",
       expense: 50,
       effect: 1.5,
-      description: "Skill xp",
+      description: "Skill Xp",
       selected: false,
       upgradePrice: 1000,
+    },
+  ],
+  [
+    "House",
+    {
+      name: "House",
+      expense: 300,
+      effect: 2,
+      description: "All Xp",
+      selected: false,
+      upgradePrice: 20000,
     },
   ],
 ]);

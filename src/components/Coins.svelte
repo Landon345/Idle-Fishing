@@ -1,6 +1,5 @@
 <script lang="ts">
   import { coinAmounts } from "src/functions";
-  import { GameData } from "src/gameData";
   import { beforeUpdate } from "svelte";
 
   export let amount: number;
@@ -10,7 +9,7 @@
   });
 </script>
 
-<span class="flex">
+<span class="flex justify-end">
   {#if coins.p > 0}
     <p class="text-lg text-blue-500 w-1/4">{coins.p}g</p>
   {/if}
