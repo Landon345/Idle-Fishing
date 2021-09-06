@@ -2,7 +2,11 @@
   import type { GameDataType } from "src/Entities";
   import type { Fishing, Skill } from "src/classes";
 
-  import { calculatedAge } from "src/functions";
+  import {
+    calculatedAge,
+    getIncomeMultipliers,
+    getTotalExpenses,
+  } from "src/functions";
   import { togglePause, GameData } from "src/gameData";
 
   import Coins from "src/components/Coins.svelte";
@@ -18,6 +22,19 @@
     currentlyFishing = data.currentlyFishing;
     currentSkill = data.currentSkill;
   });
+  console.log(currentSkill);
+  const getNet = (income, expense): number => {
+    if (negative(income, expense)) {
+      return expense - income;
+    }
+    return income - expense;
+  };
+  const negative = (income, expense) => {
+    if (income - expense < 0) {
+      return true;
+    }
+    return false;
+  };
 </script>
 
 <div class="flex flex-col w-1/4 bg-gray-900 text-white mx-2">
@@ -31,21 +48,42 @@
     >
   </div>
   <div class="m-3 flex flex-col">
-    <p class="text-lg">Coins</p>
-    <Coins amount={coins} />
+    <p class="text-xl">Coins</p>
+    <Coins amount={coins} large={true} />
   </div>
   <div class="m-3 flex flex-col">
-    <p class="text-lg">Currently Fishing</p>
+    {#if currentlyFishing}
+      <span class="text-blue-400"
+        >Net/day:
+
+        <Coins
+          amount={getNet(currentlyFishing.income, getTotalExpenses(data_value))}
+          negative={negative(
+            currentlyFishing.income,
+            getTotalExpenses(data_value)
+          )}
+        /></span
+      >
+      <span class="text-green-400"
+        >Income/day: <Coins amount={currentlyFishing.income} /></span
+      >
+    {/if}
+    <span class="text-red-500"
+      >Expense/day: <Coins amount={getTotalExpenses(data_value)} /></span
+    >
+  </div>
+
+  <div class="m-3 flex flex-col">
     {#if currentlyFishing}
       <XpBar
         name={currentlyFishing.name}
         width={currentlyFishing.barWidth}
         level={currentlyFishing.level}
       />
+      <p class="text-lg text-gray-400">Currently Fishing</p>
     {/if}
   </div>
   <div class="m-3 flex flex-col">
-    <p class="text-lg">Current Skill</p>
     {#if currentSkill}
       <XpBar
         name={currentSkill.name}
@@ -53,5 +91,6 @@
         level={currentSkill.level}
       />
     {/if}
+    <p class="text-lg text-gray-400">Current Skill</p>
   </div>
 </div>

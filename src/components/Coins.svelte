@@ -3,21 +3,28 @@
   import { beforeUpdate } from "svelte";
 
   export let amount: number;
+  export let large: boolean = false;
+  export let negative: boolean = undefined;
   let coins;
   beforeUpdate(() => {
     coins = coinAmounts(amount);
   });
 </script>
 
-<span class="flex justify-end">
+<span class="flex justify-end text-lg items-center" class:text-2xl={large}>
+  {#if negative}
+    <p class="text-red-500 text-xl">-</p>
+  {:else if negative == false}
+    <p class="text-green-500 text-xl">+</p>
+  {/if}
   {#if coins.p > 0}
-    <p class="text-lg text-blue-500 w-1/4">{coins.p}p</p>
+    <p class="text-blue-500 w-1/4">{coins.p}p</p>
   {/if}
   {#if coins.g > 0}
-    <p class="text-lg text-yellow-400 w-1/4">{coins.g}g</p>
+    <p class="text-yellow-400 w-1/4">{coins.g}g</p>
   {/if}
   {#if coins.s > 0}
-    <p class="text-lg text-gray-300 w-1/4">{coins.s}s</p>
+    <p class="text-gray-300 w-1/4">{coins.s}s</p>
   {/if}
-  <p class="text-lg text-yellow-800 w-1/4">{coins.c}c</p>
+  <p class="text-yellow-800 w-1/4">{coins.c}c</p>
 </span>
