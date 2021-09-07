@@ -67,7 +67,5 @@ export interface GameDataType {
 
   currentlyFishing: Fishing | null;
   currentSkill: Skill | null;
-  currentProperty: string | null;
-  currentMisc: any[];
   evil: number;
 }

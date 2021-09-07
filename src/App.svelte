@@ -26,8 +26,15 @@
   } from "./gameData";
   import { onMount } from "svelte";
   import Sidebar from "src/Sidebar.svelte";
+  import Reincarnation from "src/tabs/Reincarnation.svelte";
 
-  type Tab = "goneFishing" | "skills" | "shop" | "achievements" | "settings";
+  type Tab =
+    | "goneFishing"
+    | "skills"
+    | "shop"
+    | "achievements"
+    | "settings"
+    | "reincarnation";
   let selectedTab: Tab = "skills";
 
   let data_value: GameDataType;
@@ -80,6 +87,11 @@
             >Achievements</button
           >
           <button class="btn" on:click={() => selectTab("shop")}>Shop</button>
+          {#if data_value.day > 365 * 50}
+            <button class="btn" on:click={() => selectTab("reincarnation")}
+              >Reincarnation</button
+            >
+          {/if}
         </div>
         <button class="btn" on:click={() => selectTab("settings")}
           >Settings</button
@@ -95,6 +107,8 @@
           <Achievements />
         {:else if selectedTab == "shop"}
           <Shop />
+        {:else if selectedTab == "reincarnation"}
+          <Reincarnation />
         {:else}
           <Settings />
         {/if}

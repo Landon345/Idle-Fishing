@@ -31,6 +31,7 @@ import {
   setGameData,
   boatBaseData,
   updateSpeed,
+  baseGameSpeed,
 } from "./gameData";
 
 export const daysToYears = (days: number) => Math.floor(days / 365);
@@ -72,7 +73,15 @@ export function capitalize(str: string): string {
 
 export function applySpeed(value: number) {
   // Make sure to divide by updateSpeed
-  return value;
+  return (value * getGameSpeed()) / updateSpeed;
+}
+
+export function getGameSpeed() {
+  return baseGameSpeed * +!getGameData().paused * +isAlive();
+}
+
+export function isAlive() {
+  return getGameData().day < baseLifespan;
 }
 
 export const needRequirements = (

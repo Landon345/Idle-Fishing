@@ -50,7 +50,7 @@ export class Task {
 
   get xpGain() {
     this.xpMultipliers = getXpMultipliers(this);
-    return applyMultipliers(10, this.xpMultipliers);
+    return applyMultipliers(10, this.xpMultipliers) * this.maxLevelMultiplier;
   }
 
   get barWidth(): number {
