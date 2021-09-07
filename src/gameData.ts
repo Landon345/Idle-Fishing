@@ -52,8 +52,6 @@ export let GameData: Writable<GameDataType> = writable({
 
   currentlyFishing: null,
   currentSkill: null,
-  currentProperty: null,
-  currentMisc: null,
   evil: 0,
 });
 
@@ -164,13 +162,46 @@ export const updateItemExpenses = () => {
   });
 };
 
+export const rebirthReset = () => {
+  GameData.update((data) => {
+    data.fishingData.forEach((fish) => {
+      if (fish.level > fish.maxLevel) {
+        fish.maxLevel = fish.level;
+      }
+      fish.level = 0;
+      fish.xp = 0;
+    });
+    data.skillsData.forEach((skill) => {
+      if (skill.level > skill.maxLevel) {
+        skill.maxLevel = skill.level;
+      }
+      skill.level = 0;
+      skill.xp = 0;
+    });
+    data.boatData.forEach((boat) => {
+      boat.baseData.bought = false;
+    });
+    data.itemData.forEach((item) => {
+      item.level = 0;
+      item.deselect();
+    });
+    return {
+      ...data,
+      coins: 0,
+      day: 365 * 14,
+      currentlyFishing: data.fishingData.get("Black Drum"),
+      currentSkill: data.skillsData.get("Strength"),
+    };
+  });
+};
+
 export let tempData = {
   requirements: {},
 };
 
 export let skillWithLowestMaxXp = null;
 
-export const updateSpeed = 60;
+export const updateSpeed = 20;
 
 export const baseLifespan = 365 * 70;
 
