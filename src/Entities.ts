@@ -1,17 +1,33 @@
 import type { Fishing, Item, Boat, Skill, Requirement } from "src/classes";
 
 export type Description =
-  | "Fishing Pay"
-  | "Fishing Effects"
+  | "All Xp"
+  | "Fishing Skill Xp"
+  | "Fishing Xp"
   | "Skill Xp"
-  | "Ocean Pay"
-  | "Ocean Xp"
-  | "Lake Pay"
   | "Lake Xp"
-  | "River Pay"
   | "River Xp"
+  | "Ocean Xp"
+  | "Jigging Xp"
+  | "Casting Xp"
+  | "Hooking Xp"
+  | "Trolling Xp"
+  | "Reeling Xp"
   | "Strength Xp"
-  | "All Xp";
+  | "Concentration Xp"
+  | "Intelligence Xp"
+  | "Patience Xp"
+  | "Communication Xp"
+  | "Ambition Xp"
+  | "Sailing Xp"
+  | "Navigation Xp"
+  | "Fishing Pay"
+  | "Lake Pay"
+  | "River Pay"
+  | "Ocean Pay"
+  | "Payara Pay"
+  | "Northern Pay"
+  | "Whale Pay";
 export interface BoatBaseData {
   name: string;
   price: number;
