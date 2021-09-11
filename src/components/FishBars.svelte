@@ -1,8 +1,9 @@
 <script lang="ts">
   import type { GameDataType } from "src/Entities";
-  import type { Fishing } from "src/classes";
-  import { GameData, setCurrentlyFishing } from "src/gameData";
+  import type { Fishing, Requirement } from "src/classes";
+  import { fishBaseData, GameData, setCurrentlyFishing } from "src/gameData";
   import {
+    filtered,
     formatNumber,
     getRequiredString,
     needRequirements,
@@ -17,13 +18,9 @@
     data_value = data;
   });
 
-  let selected: string = data_value.currentlyFishing?.name || "Black Drum";
-
   const setCurrent = (name: string) => {
     setCurrentlyFishing(name);
-    selected = name;
   };
-  setCurrent(selected);
 
   const getValues = (fish: Fishing): any[] => {
     // ["Level", "Income/day", "Effect", "Xp/day", "Xp left", "Max Level"]
@@ -39,11 +36,11 @@
   };
 </script>
 
-{#each allFish as fish}
+{#each filtered(data_value, allFish) as fish, idx}
   {#if !needRequirements(data_value, fish)}
     <tr
       class="cursor-pointer"
-      class:bg-blue-200={selected === fish.name}
+      class:selected-bar={data_value.currentlyFishing.name === fish.name}
       on:click={() => setCurrent(fish.name)}
     >
       <XpBar name={fish.name} width={fish.barWidth} />
@@ -55,10 +52,5 @@
         {/if}
       {/each}
     </tr>
-  {/if}
-  {#if needRequirements(data_value, fish)}
-    <div class="w-full">
-      {getRequiredString(data_value, fish)}
-    </div>
   {/if}
 {/each}
