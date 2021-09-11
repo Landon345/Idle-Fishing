@@ -87,9 +87,10 @@ export function isAlive() {
 
 export const needRequirements = (
   data_value: GameDataType,
-  requiredFor: any
+  requiredFor: any // Class Fish or Skill
 ): boolean => {
   let reqs = data_value.requirements.get(requiredFor.name);
+  // Reqs is an array of requirements
   if (reqs == undefined) {
     return false;
   }
@@ -99,6 +100,23 @@ export const needRequirements = (
     }
   }
   return false;
+};
+
+export const filtered = (
+  data_value: GameDataType,
+  allRequiredFor: any[]
+): any[] => {
+  // returns all Fish that have completed requirements + 1 that doesn't.
+  const filteredTasks = [];
+  for (let i = 0; i < allRequiredFor.length; i++) {
+    if (!needRequirements(data_value, allRequiredFor[i])) {
+      filteredTasks.push(allRequiredFor[i]);
+    } else {
+      filteredTasks.push(allRequiredFor[i]);
+      break;
+    }
+  }
+  return filteredTasks;
 };
 
 export const getRequiredString = (

@@ -25,24 +25,111 @@ import type {
 
 import { writable, Writable } from "svelte/store";
 export const requirements = new Map<string, Requirement[]>([
-  [
-    "Blue Marlin",
-    [
-      new FishingRequirement([{ name: "Sun Fish", requirement: 10 }]),
-      new SkillRequirement([{ name: "Strength", requirement: 5 }]),
-    ],
-  ],
-  [
-    "Concentration",
-    [new SkillRequirement([{ name: "Strength", requirement: 10 }])],
-  ],
   ["Sun Fish", []],
+  ["Perch", [new FishingRequirement([{ name: "Sun Fish", requirement: 10 }])]],
   [
-    "Waleye",
+    "Bass",
     [
-      new FishingRequirement([{ name: "Sun Fish", requirement: 10 }]),
+      new FishingRequirement([{ name: "Perch", requirement: 10 }]),
       new BoatRequirement([{ name: "Bass Boat", requirement: true }]),
     ],
+  ],
+  ["Trout", [new FishingRequirement([{ name: "Bass", requirement: 10 }])]],
+  ["Waleye", [new FishingRequirement([{ name: "Trout", requirement: 10 }])]],
+  [
+    "Northern Pike",
+    [new FishingRequirement([{ name: "Waleye", requirement: 10 }])],
+  ],
+  [
+    "Lake Sturgeon",
+    [new FishingRequirement([{ name: "Northern Pike", requirement: 10 }])],
+  ],
+  // River
+  // 1. Pirana
+  // 2. Salmon
+  // 2. Silver Drum
+  // 3. Armoured Catfish
+  // 4. Electric Eel
+  // 5. Pacu
+  // 6. Payara
+  ["Pirana", [new SkillRequirement([{ name: "Strength", requirement: 30 }])]],
+  ["Salmon", [new FishingRequirement([{ name: "Pirana", requirement: 10 }])]],
+  [
+    "Silver Drum",
+    [new FishingRequirement([{ name: "Salmon", requirement: 10 }])],
+  ],
+  [
+    "Armoured Catfish",
+    [new FishingRequirement([{ name: "Silver Drum", requirement: 10 }])],
+  ],
+  [
+    "Electric Eel",
+    [new FishingRequirement([{ name: "Armoured Catfish", requirement: 10 }])],
+  ],
+  [
+    "Pacu",
+    [new FishingRequirement([{ name: "Electric Eel", requirement: 10 }])],
+  ],
+  ["Payara", [new FishingRequirement([{ name: "Pacu", requirement: 10 }])]],
+  // Ocean
+  // 1. Cod
+  // 2. Mackerel
+  // 2. Angle Fish
+  // 4. Grouper
+  // Stingray
+  // 6. Barracuda
+  // 3. Bluefin tuna
+  // 5. Blue Marlin
+  // Swordfish
+  // Shark
+  // Whale
+  [
+    "Cod",
+    [
+      new SkillRequirement([
+        { name: "Strength", requirement: 80 },
+        { name: "Concentration", requirement: 80 },
+      ]),
+    ],
+  ],
+  ["Mackerel", [new FishingRequirement([{ name: "Cod", requirement: 10 }])]],
+  [
+    "Angle Fish",
+    [new FishingRequirement([{ name: "Mackerel", requirement: 10 }])],
+  ],
+  [
+    "Grouper",
+    [new FishingRequirement([{ name: "Angle Fish", requirement: 10 }])],
+  ],
+  [
+    "Stingray",
+    [new FishingRequirement([{ name: "Grouper", requirement: 10 }])],
+  ],
+  [
+    "Barracuda",
+    [new FishingRequirement([{ name: "Stingray", requirement: 10 }])],
+  ],
+  [
+    "Bluefin Tuna",
+    [new FishingRequirement([{ name: "Barracuda", requirement: 10 }])],
+  ],
+  [
+    "Blue Marlin",
+    [new FishingRequirement([{ name: "Bluefin Tuna", requirement: 10 }])],
+  ],
+  [
+    "Swordfish",
+    [new FishingRequirement([{ name: "Blue Marlin", requirement: 10 }])],
+  ],
+  ["Shark", [new FishingRequirement([{ name: "Swordfish", requirement: 10 }])]],
+  ["Whale", [new FishingRequirement([{ name: "Shark", requirement: 10 }])]],
+  [
+    "Concentration",
+    [new SkillRequirement([{ name: "Strength", requirement: 5 }])],
+  ],
+  [
+    "Jigging",
+    [new SkillRequirement([{ name: "Concentration", requirement: 20 }])],
   ],
 ]);
 
@@ -204,6 +291,11 @@ export const rebirthReset = () => {
   });
 };
 
+export const hardReset = () => {
+  window.localStorage.clear();
+  window.location.reload();
+};
+
 export let tempData = {
   requirements: {},
 };
@@ -269,7 +361,7 @@ export const fishBaseData: Map<string, FishBaseData> = new Map(
         income: 500,
         effect: 0.01,
         description: "Concentration Xp",
-        category: "river",
+        category: "lake",
       },
     ],
     [
@@ -939,9 +1031,9 @@ export const itemBaseData: Map<string, ItemBaseData> = new Map([
 ]);
 
 export const fishCategories = {
-  ocean: ["Black Drum", "Blue Marlin"],
-  lake: ["Sun Fish", "Waleye"],
-  river: [],
+  lake: ["Sun Fish", "Perch"],
+  river: ["Trout", "P"],
+  ocean: ["Cod", "Mackerel"],
 };
 
 export const skillCategories = {

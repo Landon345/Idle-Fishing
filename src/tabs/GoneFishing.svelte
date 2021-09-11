@@ -5,6 +5,7 @@
   import { GameData, fishCategories } from "src/gameData";
   import FishBars from "src/components/FishBars.svelte";
   import { onMount } from "svelte";
+  import { filtered, getRequiredString, needRequirements } from "src/functions";
 
   let data_value: GameDataType;
   let fishingData;
@@ -47,8 +48,17 @@
     Gone Fishing!
   </p>
   {#each allHeaders as headers}
-    <ProgressTable {headers}>
-      <FishBars allFish={getAllFish(data_value.fishingData, headers[0])} />
-    </ProgressTable>
+    <div class="mb-3">
+      <ProgressTable {headers}>
+        <FishBars allFish={getAllFish(data_value.fishingData, headers[0])} />
+      </ProgressTable>
+      {#each filtered(data_value, getAllFish(data_value.fishingData, headers[0])) as fish, idx}
+        {#if needRequirements(data_value, fish)}
+          <div class="w-full mb-8">
+            {getRequiredString(data_value, fish)}
+          </div>
+        {/if}
+      {/each}
+    </div>
   {/each}
 </div>

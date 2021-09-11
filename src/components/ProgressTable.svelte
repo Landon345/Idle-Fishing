@@ -1,15 +1,16 @@
 <script lang="ts">
   export let headers: string[] = ["Unknown"];
+  import { capitalize } from "src/functions";
 
   // headers I need:
   // ["Fundamentals", "Level", "Effect", "Xp/day", "Xp left", "Max Level"]
   // ["Ocean", "Level", "Income/day", "Effect", "Xp/day", "Xp left", "Max Level"]
 </script>
 
-<table class="w-full mb-5">
+<table class="w-full">
   <tr class="mt-4 mb-1">
     {#each headers as header, idx}
-      <th>{header}</th>
+      <th>{capitalize(header)}</th>
     {/each}
   </tr>
   <slot />

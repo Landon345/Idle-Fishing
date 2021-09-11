@@ -133,4 +133,7 @@
     border: 1px solid #ddd;
     padding: 8px;
   }
+  .selected-bar {
+    @apply bg-gray-800 text-gray-300;
+  }
 </style>
