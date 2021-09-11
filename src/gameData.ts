@@ -36,10 +36,7 @@ export const requirements = new Map<string, Requirement[]>([
     "Concentration",
     [new SkillRequirement([{ name: "Strength", requirement: 10 }])],
   ],
-  [
-    "Sun Fish",
-    [new FishingRequirement([{ name: "Blue Marlin", requirement: 10 }])],
-  ],
+  ["Sun Fish", []],
   [
     "Waleye",
     [
