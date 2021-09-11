@@ -2,6 +2,7 @@ import type {
   Bases,
   BoatBaseData,
   Classes,
+  Description,
   FishBaseData,
   GameDataType,
   ItemBaseData,
@@ -117,9 +118,10 @@ export const getRequiredString = (
             ? data_value.skillsData.get(name).level
             : data_value.fishingData.get(name).level;
         requiredString += `${name} level ${levelNow}/${sameTypeReqs[j].requirement}, `;
-      }
-      if (type == "age") {
-        requiredString += `${daysToYears(data_value.day)} years old `;
+      } else if (type == "age") {
+        requiredString += `${daysToYears(data_value.day)} years old, `;
+      } else if (type == "boat") {
+        requiredString += `${sameTypeReqs[j].name}, `;
       }
     }
   }
@@ -191,18 +193,27 @@ export const getIncomeMultipliers = (task: Task): { [key: string]: number } => {
     multipliers[item.name] = kind(task, item.baseData.description, item.effect);
   });
 
-  function kind(task: Task, description: string, effect: number) {
+  function kind(task: Task, description: Description, effect: number) {
     switch (description) {
       case "Fishing Pay":
         return effect;
       case "Lake Pay":
         if (task.baseData.category == "lake") return effect;
         break;
+      case "River Pay":
+        if (task.baseData.category == "river") return effect;
+        break;
       case "Ocean Pay":
         if (task.baseData.category == "ocean") return effect;
         break;
-      case "River Pay":
-        if (task.baseData.category == "river") return effect;
+      case "Payara Pay":
+        if (task.name == "Payara") return effect;
+        break;
+      case "Northern Pay":
+        if (task.name == "Northern") return effect;
+        break;
+      case "Whale Pay":
+        if (task.name == "Whale") return effect;
         break;
       default:
         return 1;
@@ -232,20 +243,63 @@ export const getXpMultipliers = (task: Task): { [key: string]: number } => {
     switch (description) {
       case "All Xp":
         return effect;
+      case "Fishing Skill Xp":
+        if (task instanceof Skill && task.baseData.category == "fishing")
+          return effect;
+        break;
+      case "Fishing Xp":
+        if (task instanceof Fishing) return effect;
+        break;
+      case "Skill Xp":
+        if (task instanceof Skill) return effect;
+        break;
       case "Lake Xp":
         if (task.baseData.category == "lake") return effect;
-        break;
-      case "Ocean Xp":
-        if (task.baseData.category == "ocean") return effect;
         break;
       case "River Xp":
         if (task.baseData.category == "river") return effect;
         break;
+      case "Ocean Xp":
+        if (task.baseData.category == "ocean") return effect;
+        break;
+      case "Jigging Xp":
+        if (task.name == "Jigging") return effect;
+        break;
+      case "Casting Xp":
+        if (task.name == "Casting") return effect;
+        break;
+      case "Hooking Xp":
+        if (task.name == "Hooking") return effect;
+        break;
+      case "Trolling Xp":
+        if (task.name == "Trolling") return effect;
+        break;
+      case "Reeling Xp":
+        if (task.name == "Reeling") return effect;
+        break;
       case "Strength Xp":
         if (task.name == "Strength") return effect;
         break;
-      case "Skill Xp":
-        if (task instanceof Skill) return effect;
+      case "Concentration Xp":
+        if (task.name == "Concentration") return effect;
+        break;
+      case "Intelligence Xp":
+        if (task.name == "Intelligence") return effect;
+        break;
+      case "Patience Xp":
+        if (task.name == "Patience") return effect;
+        break;
+      case "Communication Xp":
+        if (task.name == "Communication") return effect;
+        break;
+      case "Ambition Xp":
+        if (task.name == "Ambition") return effect;
+        break;
+      case "Sailing Xp":
+        if (task.name == "Sailing") return effect;
+        break;
+      case "Navigation Xp":
+        if (task.name == "Navigation") return effect;
         break;
       default:
         return 1;

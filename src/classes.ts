@@ -279,7 +279,10 @@ export class BoatRequirement extends Requirement {
   }
 
   getCondition(requirement) {
-    return getGameData().boatData >= requirement.requirement;
+    return (
+      getGameData().boatData.get(requirement.name).bought ==
+      requirement.requirement
+    );
   }
 }
 
