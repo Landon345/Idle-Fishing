@@ -123,14 +123,105 @@ export const requirements = new Map<string, Requirement[]>([
   ],
   ["Shark", [new FishingRequirement([{ name: "Swordfish", requirement: 10 }])]],
   ["Whale", [new FishingRequirement([{ name: "Shark", requirement: 10 }])]],
+  // FUNDAMENTALS //
+  // Strength
+  // Concentration
+  // Intelligence
+  // Patience
+  // Ambition
+  // Communication
+  ["Strength", []],
   [
     "Concentration",
     [new SkillRequirement([{ name: "Strength", requirement: 5 }])],
   ],
   [
-    "Jigging",
-    [new SkillRequirement([{ name: "Concentration", requirement: 20 }])],
+    "Intelligence",
+    [new SkillRequirement([{ name: "Concentration", requirement: 10 }])],
   ],
+  [
+    "Patience",
+    [new SkillRequirement([{ name: "Intelligence", requirement: 10 }])],
+  ],
+  ["Ambition", [new SkillRequirement([{ name: "Patience", requirement: 10 }])]],
+  [
+    "Communication",
+    [new SkillRequirement([{ name: "Communication", requirement: 10 }])],
+  ],
+  // FISHING SKILLS
+  // Casting
+  // Jigging
+  // Trolling
+  // Reeling
+  // Hooking
+  // Netting
+  // Whaling
+  [
+    "Casting",
+    [new SkillRequirement([{ name: "Communication", requirement: 10 }])],
+  ],
+  ["Jigging", [new SkillRequirement([{ name: "Casting", requirement: 10 }])]],
+  ["Trolling", [new SkillRequirement([{ name: "Jigging", requirement: 10 }])]],
+  ["Reeling", [new SkillRequirement([{ name: "Trolling", requirement: 10 }])]],
+  ["Hooking", [new SkillRequirement([{ name: "Reeling", requirement: 10 }])]],
+  ["Netting", [new SkillRequirement([{ name: "Hooking", requirement: 10 }])]],
+  ["Whaling", [new SkillRequirement([{ name: "Netting", requirement: 10 }])]],
+  // Boating Skills
+  // Docking
+  // Turning
+  // Anchoring
+  // Sailing
+  // Navigation
+  // Stability
+  ["Docking", [new SkillRequirement([{ name: "Whaling", requirement: 10 }])]],
+  ["Turning", [new SkillRequirement([{ name: "Docking", requirement: 10 }])]],
+  ["Anchoring", [new SkillRequirement([{ name: "Turning", requirement: 10 }])]],
+  ["Sailing", [new SkillRequirement([{ name: "Anchoring", requirement: 10 }])]],
+  [
+    "Navigation",
+    [new SkillRequirement([{ name: "Sailing", requirement: 10 }])],
+  ],
+  [
+    "Stability",
+    [new SkillRequirement([{ name: "Navigation", requirement: 10 }])],
+  ],
+  ["Row Boat", [new CoinRequirement([{ name: "Coins", requirement: 500 }])]],
+  [
+    "Silver Bullet",
+    [new CoinRequirement([{ name: "Coins", requirement: 500 }])],
+  ],
+  ["Bass Boat", [new CoinRequirement([{ name: "Coins", requirement: 500 }])]],
+  ["Canoe", [new CoinRequirement([{ name: "Coins", requirement: 500 }])]],
+  ["River Skiff", [new CoinRequirement([{ name: "Coins", requirement: 500 }])]],
+  ["Airboat", [new CoinRequirement([{ name: "Coins", requirement: 500 }])]],
+  ["Sail Boat", [new CoinRequirement([{ name: "Coins", requirement: 500 }])]],
+  ["Yacht", [new CoinRequirement([{ name: "Coins", requirement: 500 }])]],
+  [
+    "Whaling Ship",
+    [new CoinRequirement([{ name: "Coins", requirement: 500 }])],
+  ],
+  // ITEMS //
+  // Rod
+  // Book
+  // Net
+  // Hook
+  // Bait
+  // Ham Sandwich
+  // Pliers
+  // Fish Finder
+  // House
+  ["Rod", [new CoinRequirement([{ name: "Coins", requirement: 500 }])]],
+  ["Book", [new CoinRequirement([{ name: "Coins", requirement: 500 }])]],
+  ["Net", [new CoinRequirement([{ name: "Coins", requirement: 500 }])]],
+  ["Hook", [new CoinRequirement([{ name: "Coins", requirement: 500 }])]],
+  ["Bait", [new CoinRequirement([{ name: "Coins", requirement: 500 }])]],
+  [
+    "Ham Sandwich",
+    [new CoinRequirement([{ name: "Coins", requirement: 500 }])],
+  ],
+  ["Pliers", [new CoinRequirement([{ name: "Coins", requirement: 500 }])]],
+  ["Fish Finder", [new CoinRequirement([{ name: "Coins", requirement: 500 }])]],
+  ["House", [new CoinRequirement([{ name: "Coins", requirement: 500 }])]],
 ]);
 
 export let GameData: Writable<GameDataType> = writable({

@@ -3,7 +3,7 @@
   import type { Item } from "src/classes";
   import { GameData } from "src/gameData";
   import Coins from "src/components/Coins.svelte";
-  import { getRequiredString, needRequirements } from "src/functions";
+  import { filtered, getRequiredString, needRequirements } from "src/functions";
 
   let data_value: GameDataType;
   export let items: Item[] = [];
@@ -23,7 +23,7 @@
   };
 </script>
 
-{#each items as item}
+{#each filtered(data_value, items) as item}
   {#if !needRequirements(data_value, item)}
     <tr>
       {#each getValues(item) as value, idx}
@@ -47,9 +47,5 @@
         {/if}
       {/each}
     </tr>
-  {:else}
-    <div class="w-full">
-      {getRequiredString(data_value, item)}
-    </div>
   {/if}
 {/each}

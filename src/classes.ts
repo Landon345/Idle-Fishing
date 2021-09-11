@@ -183,9 +183,11 @@ export class Item {
 }
 
 export class Boat {
+  name: string;
   baseData: { name: string; price: number; bought: boolean };
   constructor(baseData) {
     this.baseData = baseData;
+    this.name = baseData.name;
   }
 
   get bought() {

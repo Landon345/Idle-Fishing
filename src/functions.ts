@@ -140,9 +140,13 @@ export const getRequiredString = (
         requiredString += `${daysToYears(data_value.day)} years old, `;
       } else if (type == "boat") {
         requiredString += `${sameTypeReqs[j].name}, `;
+      } else if (type == "coin") {
+        requiredString += `${sameTypeReqs[j].requirement} coins, `;
       }
     }
   }
+  let endIndex = requiredString.length - 1;
+  requiredString = requiredString.slice(0, endIndex - 1);
   return requiredString;
 };
 

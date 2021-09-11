@@ -122,6 +122,9 @@
   @tailwind components;
   @tailwind utilities;
 
+  * {
+    transition: all 0.2s cubic-bezier(0.075, 0.82, 0.165, 1);
+  }
   .btn {
     @apply hover:bg-gray-900 py-5 px-10;
   }

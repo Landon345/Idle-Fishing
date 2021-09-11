@@ -3,7 +3,7 @@
   import type { Boat } from "src/classes";
   import { GameData } from "src/gameData";
   import Coins from "src/components/Coins.svelte";
-  import { getRequiredString, needRequirements } from "src/functions";
+  import { filtered, getRequiredString, needRequirements } from "src/functions";
 
   let data_value: GameDataType;
   export let boats: Boat[] = [];
@@ -13,7 +13,7 @@
   });
 </script>
 
-{#each boats as boat}
+{#each filtered(data_value, boats) as boat}
   {#if !needRequirements(data_value, boat)}
     <tr class="cursor-pointer" on:click={() => boat.buy()}>
       <td
@@ -22,9 +22,5 @@
       >
       <td><Coins amount={boat.baseData.price} /></td>
     </tr>
-  {:else}
-    <div class="w-full">
-      {getRequiredString(data_value, boat)}
-    </div>
   {/if}
 {/each}
