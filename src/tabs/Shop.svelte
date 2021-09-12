@@ -7,6 +7,7 @@
   import { filtered, getRequiredString, needRequirements } from "src/functions";
   import BoatBars from "src/components/BoatBars.svelte";
   import ItemBars from "src/components/ItemBars.svelte";
+  import RequiredBar from "src/components/RequiredBar.svelte";
 
   let data_value: GameDataType;
 
@@ -30,9 +31,7 @@
   };
 </script>
 
-<div class="bg-gray-white w-full h-full">
-  <p class="p-10 bg-red-700 text-white text-xl font-bold w-full">Shop!</p>
-
+<div class="w-full h-full bg-gray-700 p-2 mt-2">
   <div class="mb-3">
     <ProgressTable headers={["Boats", "Price"]}>
       <BoatBars boats={getBoats(data_value.boatData)} />
@@ -40,7 +39,7 @@
     {#each filtered(data_value, getBoats(data_value.boatData)) as boat}
       {#if needRequirements(data_value, boat)}
         <div class="w-full mb-8">
-          {getRequiredString(data_value, boat)}
+          <RequiredBar taskOrItem={boat} />
         </div>
       {/if}
     {/each}
@@ -54,9 +53,7 @@
     </ProgressTable>
     {#each filtered(data_value, getItems(data_value.itemData)) as item}
       {#if needRequirements(data_value, item)}
-        <div class="w-full mb-8">
-          {getRequiredString(data_value, item)}
-        </div>
+        <RequiredBar taskOrItem={item} />
       {/if}
     {/each}
   </div>

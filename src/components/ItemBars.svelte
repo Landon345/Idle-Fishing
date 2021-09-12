@@ -29,13 +29,13 @@
       {#each getValues(item) as value, idx}
         {#if idx == 0}
           <td
-            class="cursor-pointer bg-gray-600 text-white"
-            class:bg-purple-400={item.selected}
+            class="cursor-pointer bg-purple-400 text-white"
+            class:bg-pink-900={item.selected}
             on:click={() => item.select()}>{value}</td
           >
         {:else if idx == 1}
           <td
-            class="cursor-pointer bg-gray-600 text-white hover:bg-gray-800"
+            class="cursor-pointer bg-purple-700 text-white hover:bg-purple-800"
             on:click={() => item.upgrade()}><Coins amount={+value} /></td
           >
         {:else if idx == 4}

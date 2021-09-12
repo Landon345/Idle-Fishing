@@ -2,22 +2,29 @@
   export let name = "";
   export let width = 10;
   export let level: number = undefined;
+  export let selected: boolean = false;
 </script>
 
-<td class="bar bg-blue-400">
-  <div class="text-top">
-    {name}
-    {#if level}
-      {` lvl ${level}`}
-    {/if}
+<td>
+  <div class={`bar ${selected ? "bg-purple-800" : "bg-purple-800"} p-2`}>
+    <div class="text-top">
+      {name}
+      {#if level}
+        {` lvl ${level}`}
+      {/if}
+    </div>
+    <div
+      class={`progress ${selected ? "bg-pink-900" : "bg-purple-500"}`}
+      style="width: {width}%; height: 100%;"
+    />
   </div>
-  <div class="progress bg-blue-800" style="width: {width}%; height: 100%;" />
 </td>
 
 <style>
   .bar {
     position: relative;
-    width: 300px;
+    min-width: 160px;
+    max-width: 350px;
     color: white;
   }
   .progress {

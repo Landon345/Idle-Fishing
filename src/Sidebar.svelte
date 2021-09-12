@@ -80,6 +80,7 @@
         name={currentlyFishing.name}
         width={currentlyFishing.barWidth}
         level={currentlyFishing.level}
+        selected={true}
       />
       <p class="text-lg text-gray-400">Currently Fishing</p>
     {/if}
@@ -90,6 +91,7 @@
         name={currentSkill.name}
         width={currentSkill.barWidth}
         level={currentSkill.level}
+        selected={true}
       />
     {/if}
     <p class="text-lg text-gray-400">Current Skill</p>

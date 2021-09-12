@@ -6,6 +6,7 @@
   import SkillBars from "src/components/SkillBars.svelte";
   import { onMount } from "svelte";
   import { filtered, getRequiredString, needRequirements } from "src/functions";
+  import RequiredBar from "src/components/RequiredBar.svelte";
 
   let data_value: GameDataType;
   let commonHeaders: string[] = [
@@ -39,8 +40,7 @@
   };
 </script>
 
-<div class="bg-gray-white w-full h-full">
-  <p class="p-10 bg-green-500 text-white text-xl font-bold w-full">Skills</p>
+<div class="w-full h-full bg-gray-700 p-2 mt-2">
   {#each allHeaders as headers}
     <div class="mb-3">
       <ProgressTable {headers}>
@@ -48,9 +48,7 @@
       </ProgressTable>
       {#each filtered(data_value, getSkills(data_value.skillsData, headers[0])) as skill}
         {#if needRequirements(data_value, skill)}
-          <div class="w-full mb-8">
-            {getRequiredString(data_value, skill)}
-          </div>
+          <RequiredBar taskOrItem={skill} />
         {/if}
       {/each}
     </div>

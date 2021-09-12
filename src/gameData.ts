@@ -146,7 +146,7 @@ export const requirements = new Map<string, Requirement[]>([
   ["Ambition", [new SkillRequirement([{ name: "Patience", requirement: 10 }])]],
   [
     "Communication",
-    [new SkillRequirement([{ name: "Communication", requirement: 10 }])],
+    [new SkillRequirement([{ name: "Ambition", requirement: 10 }])],
   ],
   // FISHING SKILLS
   // Casting
@@ -211,17 +211,20 @@ export const requirements = new Map<string, Requirement[]>([
   // Fish Finder
   // House
   ["Rod", [new CoinRequirement([{ name: "Coins", requirement: 500 }])]],
-  ["Book", [new CoinRequirement([{ name: "Coins", requirement: 500 }])]],
-  ["Net", [new CoinRequirement([{ name: "Coins", requirement: 500 }])]],
-  ["Hook", [new CoinRequirement([{ name: "Coins", requirement: 500 }])]],
-  ["Bait", [new CoinRequirement([{ name: "Coins", requirement: 500 }])]],
+  ["Book", [new CoinRequirement([{ name: "Coins", requirement: 3000 }])]],
+  ["Net", [new CoinRequirement([{ name: "Coins", requirement: 30000 }])]],
+  ["Hook", [new CoinRequirement([{ name: "Coins", requirement: 50000 }])]],
+  ["Bait", [new CoinRequirement([{ name: "Coins", requirement: 300000 }])]],
   [
     "Ham Sandwich",
-    [new CoinRequirement([{ name: "Coins", requirement: 500 }])],
+    [new CoinRequirement([{ name: "Coins", requirement: 500000 }])],
   ],
-  ["Pliers", [new CoinRequirement([{ name: "Coins", requirement: 500 }])]],
-  ["Fish Finder", [new CoinRequirement([{ name: "Coins", requirement: 500 }])]],
-  ["House", [new CoinRequirement([{ name: "Coins", requirement: 500 }])]],
+  ["Pliers", [new CoinRequirement([{ name: "Coins", requirement: 1000000 }])]],
+  [
+    "Fish Finder",
+    [new CoinRequirement([{ name: "Coins", requirement: 5000000 }])],
+  ],
+  ["House", [new CoinRequirement([{ name: "Coins", requirement: 10000000 }])]],
 ]);
 
 export let GameData: Writable<GameDataType> = writable({

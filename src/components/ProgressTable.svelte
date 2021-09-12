@@ -1,5 +1,6 @@
 <script lang="ts">
   export let headers: string[] = ["Unknown"];
+  export let headerColor: string = "#04aa6d";
   import { capitalize } from "src/functions";
 
   // headers I need:
@@ -10,7 +11,7 @@
 <table class="w-full">
   <tr class="mt-4 mb-1">
     {#each headers as header, idx}
-      <th>{capitalize(header)}</th>
+      <th style="background-color: {headerColor}">{capitalize(header)}</th>
     {/each}
   </tr>
   <slot />
@@ -18,22 +19,20 @@
 
 <style>
   th {
-    border: 1px solid #ddd;
     padding: 12px 8px;
     text-align: left;
-    background-color: #04aa6d;
     color: white;
   }
 
   tr {
     margin-bottom: 15px;
     width: 100%;
-    border-bottom: 1px solid #ddd;
   }
 
   table {
     font-family: Arial, Helvetica, sans-serif;
     border-collapse: collapse;
+    border-spacing: 0 0.5em;
     width: 100%;
   }
 </style>

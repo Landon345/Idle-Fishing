@@ -36,12 +36,12 @@
 
 {#each filtered(data_value, skills) as skill}
   {#if !needRequirements(data_value, skill)}
-    <tr
-      class="cursor-pointer"
-      class:bg-green-200={data_value.currentSkill.name === skill.name}
-      on:click={() => setCurrent(skill.name)}
-    >
-      <XpBar name={skill.name} width={skill.barWidth} />
+    <tr class="cursor-pointer" on:click={() => setCurrent(skill.name)}>
+      <XpBar
+        name={skill.name}
+        width={skill.barWidth}
+        selected={data_value.currentSkill.name === skill.name}
+      />
       {#each getValues(skill) as value}
         <td>{value}</td>
       {/each}
