@@ -11,7 +11,7 @@
   });
 </script>
 
-<span class="flex justify-end text-lg items-center" class:text-2xl={large}>
+<span class="flex justify-start text-lg items-center" class:text-2xl={large}>
   {#if negative}
     <p class="text-red-500 text-xl">-</p>
   {:else if negative == false}
@@ -20,10 +20,10 @@
   {#if coins.p > 0}
     <p class="text-blue-500 w-1/4">{coins.p}p</p>
   {/if}
-  {#if coins.g > 0}
+  {#if coins.g > 0 || coins.p > 0}
     <p class="text-yellow-400 w-1/4">{coins.g}g</p>
   {/if}
-  {#if coins.s > 0}
+  {#if coins.s > 0 || coins.g > 0 || coins.p > 0}
     <p class="text-gray-300 w-1/4">{coins.s}s</p>
   {/if}
   <p class="text-yellow-800 w-1/4">{coins.c}c</p>

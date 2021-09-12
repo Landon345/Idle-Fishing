@@ -38,12 +38,12 @@
 
 {#each filtered(data_value, allFish) as fish, idx}
   {#if !needRequirements(data_value, fish)}
-    <tr
-      class="cursor-pointer"
-      class:selected-bar={data_value.currentlyFishing.name === fish.name}
-      on:click={() => setCurrent(fish.name)}
-    >
-      <XpBar name={fish.name} width={fish.barWidth} />
+    <tr class="cursor-pointer" on:click={() => setCurrent(fish.name)}>
+      <XpBar
+        name={fish.name}
+        width={fish.barWidth}
+        selected={data_value.currentlyFishing.name === fish.name}
+      />
       {#each getValues(fish) as value, idx}
         {#if idx == 1}
           <td><Coins amount={value} /></td>

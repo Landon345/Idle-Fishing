@@ -69,32 +69,46 @@
   loadGameData();
 </script>
 
-<main>
-  <h1 class="text-6xl">Idle Fishing</h1>
+<main class="bg-gray-600 min-h-screen text-white">
+  <h1 class="text-6xl text-center p-6">Idle Fishing</h1>
   <div class="flex flex-row">
     <Sidebar />
 
     <div class="flex flex-col mr-2 w-3/4 overflow-x-auto">
       <div class="flex flex-row bg-gray-800 text-white justify-between">
         <div class="flex flex-row">
-          <button class="btn" on:click={() => selectTab("skills")}
-            >Skills</button
+          <button
+            class="btn"
+            class:bg-blue-900={selectedTab == "skills"}
+            on:click={() => selectTab("skills")}>Skills</button
           >
-          <button class="btn" on:click={() => selectTab("goneFishing")}
-            >Gone Fishing</button
+          <button
+            class="btn"
+            class:bg-blue-900={selectedTab == "goneFishing"}
+            on:click={() => selectTab("goneFishing")}>Gone Fishing</button
           >
-          <button class="btn" on:click={() => selectTab("achievements")}
-            >Achievements</button
+          <button
+            class="btn"
+            class:bg-blue-900={selectedTab == "achievements"}
+            on:click={() => selectTab("achievements")}>Achievements</button
           >
-          <button class="btn" on:click={() => selectTab("shop")}>Shop</button>
+          <button
+            class="btn"
+            class:bg-blue-900={selectedTab == "shop"}
+            on:click={() => selectTab("shop")}>Shop</button
+          >
           {#if data_value.day > 365 * 50}
-            <button class="btn" on:click={() => selectTab("reincarnation")}
-              >Reincarnation</button
+            <button
+              class="btn"
+              class:bg-blue-900={selectedTab == "reincarnation"}
+              on:click={() => selectTab("reincarnation")}>Reincarnation</button
             >
           {/if}
         </div>
-        <button class="btn" on:click={() => selectTab("settings")}
-          >Settings</button
+        <button
+          class="btn"
+          class:bg-blue-900={selectedTab == "settings"}
+          on:click={() => selectTab("settings")}>Settings</button
         >
       </div>
 
@@ -123,20 +137,15 @@
   @tailwind utilities;
 
   * {
-    transition: all 0.2s cubic-bezier(0.075, 0.82, 0.165, 1);
+    transition: all 0.1s linear;
   }
   .btn {
     @apply hover:bg-gray-900 py-5 px-10;
   }
-
   tr {
-    border-bottom: 1px solid #ddd;
+    border-bottom: 1px solid #666;
   }
   td {
-    border: 1px solid #ddd;
-    padding: 8px;
-  }
-  .selected-bar {
-    @apply bg-gray-800 text-gray-300;
+    padding: 12px 0px 12px 10px;
   }
 </style>

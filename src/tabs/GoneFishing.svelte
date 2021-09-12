@@ -6,6 +6,7 @@
   import FishBars from "src/components/FishBars.svelte";
   import { onMount } from "svelte";
   import { filtered, getRequiredString, needRequirements } from "src/functions";
+  import RequiredBar from "src/components/RequiredBar.svelte";
 
   let data_value: GameDataType;
   let fishingData;
@@ -43,10 +44,7 @@
   };
 </script>
 
-<div class="bg-gray-white w-full h-full">
-  <p class="p-10 bg-blue-500 text-white text-xl font-bold w-full">
-    Gone Fishing!
-  </p>
+<div class="w-full h-full bg-gray-700 p-2 mt-2">
   {#each allHeaders as headers}
     <div class="mb-3">
       <ProgressTable {headers}>
@@ -54,9 +52,7 @@
       </ProgressTable>
       {#each filtered(data_value, getAllFish(data_value.fishingData, headers[0])) as fish, idx}
         {#if needRequirements(data_value, fish)}
-          <div class="w-full mb-8">
-            {getRequiredString(data_value, fish)}
-          </div>
+          <RequiredBar taskOrItem={fish} />
         {/if}
       {/each}
     </div>
