@@ -19,6 +19,7 @@ export type Description =
   | "Patience Xp"
   | "Communication Xp"
   | "Ambition Xp"
+  | "Boating Xp"
   | "Sailing Xp"
   | "Navigation Xp"
   | "Fishing Pay"
