@@ -269,6 +269,10 @@ export const getXpMultipliers = (task: Task): { [key: string]: number } => {
         if (task instanceof Skill && task.baseData.category == "fishing")
           return effect;
         break;
+      case "Boating Skill Xp":
+        if (task instanceof Skill && task.baseData.category == "boating")
+          return effect;
+        break;
       case "Fishing Xp":
         if (task instanceof Fishing) return effect;
         break;

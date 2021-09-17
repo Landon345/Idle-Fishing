@@ -24,6 +24,7 @@ import type {
 } from "src/Entities";
 
 import { writable, Writable } from "svelte/store";
+import { trusted } from "svelte/internal";
 export const requirements = new Map<string, Requirement[]>([
   ["Sun Fish", []],
   ["Perch", [new FishingRequirement([{ name: "Sun Fish", requirement: 10 }])]],
@@ -31,18 +32,38 @@ export const requirements = new Map<string, Requirement[]>([
     "Bass",
     [
       new FishingRequirement([{ name: "Perch", requirement: 10 }]),
-      new BoatRequirement([{ name: "Bass Boat", requirement: true }]),
+      new BoatRequirement([{ name: "Row Boat", requirement: true }]),
     ],
   ],
-  ["Trout", [new FishingRequirement([{ name: "Bass", requirement: 10 }])]],
-  ["Waleye", [new FishingRequirement([{ name: "Trout", requirement: 10 }])]],
+  [
+    "Trout",
+    [
+      new FishingRequirement([{ name: "Bass", requirement: 10 }]),
+      new SkillRequirement([{ name: "Strength", requirement: 10 }]),
+    ],
+  ],
+  [
+    "Waleye",
+    [
+      new FishingRequirement([{ name: "Trout", requirement: 10 }]),
+      new SkillRequirement([{ name: "Strength", requirement: 30 }]),
+      new BoatRequirement([{ name: "Silver Bullet", requirement: true }]),
+    ],
+  ],
   [
     "Northern Pike",
-    [new FishingRequirement([{ name: "Waleye", requirement: 10 }])],
+    [
+      new FishingRequirement([{ name: "Waleye", requirement: 10 }]),
+      new SkillRequirement([{ name: "Ambition", requirement: 50 }]),
+    ],
   ],
   [
     "Lake Sturgeon",
-    [new FishingRequirement([{ name: "Northern Pike", requirement: 10 }])],
+    [
+      new FishingRequirement([{ name: "Northern Pike", requirement: 10 }]),
+      new SkillRequirement([{ name: "Patience", requirement: 80 }]),
+      new BoatRequirement([{ name: "Bass Boat", requirement: true }]),
+    ],
   ],
   // River
   // 1. Pirana
@@ -52,25 +73,52 @@ export const requirements = new Map<string, Requirement[]>([
   // 4. Electric Eel
   // 5. Pacu
   // 6. Payara
-  ["Pirana", [new SkillRequirement([{ name: "Strength", requirement: 30 }])]],
-  ["Salmon", [new FishingRequirement([{ name: "Pirana", requirement: 10 }])]],
+  ["Pirana", [new SkillRequirement([{ name: "Strength", requirement: 10 }])]],
+  [
+    "Salmon",
+    [
+      new FishingRequirement([{ name: "Pirana", requirement: 10 }]),
+      new SkillRequirement([{ name: "Strength", requirement: 30 }]),
+    ],
+  ],
   [
     "Silver Drum",
-    [new FishingRequirement([{ name: "Salmon", requirement: 10 }])],
+    [
+      new FishingRequirement([{ name: "Salmon", requirement: 10 }]),
+      new SkillRequirement([{ name: "Intelligence", requirement: 40 }]),
+      new BoatRequirement([{ name: "Canoe", requirement: true }]),
+    ],
   ],
   [
     "Armoured Catfish",
-    [new FishingRequirement([{ name: "Silver Drum", requirement: 10 }])],
+    [
+      new FishingRequirement([{ name: "Silver Drum", requirement: 10 }]),
+      new SkillRequirement([{ name: "Casting", requirement: 100 }]),
+    ],
   ],
   [
     "Electric Eel",
-    [new FishingRequirement([{ name: "Armoured Catfish", requirement: 10 }])],
+    [
+      new FishingRequirement([{ name: "Armoured Catfish", requirement: 10 }]),
+      new SkillRequirement([{ name: "Strength", requirement: 300 }]),
+      new BoatRequirement([{ name: "River Skiff", requirement: true }]),
+    ],
   ],
   [
     "Pacu",
-    [new FishingRequirement([{ name: "Electric Eel", requirement: 10 }])],
+    [
+      new FishingRequirement([{ name: "Electric Eel", requirement: 10 }]),
+      new SkillRequirement([{ name: "Trolling", requirement: 500 }]),
+    ],
   ],
-  ["Payara", [new FishingRequirement([{ name: "Pacu", requirement: 10 }])]],
+  [
+    "Payara",
+    [
+      new FishingRequirement([{ name: "Pacu", requirement: 10 }]),
+      new SkillRequirement([{ name: "Reeling", requirement: 1000 }]),
+      new BoatRequirement([{ name: "Airboat", requirement: true }]),
+    ],
+  ],
   // Ocean
   // 1. Cod
   // 2. Mackerel
@@ -87,42 +135,90 @@ export const requirements = new Map<string, Requirement[]>([
     "Cod",
     [
       new SkillRequirement([
-        { name: "Strength", requirement: 80 },
-        { name: "Concentration", requirement: 80 },
+        { name: "Patience", requirement: 200 },
+        { name: "Concentration", requirement: 200 },
+      ]),
+      new BoatRequirement([{ name: "Sail Boat", requirement: true }]),
+    ],
+  ],
+  [
+    "Mackerel",
+    [
+      new FishingRequirement([{ name: "Cod", requirement: 10 }]),
+      new SkillRequirement([
+        { name: "Docking", requirement: 400 },
+        { name: "Netting", requirement: 200 },
       ]),
     ],
   ],
-  ["Mackerel", [new FishingRequirement([{ name: "Cod", requirement: 10 }])]],
   [
     "Angle Fish",
-    [new FishingRequirement([{ name: "Mackerel", requirement: 10 }])],
+    [
+      new FishingRequirement([{ name: "Mackerel", requirement: 10 }]),
+      new SkillRequirement([
+        { name: "Docking", requirement: 700 },
+        { name: "Turning", requirement: 600 },
+      ]),
+    ],
   ],
   [
     "Grouper",
-    [new FishingRequirement([{ name: "Angle Fish", requirement: 10 }])],
+    [
+      new FishingRequirement([{ name: "Angle Fish", requirement: 10 }]),
+      new SkillRequirement([{ name: "Anchoring", requirement: 1000 }]),
+    ],
   ],
   [
     "Stingray",
-    [new FishingRequirement([{ name: "Grouper", requirement: 10 }])],
+    [
+      new FishingRequirement([{ name: "Grouper", requirement: 10 }]),
+      new SkillRequirement([{ name: "Docking", requirement: 1200 }]),
+    ],
   ],
   [
     "Barracuda",
-    [new FishingRequirement([{ name: "Stingray", requirement: 10 }])],
+    [
+      new FishingRequirement([{ name: "Stingray", requirement: 10 }]),
+      new SkillRequirement([{ name: "Turning", requirement: 1400 }]),
+    ],
   ],
   [
     "Bluefin Tuna",
-    [new FishingRequirement([{ name: "Barracuda", requirement: 10 }])],
+    [
+      new FishingRequirement([{ name: "Barracuda", requirement: 10 }]),
+      new SkillRequirement([{ name: "Sailing", requirement: 1500 }]),
+      new BoatRequirement([{ name: "Yacht", requirement: true }]),
+    ],
   ],
   [
     "Blue Marlin",
-    [new FishingRequirement([{ name: "Bluefin Tuna", requirement: 10 }])],
+    [
+      new FishingRequirement([{ name: "Bluefin Tuna", requirement: 10 }]),
+      new SkillRequirement([{ name: "Sailing", requirement: 1800 }]),
+    ],
   ],
   [
     "Swordfish",
-    [new FishingRequirement([{ name: "Blue Marlin", requirement: 10 }])],
+    [
+      new FishingRequirement([{ name: "Blue Marlin", requirement: 10 }]),
+      new SkillRequirement([{ name: "Navigation", requirement: 1900 }]),
+    ],
   ],
-  ["Shark", [new FishingRequirement([{ name: "Swordfish", requirement: 10 }])]],
-  ["Whale", [new FishingRequirement([{ name: "Shark", requirement: 10 }])]],
+  [
+    "Shark",
+    [
+      new FishingRequirement([{ name: "Swordfish", requirement: 10 }]),
+      new SkillRequirement([{ name: "Stability", requirement: 2000 }]),
+    ],
+  ],
+  [
+    "Whale",
+    [
+      new FishingRequirement([{ name: "Shark", requirement: 10 }]),
+      new SkillRequirement([{ name: "Stability", requirement: 2500 }]),
+      new BoatRequirement([{ name: "Whaling Ship", requirement: true }]),
+    ],
+  ],
   // FUNDAMENTALS //
   // Strength
   // Concentration
@@ -131,22 +227,27 @@ export const requirements = new Map<string, Requirement[]>([
   // Ambition
   // Communication
   ["Strength", []],
-  [
-    "Concentration",
-    [new SkillRequirement([{ name: "Strength", requirement: 5 }])],
-  ],
+  ["Concentration", []],
   [
     "Intelligence",
     [new SkillRequirement([{ name: "Concentration", requirement: 10 }])],
   ],
   [
     "Patience",
-    [new SkillRequirement([{ name: "Intelligence", requirement: 10 }])],
+    [new SkillRequirement([{ name: "Concentration", requirement: 20 }])],
   ],
-  ["Ambition", [new SkillRequirement([{ name: "Patience", requirement: 10 }])]],
+  [
+    "Ambition",
+    [new SkillRequirement([{ name: "Intelligence", requirement: 30 }])],
+  ],
   [
     "Communication",
-    [new SkillRequirement([{ name: "Ambition", requirement: 10 }])],
+    [
+      new SkillRequirement([
+        { name: "Intelligence", requirement: 30 },
+        { name: "Strength", requirement: 40 },
+      ]),
+    ],
   ],
   // FISHING SKILLS
   // Casting
@@ -156,16 +257,19 @@ export const requirements = new Map<string, Requirement[]>([
   // Hooking
   // Netting
   // Whaling
+  ["Casting", []],
+  ["Jigging", [new SkillRequirement([{ name: "Strength", requirement: 30 }])]],
   [
-    "Casting",
-    [new SkillRequirement([{ name: "Communication", requirement: 10 }])],
+    "Trolling",
+    [new SkillRequirement([{ name: "Concentration", requirement: 40 }])],
   ],
-  ["Jigging", [new SkillRequirement([{ name: "Casting", requirement: 10 }])]],
-  ["Trolling", [new SkillRequirement([{ name: "Jigging", requirement: 10 }])]],
-  ["Reeling", [new SkillRequirement([{ name: "Trolling", requirement: 10 }])]],
-  ["Hooking", [new SkillRequirement([{ name: "Reeling", requirement: 10 }])]],
-  ["Netting", [new SkillRequirement([{ name: "Hooking", requirement: 10 }])]],
-  ["Whaling", [new SkillRequirement([{ name: "Netting", requirement: 10 }])]],
+  ["Reeling", [new SkillRequirement([{ name: "Strength", requirement: 60 }])]],
+  ["Hooking", [new SkillRequirement([{ name: "Jigging", requirement: 40 }])]],
+  [
+    "Netting",
+    [new SkillRequirement([{ name: "Concentration", requirement: 120 }])],
+  ],
+  ["Whaling", [new SkillRequirement([{ name: "Strength", requirement: 250 }])]],
   // Boating Skills
   // Docking
   // Turning
@@ -173,22 +277,41 @@ export const requirements = new Map<string, Requirement[]>([
   // Sailing
   // Navigation
   // Stability
-  ["Docking", [new SkillRequirement([{ name: "Whaling", requirement: 10 }])]],
-  ["Turning", [new SkillRequirement([{ name: "Docking", requirement: 10 }])]],
-  ["Anchoring", [new SkillRequirement([{ name: "Turning", requirement: 10 }])]],
-  ["Sailing", [new SkillRequirement([{ name: "Anchoring", requirement: 10 }])]],
+  [
+    "Docking",
+    [
+      new SkillRequirement([
+        { name: "Concentration", requirement: 200 },
+        { name: "Intelligence", requirement: 200 },
+      ]),
+    ],
+  ],
+  [
+    "Turning",
+    [
+      new SkillRequirement([
+        { name: "Concentration", requirement: 320 },
+        { name: "Patience", requirement: 250 },
+      ]),
+    ],
+  ],
+  ["Anchoring", [new FishingRequirement([{ name: "Cod", requirement: 15 }])]],
+  [
+    "Sailing",
+    [new FishingRequirement([{ name: "Angle Fish", requirement: 10 }])],
+  ],
   [
     "Navigation",
-    [new SkillRequirement([{ name: "Sailing", requirement: 10 }])],
+    [new SkillRequirement([{ name: "Trolling", requirement: 400 }])],
   ],
   [
     "Stability",
-    [new SkillRequirement([{ name: "Navigation", requirement: 10 }])],
+    [new SkillRequirement([{ name: "Anchoring", requirement: 500 }])],
   ],
   ["Row Boat", [new CoinRequirement([{ name: "Coins", requirement: 500 }])]],
   [
     "Silver Bullet",
-    [new CoinRequirement([{ name: "Coins", requirement: 10000 }])],
+    [new CoinRequirement([{ name: "Coins", requirement: 1000 }])],
   ],
   ["Bass Boat", [new CoinRequirement([{ name: "Coins", requirement: 50000 }])]],
   ["Canoe", [new CoinRequirement([{ name: "Coins", requirement: 500000 }])]],
@@ -424,8 +547,8 @@ export const fishBaseData: Map<string, FishBaseData> = new Map(
       "Sun Fish",
       {
         name: "Sun Fish",
-        maxXp: 100,
-        income: 20,
+        maxXp: 50,
+        income: 5,
         effect: 0.01,
         description: "Fishing Pay",
         category: "lake",
@@ -436,7 +559,7 @@ export const fishBaseData: Map<string, FishBaseData> = new Map(
       {
         name: "Perch",
         maxXp: 100,
-        income: 50,
+        income: 9,
         effect: 0.01,
         description: "Jigging Xp",
         category: "lake",
@@ -446,8 +569,8 @@ export const fishBaseData: Map<string, FishBaseData> = new Map(
       "Bass",
       {
         name: "Bass",
-        maxXp: 100,
-        income: 200,
+        maxXp: 200,
+        income: 15,
         effect: 0.01,
         description: "Casting Xp",
         category: "lake",
@@ -457,8 +580,8 @@ export const fishBaseData: Map<string, FishBaseData> = new Map(
       "Trout",
       {
         name: "Trout",
-        maxXp: 100,
-        income: 500,
+        maxXp: 400,
+        income: 40,
         effect: 0.01,
         description: "Concentration Xp",
         category: "lake",
@@ -468,8 +591,8 @@ export const fishBaseData: Map<string, FishBaseData> = new Map(
       "Waleye",
       {
         name: "Waleye",
-        maxXp: 100,
-        income: 1000,
+        maxXp: 800,
+        income: 80,
         effect: 0.01,
         description: "Hooking Xp",
         category: "lake",
@@ -479,8 +602,8 @@ export const fishBaseData: Map<string, FishBaseData> = new Map(
       "Northern Pike",
       {
         name: "Northern Pike",
-        maxXp: 100,
-        income: 1500,
+        maxXp: 1600,
+        income: 150,
         effect: 0.01,
         description: "Trolling Xp",
         category: "lake",
@@ -490,8 +613,8 @@ export const fishBaseData: Map<string, FishBaseData> = new Map(
       "Lake Sturgeon",
       {
         name: "Lake Sturgeon",
-        maxXp: 100,
-        income: 2000,
+        maxXp: 3200,
+        income: 300,
         effect: 0.01,
         description: "Fishing Pay",
         category: "lake",
@@ -510,7 +633,7 @@ export const fishBaseData: Map<string, FishBaseData> = new Map(
       {
         name: "Pirana",
         maxXp: 100,
-        income: 30,
+        income: 5,
         effect: 0.01,
         description: "Ambition Xp",
         category: "river",
@@ -520,8 +643,8 @@ export const fishBaseData: Map<string, FishBaseData> = new Map(
       "Salmon",
       {
         name: "Salmon",
-        maxXp: 100,
-        income: 60,
+        maxXp: 1000,
+        income: 50,
         effect: 0.01,
         description: "Patience Xp",
         category: "river",
@@ -531,8 +654,8 @@ export const fishBaseData: Map<string, FishBaseData> = new Map(
       "Silver Drum",
       {
         name: "Silver Drum",
-        maxXp: 100,
-        income: 150,
+        maxXp: 10000,
+        income: 120,
         effect: 0.01,
         description: "Intelligence Xp",
         category: "river",
@@ -542,8 +665,8 @@ export const fishBaseData: Map<string, FishBaseData> = new Map(
       "Armoured Catfish",
       {
         name: "Armoured Catfish",
-        maxXp: 100,
-        income: 400,
+        maxXp: 100000,
+        income: 300,
         effect: 0.01,
         description: "Reeling Xp",
         category: "river",
@@ -553,7 +676,7 @@ export const fishBaseData: Map<string, FishBaseData> = new Map(
       "Electric Eel",
       {
         name: "Electric Eel",
-        maxXp: 100,
+        maxXp: 1000000,
         income: 1000,
         effect: 0.01,
         description: "River Xp",
@@ -564,8 +687,8 @@ export const fishBaseData: Map<string, FishBaseData> = new Map(
       "Pacu",
       {
         name: "Pacu",
-        maxXp: 100,
-        income: 2500,
+        maxXp: 7500000,
+        income: 300,
         effect: 0.01,
         description: "Concentration Xp",
         category: "river",
@@ -575,8 +698,8 @@ export const fishBaseData: Map<string, FishBaseData> = new Map(
       "Payara",
       {
         name: "Payara",
-        maxXp: 100,
-        income: 10000,
+        maxXp: 4 * Math.pow(10, 7),
+        income: 15000,
         effect: 0.01,
         description: "River Pay",
         category: "river",
@@ -598,8 +721,8 @@ export const fishBaseData: Map<string, FishBaseData> = new Map(
       "Cod",
       {
         name: "Cod",
-        maxXp: 100,
-        income: 50,
+        maxXp: 100000,
+        income: 100,
         effect: 0.01,
         description: "Hooking Xp",
         category: "ocean",
@@ -609,8 +732,8 @@ export const fishBaseData: Map<string, FishBaseData> = new Map(
       "Mackerel",
       {
         name: "Mackerel",
-        maxXp: 100,
-        income: 200,
+        maxXp: Math.pow(10, 6),
+        income: 1000,
         effect: 0.01,
         description: "Sailing Xp",
         category: "ocean",
@@ -620,8 +743,8 @@ export const fishBaseData: Map<string, FishBaseData> = new Map(
       "Angle Fish",
       {
         name: "Angle Fish",
-        maxXp: 100,
-        income: 600,
+        maxXp: Math.pow(10, 7),
+        income: 7500,
         effect: 0.01,
         description: "Payara Pay",
         category: "ocean",
@@ -631,8 +754,8 @@ export const fishBaseData: Map<string, FishBaseData> = new Map(
       "Grouper",
       {
         name: "Grouper",
-        maxXp: 100,
-        income: 1600,
+        maxXp: Math.pow(10, 8),
+        income: 50000,
         effect: 0.01,
         description: "Strength Xp",
         category: "ocean",
@@ -642,8 +765,8 @@ export const fishBaseData: Map<string, FishBaseData> = new Map(
       "Stingray",
       {
         name: "Stingray",
-        maxXp: 100,
-        income: 3500,
+        maxXp: Math.pow(10, 9),
+        income: 100000,
         effect: 0.01,
         description: "Reeling Xp",
         category: "ocean",
@@ -653,8 +776,8 @@ export const fishBaseData: Map<string, FishBaseData> = new Map(
       "Barracuda",
       {
         name: "Barracuda",
-        maxXp: 100,
-        income: 7500,
+        maxXp: Math.pow(10, 10),
+        income: 200000,
         effect: 0.01,
         description: "Trolling Xp",
         category: "ocean",
@@ -664,8 +787,8 @@ export const fishBaseData: Map<string, FishBaseData> = new Map(
       "Bluefin Tuna",
       {
         name: "Bluefin Tuna",
-        maxXp: 100,
-        income: 7500,
+        maxXp: Math.pow(10, 11),
+        income: 400000,
         effect: 0.01,
         description: "Patience Xp",
         category: "ocean",
@@ -675,8 +798,8 @@ export const fishBaseData: Map<string, FishBaseData> = new Map(
       "Blue Marlin",
       {
         name: "Blue Marlin",
-        maxXp: 100,
-        income: 17000,
+        maxXp: Math.pow(10, 12),
+        income: 800000,
         effect: 0.01,
         description: "Communication Xp",
         category: "ocean",
@@ -686,8 +809,8 @@ export const fishBaseData: Map<string, FishBaseData> = new Map(
       "Swordfish",
       {
         name: "Swordfish",
-        maxXp: 100,
-        income: 38000,
+        maxXp: Math.pow(10, 13),
+        income: 1600000,
         effect: 0.01,
         description: "Navigation Xp",
         category: "ocean",
@@ -697,8 +820,8 @@ export const fishBaseData: Map<string, FishBaseData> = new Map(
       "Shark",
       {
         name: "Shark",
-        maxXp: 100,
-        income: 100000,
+        maxXp: Math.pow(10, 13),
+        income: 2400000,
         effect: 0.01,
         description: "All Xp",
         category: "ocean",
@@ -708,8 +831,8 @@ export const fishBaseData: Map<string, FishBaseData> = new Map(
       "Whale",
       {
         name: "Whale",
-        maxXp: 100,
-        income: 500000,
+        maxXp: Math.pow(10, 13),
+        income: 3200000,
         effect: 0.01,
         description: "All Xp",
         category: "ocean",
@@ -1033,9 +1156,9 @@ export const itemBaseData: Map<string, ItemBaseData> = new Map([
     "Rod",
     {
       name: "Rod",
-      expense: 15,
+      expense: 10,
       effect: 1.5,
-      description: "Fishing Pay",
+      description: "Strength Xp",
       selected: false,
       upgradePrice: 200,
     },
@@ -1056,7 +1179,7 @@ export const itemBaseData: Map<string, ItemBaseData> = new Map([
     {
       name: "Net",
       expense: 200,
-      effect: 1.5,
+      effect: 2,
       description: "Fishing Xp",
       selected: false,
       upgradePrice: 3000,
@@ -1066,9 +1189,9 @@ export const itemBaseData: Map<string, ItemBaseData> = new Map([
     "Hook",
     {
       name: "Hook",
-      expense: 500,
-      effect: 1.5,
-      description: "Fishing Xp",
+      expense: 1000,
+      effect: 2,
+      description: "River Xp",
       selected: false,
       upgradePrice: 5000,
     },
@@ -1077,9 +1200,9 @@ export const itemBaseData: Map<string, ItemBaseData> = new Map([
     "Bait",
     {
       name: "Bait",
-      expense: 1000,
+      expense: 7500,
       effect: 1.5,
-      description: "Jigging Xp",
+      description: "All Xp",
       selected: false,
       upgradePrice: 8000,
     },
@@ -1088,9 +1211,9 @@ export const itemBaseData: Map<string, ItemBaseData> = new Map([
     "Ham Sandwich",
     {
       name: "Ham Sandwich",
-      expense: 5000,
-      effect: 1.5,
-      description: "All Xp",
+      expense: 50000,
+      effect: 3,
+      description: "Boating Xp",
       selected: false,
       upgradePrice: 10000,
     },
@@ -1099,9 +1222,9 @@ export const itemBaseData: Map<string, ItemBaseData> = new Map([
     "Pliers",
     {
       name: "Pliers",
-      expense: 30000,
-      effect: 1.5,
-      description: "Fishing Skill Xp",
+      expense: 1000000,
+      effect: 2,
+      description: "Skill Xp",
       selected: false,
       upgradePrice: 15000,
     },
@@ -1110,9 +1233,9 @@ export const itemBaseData: Map<string, ItemBaseData> = new Map([
     "Fish Finder",
     {
       name: "Fish Finder",
-      expense: 100000,
+      expense: Math.pow(10, 7),
       effect: 1.5,
-      description: "Lake Pay",
+      description: "Skill Xp",
       selected: false,
       upgradePrice: 20000,
     },
@@ -1121,7 +1244,7 @@ export const itemBaseData: Map<string, ItemBaseData> = new Map([
     "House",
     {
       name: "House",
-      expense: 400000,
+      expense: Math.pow(10, 8),
       effect: 3,
       description: "All Xp",
       selected: false,
