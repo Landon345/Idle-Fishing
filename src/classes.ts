@@ -91,7 +91,10 @@ export class Fishing extends Task {
 
   get income() {
     this.incomeMultipliers = getIncomeMultipliers(this);
-    return applyMultipliers(this.baseData.income, this.incomeMultipliers);
+    return (
+      applyMultipliers(this.baseData.income, this.incomeMultipliers) *
+      this.levelMultiplier
+    );
   }
 
   get effect() {
