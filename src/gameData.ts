@@ -188,17 +188,23 @@ export const requirements = new Map<string, Requirement[]>([
   ["Row Boat", [new CoinRequirement([{ name: "Coins", requirement: 500 }])]],
   [
     "Silver Bullet",
-    [new CoinRequirement([{ name: "Coins", requirement: 500 }])],
+    [new CoinRequirement([{ name: "Coins", requirement: 10000 }])],
   ],
-  ["Bass Boat", [new CoinRequirement([{ name: "Coins", requirement: 500 }])]],
-  ["Canoe", [new CoinRequirement([{ name: "Coins", requirement: 500 }])]],
-  ["River Skiff", [new CoinRequirement([{ name: "Coins", requirement: 500 }])]],
-  ["Airboat", [new CoinRequirement([{ name: "Coins", requirement: 500 }])]],
-  ["Sail Boat", [new CoinRequirement([{ name: "Coins", requirement: 500 }])]],
-  ["Yacht", [new CoinRequirement([{ name: "Coins", requirement: 500 }])]],
+  ["Bass Boat", [new CoinRequirement([{ name: "Coins", requirement: 50000 }])]],
+  ["Canoe", [new CoinRequirement([{ name: "Coins", requirement: 500000 }])]],
+  [
+    "River Skiff",
+    [new CoinRequirement([{ name: "Coins", requirement: 1000000 }])],
+  ],
+  ["Airboat", [new CoinRequirement([{ name: "Coins", requirement: 5000000 }])]],
+  [
+    "Sail Boat",
+    [new CoinRequirement([{ name: "Coins", requirement: 10000000 }])],
+  ],
+  ["Yacht", [new CoinRequirement([{ name: "Coins", requirement: 50000000 }])]],
   [
     "Whaling Ship",
-    [new CoinRequirement([{ name: "Coins", requirement: 500 }])],
+    [new CoinRequirement([{ name: "Coins", requirement: 500000000 }])],
   ],
   // ITEMS //
   // Rod
