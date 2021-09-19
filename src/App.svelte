@@ -46,7 +46,7 @@
   });
 
   const updateGame = () => {
-    update(data_value.paused);
+    update(data_value.paused, data_value.autoTrain, data_value.autoFish);
   };
   const masterInterval: number = window.setInterval(
     updateGame,

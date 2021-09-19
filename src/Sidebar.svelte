@@ -7,7 +7,7 @@
     getIncomeMultipliers,
     getTotalExpenses,
   } from "src/functions";
-  import { togglePause, GameData } from "src/gameData";
+  import { toggleTrain, togglePause, GameData, toggleFish } from "src/gameData";
 
   import Coins from "src/components/Coins.svelte";
   import XpBar from "src/components/XpBar.svelte";
@@ -95,5 +95,27 @@
       />
     {/if}
     <p class="text-lg text-gray-400">Current Skill</p>
+  </div>
+  <div class="m-3 flex flex-col text-white">
+    <div class="flex items-center mb-1">
+      <input
+        class="mr-4 h-6 w-6"
+        name="autoTrain"
+        type="checkbox"
+        on:change={toggleTrain}
+        checked={data_value.autoTrain}
+      />
+      <label for="autoTrain">Auto Train</label>
+    </div>
+    <div class="flex items-center">
+      <input
+        class="mr-4 h-6 w-6"
+        name="autoFish"
+        type="checkbox"
+        on:change={toggleFish}
+        checked={data_value.autoFish}
+      />
+      <label for="autoTrain">Auto Promote Fish</label>
+    </div>
   </div>
 </div>

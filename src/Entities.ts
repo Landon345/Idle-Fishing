@@ -78,6 +78,8 @@ export interface GameDataType {
   itemData: Map<string, Item>;
   requirements: Map<string, Requirement[]>;
   paused: boolean;
+  autoTrain: boolean;
+  autoFish: boolean;
 
   rebirthOneCount: number;
   rebirthTwoCount: number;

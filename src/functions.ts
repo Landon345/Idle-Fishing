@@ -188,6 +188,38 @@ export function formatNumber(number): string {
   return scaled.toFixed(2) + suffix;
 }
 
+export function lowestLevelSkill(data_value: GameDataType): Skill {
+  let xpDict = new Map<string, number>();
+  const skills = data_value.skillsData;
+  skills.forEach((s) => {
+    if (!needRequirements(data_value, s)) {
+      xpDict.set(s.name, s.level);
+    }
+  });
+
+  if (xpDict.size == 0) {
+    return skills.get("Strength");
+  }
+
+  let lowest = new Map([...xpDict.entries()].sort((a, b) => a[1] - b[1]));
+  return skills.get(lowest.entries().next().value[0]);
+}
+
+export function highestTierFish(data_value: GameDataType): Fishing {
+  const fish = data_value.fishingData;
+  let availableFish = new Map<string, Fishing>();
+  fish.forEach((f) => {
+    if (!needRequirements(data_value, f)) {
+      availableFish.set(f.name, f);
+    }
+  });
+  if (availableFish.size == 0) {
+    return fish.get("Sun Fish");
+  }
+  let highest = Array.from(availableFish.values()).pop();
+  return highest;
+}
+
 export function applyMultipliers(
   value: number,
   multipliers: { [key: string]: number }
