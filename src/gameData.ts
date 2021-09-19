@@ -572,7 +572,7 @@ export const updateSpeed = 20;
 
 export const baseLifespan = 365 * 70;
 
-export const baseGameSpeed = 4;
+export const baseGameSpeed = 10;
 
 export const permanentUnlocks = [];
 
