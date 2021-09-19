@@ -12,7 +12,12 @@ import {
   BoatRequirement,
 } from "./classes";
 
-import { applySpeed, getTotalExpenses } from "src/functions";
+import {
+  applySpeed,
+  getTotalExpenses,
+  highestTierFish,
+  lowestLevelSkill,
+} from "src/functions";
 
 import type {
   Bases,
@@ -365,6 +370,8 @@ export let GameData: Writable<GameDataType> = writable({
   boatData: new Map(),
   requirements,
   paused: false,
+  autoTrain: false,
+  autoFish: false,
 
   rebirthOneCount: 0,
   rebirthTwoCount: 0,
@@ -374,7 +381,11 @@ export let GameData: Writable<GameDataType> = writable({
   evil: 0,
 });
 
-export const update = (paused: boolean) => {
+export const update = (
+  paused: boolean,
+  autoTrain: boolean,
+  autoFish: boolean
+) => {
   if (paused) {
     return;
   }
@@ -382,6 +393,12 @@ export const update = (paused: boolean) => {
   updateCurrentFish();
   updateCurrentSkill();
   updateItemExpenses();
+  if (autoTrain) {
+    autoSetCurrentSkill();
+  }
+  if (autoFish) {
+    autoSetCurrentlyFishing();
+  }
 };
 export const getGameData = (): GameDataType => {
   let data_value;
@@ -444,7 +461,23 @@ export const updateCurrentFish = () => {
 
 export const setCurrentSkill = (skillKey: string) => {
   GameData.update((data) => {
-    return { ...data, currentSkill: data.skillsData.get(skillKey) };
+    let currentSkill = data.skillsData.get(skillKey);
+    if (data.autoTrain) {
+      currentSkill = lowestLevelSkill(data);
+    }
+    return { ...data, currentSkill };
+  });
+};
+export const autoSetCurrentSkill = () => {
+  GameData.update((data) => {
+    let currentSkill = lowestLevelSkill(data);
+    return { ...data, currentSkill };
+  });
+};
+export const autoSetCurrentlyFishing = () => {
+  GameData.update((data) => {
+    let currentlyFishing = highestTierFish(data);
+    return { ...data, currentlyFishing };
   });
 };
 
@@ -457,7 +490,6 @@ export const updateCurrentSkill = () => {
     return {
       ...data,
       skillsData: data.skillsData,
-      currentSkill: skill,
     };
   });
 };
@@ -517,6 +549,17 @@ export const rebirthReset = () => {
 export const hardReset = () => {
   window.localStorage.clear();
   window.location.reload();
+};
+
+export const toggleTrain = () => {
+  GameData.update((data: GameDataType) => {
+    return { ...data, autoTrain: !data.autoTrain };
+  });
+};
+export const toggleFish = () => {
+  GameData.update((data: GameDataType) => {
+    return { ...data, autoFish: !data.autoFish };
+  });
 };
 
 export let tempData = {
