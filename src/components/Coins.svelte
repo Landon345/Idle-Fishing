@@ -11,7 +11,9 @@
   });
 </script>
 
-<span class="flex justify-start text-lg items-center" class:text-2xl={large}>
+<span
+  class={`flex justify-start items-center ${large ? "text-2xl" : "text-lg"}`}
+>
   {#if negative}
     <p class="text-red-500 text-xl">-</p>
   {:else if negative == false}
