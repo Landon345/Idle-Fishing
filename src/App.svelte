@@ -23,8 +23,9 @@
     updateSpeed,
     togglePause,
     update,
+    setCurrentSkill,
+    setCurrentlyFishing,
   } from "./gameData";
-  import { onMount } from "svelte";
   import Sidebar from "src/Sidebar.svelte";
   import Reincarnation from "src/tabs/Reincarnation.svelte";
 
@@ -45,6 +46,23 @@
     coins = data.coins;
   });
 
+  createData(data_value.fishingData, fishBaseData);
+  createData(data_value.skillsData, skillBaseData);
+  createData(data_value.itemData, itemBaseData);
+  createData(data_value.boatData, boatBaseData);
+
+  loadGameData();
+
+  const setCurrents = () => {
+    if (!data_value.currentSkill) {
+      setCurrentSkill("Strength");
+    }
+    if (!data_value.currentlyFishing) {
+      setCurrentlyFishing("Sun Fish");
+    }
+  };
+
+  setCurrents();
   const updateGame = () => {
     update(data_value.paused, data_value.autoTrain, data_value.autoFish);
   };
@@ -60,13 +78,6 @@
   const selectTab = (selected: Tab) => {
     selectedTab = selected;
   };
-
-  createData(data_value.fishingData, fishBaseData);
-  createData(data_value.skillsData, skillBaseData);
-  createData(data_value.itemData, itemBaseData);
-  createData(data_value.boatData, boatBaseData);
-
-  loadGameData();
 </script>
 
 <main class="bg-gray-600 min-h-screen text-white">

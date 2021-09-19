@@ -64,7 +64,6 @@ export function applySkillData(skill: Skill): any {
   barInfo.xpPerDay = skill.xpGain;
   barInfo.xpLeft = skill.xpLeft;
   barInfo.maxLevel = skill.maxLevel;
-  console.log(`barInfo`, barInfo);
   return barInfo;
 }
 
@@ -567,8 +566,6 @@ export function loadGameData() {
     replaceSavedSkills(skillsData, GameDataSave.skillsData);
     replaceSavedItems(itemData, GameDataSave.itemData);
     replaceSavedBoats(boatData, GameDataSave.boatData);
-
-    console.log(`GameDataSave`, GameDataSave);
     setGameData(GameDataSave);
   }
 }

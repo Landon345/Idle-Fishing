@@ -409,13 +409,7 @@ export const getGameData = (): GameDataType => {
 };
 export const setGameData = (savedGameData) => {
   let skill = savedGameData.currentSkill;
-  if (!skill) {
-    skill = savedGameData.skillsData.get("Strength");
-  }
   let fish = savedGameData.currentlyFishing;
-  if (!fish) {
-    fish = savedGameData.fishingData.get("Sun Fish");
-  }
   GameData.set({
     ...savedGameData,
     currentSkill: new Skill(

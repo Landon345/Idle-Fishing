@@ -3,12 +3,7 @@
   import type { Skill } from "src/classes";
   import { GameData, setCurrentSkill } from "src/gameData";
   import XpBar from "src/components/XpBar.svelte";
-  import {
-    filtered,
-    formatNumber,
-    getRequiredString,
-    needRequirements,
-  } from "src/functions";
+  import { filtered, formatNumber, needRequirements } from "src/functions";
 
   let data_value: GameDataType;
   export let skills: Skill[] = [];
