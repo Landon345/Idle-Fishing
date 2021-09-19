@@ -89,36 +89,30 @@
       <div class="flex flex-row bg-gray-800 text-white justify-between">
         <div class="flex flex-row">
           <button
-            class="btn"
-            class:bg-blue-900={selectedTab == "skills"}
+            class={`btn ${selectedTab == "skills" && "bg-blue-900"}`}
             on:click={() => selectTab("skills")}>Skills</button
           >
           <button
-            class="btn"
-            class:bg-blue-900={selectedTab == "goneFishing"}
+            class={`btn ${selectedTab == "goneFishing" && "bg-blue-900"}`}
             on:click={() => selectTab("goneFishing")}>Gone Fishing</button
           >
           <button
-            class="btn"
-            class:bg-blue-900={selectedTab == "achievements"}
+            class={`btn ${selectedTab == "achievements" && "bg-blue-900"}`}
             on:click={() => selectTab("achievements")}>Achievements</button
           >
           <button
-            class="btn"
-            class:bg-blue-900={selectedTab == "shop"}
+            class={`btn ${selectedTab == "shop" && "bg-blue-900"}`}
             on:click={() => selectTab("shop")}>Shop</button
           >
           {#if data_value.day > 365 * 50}
             <button
-              class="btn"
-              class:bg-blue-900={selectedTab == "reincarnation"}
+              class={`btn ${selectedTab == "reincarnation" && "bg-blue-900"}`}
               on:click={() => selectTab("reincarnation")}>Reincarnation</button
             >
           {/if}
         </div>
         <button
-          class="btn"
-          class:bg-blue-900={selectedTab == "settings"}
+          class={`btn ${selectedTab == "settings" && "bg-blue-900"}`}
           on:click={() => selectTab("settings")}>Settings</button
         >
       </div>
