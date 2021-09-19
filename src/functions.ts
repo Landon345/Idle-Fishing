@@ -233,20 +233,25 @@ export function applyMultipliers(
 export const getIncomeMultipliers = (task: Task): { [key: string]: number } => {
   let multipliers = {};
   getGameData().fishingData.forEach((fish) => {
-    multipliers[fish.name] = kind(task, fish.baseData.description, fish.effect);
+    let effect = kind(task, fish.baseData.description, fish.effect);
+    if (effect != 1) {
+      multipliers[fish.name] = effect;
+    }
   });
   getGameData().skillsData.forEach((skill) => {
-    multipliers[skill.name] = kind(
-      task,
-      skill.baseData.description,
-      skill.effect
-    );
+    let effect = kind(task, skill.baseData.description, skill.effect);
+    if (effect != 1) {
+      multipliers[skill.name] = effect;
+    }
   });
   getGameData().itemData.forEach((item) => {
-    multipliers[item.name] = kind(task, item.baseData.description, item.effect);
+    let effect = kind(task, item.baseData.description, item.effect);
+    if (effect != 1) {
+      multipliers[item.name] = effect;
+    }
   });
 
-  function kind(task: Task, description: Description, effect: number) {
+  function kind(task: Task, description: Description, effect: number): number {
     switch (description) {
       case "Fishing Pay":
         return effect;
@@ -280,17 +285,22 @@ export const getIncomeMultipliers = (task: Task): { [key: string]: number } => {
 export const getXpMultipliers = (task: Task): { [key: string]: number } => {
   let multipliers = {};
   getGameData().fishingData.forEach((fish) => {
-    multipliers[fish.name] = kind(task, fish.baseData.description, fish.effect);
+    let effect = kind(task, fish.baseData.description, fish.effect);
+    if (effect != 1) {
+      multipliers[fish.name] = effect;
+    }
   });
   getGameData().skillsData.forEach((skill) => {
-    multipliers[skill.name] = kind(
-      task,
-      skill.baseData.description,
-      skill.effect
-    );
+    let effect = kind(task, skill.baseData.description, skill.effect);
+    if (effect != 1) {
+      multipliers[skill.name] = effect;
+    }
   });
   getGameData().itemData.forEach((item) => {
-    multipliers[item.name] = kind(task, item.baseData.description, item.effect);
+    let effect = kind(task, item.baseData.description, item.effect);
+    if (effect != 1) {
+      multipliers[item.name] = effect;
+    }
   });
   function kind(task: Task, description: string, effect: number) {
     switch (description) {
