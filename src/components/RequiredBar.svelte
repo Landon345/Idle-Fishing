@@ -1,27 +1,23 @@
 <script lang="ts">
-  import type { GameDataType } from "src/Entities";
-  import type { Requirement } from "src/classes";
-  import { GameData } from "src/gameData";
+  import type { Requirement } from "src/gameData.svelte";
+  import { gameState } from "src/gameData.svelte";
   import Coins from "src/components/Coins.svelte";
   import { daysToYears } from "src/functions";
-  import { beforeUpdate } from "svelte";
 
-  export let taskOrItem: any;
-  let data_value: GameDataType;
-  GameData.subscribe((data) => {
-    data_value = data;
-  });
-  let reqs: Requirement[] = data_value.requirements.get(taskOrItem.name);
-  beforeUpdate(() => {
-    reqs = data_value.requirements.get(taskOrItem.name);
-  });
+  interface Props {
+    taskOrItem: any;
+  }
 
-  const taskString = (requirement: any, type) => {
+  let { taskOrItem }: Props = $props();
+
+  const reqs = $derived(gameState.requirements.get(taskOrItem.name) as Requirement[]);
+
+  const taskString = (requirement: any, type: string) => {
     let name = requirement.name;
     let levelNow =
       type == "skill"
-        ? data_value.skillsData.get(name).level
-        : data_value.fishingData.get(name).level;
+        ? gameState.skillsData.get(name)!.level
+        : gameState.fishingData.get(name)!.level;
 
     return `${name} level ${levelNow}/${requirement.requirement} `;
   };
@@ -30,8 +26,8 @@
   };
 </script>
 
-<div class="w-full mb-8 flex justify-between text-lg">
-  <span class="font-bold">Required: </span>
+<div class="mb-8 flex w-full flex-wrap items-center gap-x-2 gap-y-1 text-base text-slate-300">
+  <span class="font-bold text-slate-200">Required: </span>
   {#each reqs as req}
     {#each req.requirements as sameTypeReq}
       {#if ["fishing", "skill"].includes(req.type)}
@@ -41,8 +37,8 @@
       {:else if req.type == "boat"}
         <span>{sameTypeReq.name}</span>
       {:else if req.type == "coins"}
-        <span class="w-1/4">
-          <Coins amount={sameTypeReq.requirement} large={true} />
+        <span>
+          <Coins amount={sameTypeReq.requirement as number} large={true} />
         </span>
       {:else}
         <span>Unknown</span>

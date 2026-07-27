@@ -1,7 +1,7 @@
-var ghpages = require("gh-pages");
+import ghpages from "gh-pages";
 
 ghpages.publish(
-  "public", // path to public directory
+  "dist", // path to build output directory
   {
     branch: "gh-pages",
     repo: "https://github.com/Landon345/Idle-Fishing", // Update to point to your repository

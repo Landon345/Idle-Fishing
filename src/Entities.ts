@@ -1,4 +1,5 @@
-import type { Fishing, Item, Boat, Skill, Requirement } from "src/classes";
+import type { Fishing, Item, Boat, Skill } from "src/classes.svelte";
+import type { Requirement } from "src/gameData.svelte";
 
 export type Description =
   | "All Xp"
@@ -63,7 +64,7 @@ export interface SkillBaseData {
 
 export interface RequirementObj {
   name: string;
-  requirement: number;
+  requirement: number | boolean;
 }
 
 export type Bases = SkillBaseData | FishBaseData | BoatBaseData | ItemBaseData;

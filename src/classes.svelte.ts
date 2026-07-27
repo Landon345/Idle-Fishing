@@ -1,12 +1,11 @@
-import type { Description, RequirementObj } from "src/Entities";
+import type { Description } from "src/Entities";
 import {
   applySpeed,
-  daysToYears,
   applyMultipliers,
   getXpMultipliers,
   getIncomeMultipliers,
 } from "./functions";
-import { getGameData, subtractCoins } from "./gameData";
+import { getGameData, subtractCoins } from "./gameData.svelte";
 
 export class Task {
   baseData: {
@@ -18,9 +17,13 @@ export class Task {
     category: string;
   };
   name: string;
-  level: number;
-  maxLevel: number;
-  xp: number;
+  level = $state(0);
+  maxLevel = $state(0);
+  xp = $state(0);
+  // Recomputed fresh on every read inside the `xpGain` getter below, so this
+  // is a plain cache field, not `$state`: reassigning it from a getter that
+  // runs during rendering would otherwise trip Svelte's "unsafe mutation
+  // during derivation" guard.
   xpMultipliers: { [key: string]: number }; // {"Book": 1.5, "Concentration": 1.02}
 
   constructor(baseData, level = 0, maxLevel = 0, xp = 0, xpMultipliers = {}) {
@@ -57,8 +60,8 @@ export class Task {
     return ((this.maxXp - this.xpLeft) / this.maxXp) * 100;
   }
 
-  increaseXp() {
-    this.xp += applySpeed(this.xpGain);
+  increaseXp(deltaSeconds: number) {
+    this.xp += applySpeed(this.xpGain, deltaSeconds);
     if (this.xp >= this.maxXp) {
       let excess = this.xp - this.maxXp;
       while (excess >= 0) {
@@ -67,6 +70,19 @@ export class Task {
       }
       this.xp = this.maxXp + excess;
     }
+  }
+
+  // `$state` class fields compile to non-enumerable accessors, so
+  // JSON.stringify silently drops level/maxLevel/xp without this.
+  toJSON() {
+    return {
+      baseData: this.baseData,
+      name: this.name,
+      level: this.level,
+      maxLevel: this.maxLevel,
+      xp: this.xp,
+      xpMultipliers: this.xpMultipliers,
+    };
   }
 }
 
@@ -107,6 +123,10 @@ export class Fishing extends Task {
     let text = "x" + String(this.effect.toFixed(2)) + " " + description;
     return text;
   }
+
+  toJSON() {
+    return { ...super.toJSON(), incomeMultipliers: this.incomeMultipliers };
+  }
 }
 
 export class Skill extends Task {
@@ -134,10 +154,10 @@ export class Item {
     expense: number;
     selected: boolean;
     upgradePrice: number;
-  };
-  level: number;
+  } = $state(undefined as any);
+  level = $state(0);
   name: string;
-  expenseMultipliers: { [key: string]: number };
+  expenseMultipliers: { [key: string]: number } = $state({});
   constructor(baseData, expenseMultipliers = {}, level = 0) {
     this.baseData = baseData;
     this.name = baseData.name;
@@ -178,16 +198,29 @@ export class Item {
   }
 
   upgrade() {
-    if (this.baseData.upgradePrice <= getGameData().coins) {
+    if (this.upgradePrice <= getGameData().coins) {
       subtractCoins(this.upgradePrice);
       this.level += 1;
     }
+  }
+
+  // `$state` class fields compile to non-enumerable accessors, so
+  // JSON.stringify silently drops baseData/level without this.
+  toJSON() {
+    return {
+      baseData: this.baseData,
+      name: this.name,
+      level: this.level,
+      expenseMultipliers: this.expenseMultipliers,
+    };
   }
 }
 
 export class Boat {
   name: string;
-  baseData: { name: string; price: number; bought: boolean };
+  baseData: { name: string; price: number; bought: boolean } = $state(
+    undefined as any
+  );
   constructor(baseData) {
     this.baseData = baseData;
     this.name = baseData.name;
@@ -206,97 +239,15 @@ export class Boat {
       this.baseData.bought = true;
     }
   }
-}
 
-export class Requirement {
-  requirements: RequirementObj[];
-  completed: boolean;
-  type: string;
-  constructor(requirements, type) {
-    this.requirements = requirements;
-    this.completed = false;
-    this.type = type;
-  }
-  getCondition(requirement) {
-    return false;
-  }
-
-  isCompleted() {
-    if (this.completed) {
-      return true;
-    }
-    for (let requirement of this.requirements) {
-      if (!this.getCondition(requirement)) {
-        return false;
-      }
-    }
-    this.completed = true;
-    return true;
+  // `$state` class fields compile to non-enumerable accessors, so
+  // JSON.stringify silently drops baseData without this.
+  toJSON() {
+    return { baseData: this.baseData, name: this.name };
   }
 }
 
-export class FishingRequirement extends Requirement {
-  constructor(requirements: RequirementObj[]) {
-    super(requirements, "fishing");
-  }
-  getCondition(requirement) {
-    return (
-      getGameData().fishingData.get(requirement.name).level >=
-      requirement.requirement
-    );
-  }
-}
-
-export class SkillRequirement extends Requirement {
-  constructor(requirements) {
-    super(requirements, "skill");
-  }
-  getCondition(requirement) {
-    return (
-      getGameData().skillsData.get(requirement.name).level >=
-      requirement.requirement
-    );
-  }
-}
-
-export class CoinRequirement extends Requirement {
-  constructor(requirements) {
-    super(requirements, "coins");
-  }
-
-  getCondition(requirement) {
-    return getGameData().coins >= requirement.requirement;
-  }
-}
-
-export class AgeRequirement extends Requirement {
-  constructor(requirements) {
-    super(requirements, "age");
-  }
-
-  getCondition(requirement) {
-    return daysToYears(getGameData().day) >= requirement.requirement;
-  }
-}
-export class BoatRequirement extends Requirement {
-  constructor(requirements) {
-    super(requirements, "boat");
-  }
-
-  getCondition(requirement) {
-    return (
-      getGameData().boatData.get(requirement.name).bought ==
-      requirement.requirement
-    );
-  }
-}
-
-export class EvilRequirement extends Requirement {
-  constructor(requirements) {
-    super(requirements, "evil");
-  }
-
-  getCondition(requirement) {
-    return getGameData().evil >= requirement.requirement;
-  }
-}
+// Requirement classes live in gameData.svelte.ts: they're constructed eagerly
+// at module-evaluation time (inside the `requirements` map literal), so they
+// can't depend on a class declared in a module that in turn imports back from
+// here without risking a "cannot access before initialization" cycle.

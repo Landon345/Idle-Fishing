@@ -1,19 +1,6 @@
 import {
-  FishingRequirement,
-  SkillRequirement,
-  EvilRequirement,
-  CoinRequirement,
-  AgeRequirement,
-  Fishing,
-  Requirement,
-  Skill,
-  Task,
-  Item,
-  BoatRequirement,
-} from "./classes";
-
-import {
   applySpeed,
+  daysToYears,
   getTotalExpenses,
   highestTierFish,
   lowestLevelSkill,
@@ -25,11 +12,104 @@ import type {
   FishBaseData,
   GameDataType,
   ItemBaseData,
+  RequirementObj,
   SkillBaseData,
 } from "src/Entities";
 
-import { writable, Writable } from "svelte/store";
-import { trusted } from "svelte/internal";
+// These classes are constructed eagerly below (inside the `requirements` map
+// literal), so they're defined here rather than in classes.svelte.ts: that
+// module imports back from this one, and a class from a module still mid­-
+// evaluation can't be used yet ("cannot access before initialization").
+export class Requirement {
+  requirements: RequirementObj[];
+  // Not `$state`: `isCompleted()` below caches this as a side effect of a
+  // read that regularly happens during template rendering (via
+  // `needRequirements`/`filtered`), and mutating `$state` mid-render throws
+  // "unsafe mutation" — repeatedly, once per newly-satisfied requirement,
+  // which is a real source of the reported slowdown over long sessions.
+  completed = false;
+  type: string;
+  constructor(requirements: RequirementObj[], type: string) {
+    this.requirements = requirements;
+    this.completed = false;
+    this.type = type;
+  }
+  getCondition(requirement: RequirementObj) {
+    return false;
+  }
+
+  isCompleted() {
+    if (this.completed) {
+      return true;
+    }
+    for (let requirement of this.requirements) {
+      if (!this.getCondition(requirement)) {
+        return false;
+      }
+    }
+    this.completed = true;
+    return true;
+  }
+}
+
+export class FishingRequirement extends Requirement {
+  constructor(requirements: RequirementObj[]) {
+    super(requirements, "fishing");
+  }
+  getCondition(requirement: RequirementObj) {
+    return gameState.fishingData.get(requirement.name)!.level >= (requirement.requirement as number);
+  }
+}
+
+export class SkillRequirement extends Requirement {
+  constructor(requirements: RequirementObj[]) {
+    super(requirements, "skill");
+  }
+  getCondition(requirement: RequirementObj) {
+    return gameState.skillsData.get(requirement.name)!.level >= (requirement.requirement as number);
+  }
+}
+
+export class CoinRequirement extends Requirement {
+  constructor(requirements: RequirementObj[]) {
+    super(requirements, "coins");
+  }
+
+  getCondition(requirement: RequirementObj) {
+    return gameState.coins >= (requirement.requirement as number);
+  }
+}
+
+export class AgeRequirement extends Requirement {
+  constructor(requirements: RequirementObj[]) {
+    super(requirements, "age");
+  }
+
+  getCondition(requirement: RequirementObj) {
+    return daysToYears(gameState.day) >= (requirement.requirement as number);
+  }
+}
+
+export class BoatRequirement extends Requirement {
+  constructor(requirements: RequirementObj[]) {
+    super(requirements, "boat");
+  }
+
+  getCondition(requirement: RequirementObj) {
+    return gameState.boatData.get(requirement.name)!.bought == requirement.requirement;
+  }
+}
+
+export class EvilRequirement extends Requirement {
+  constructor(requirements: RequirementObj[]) {
+    super(requirements, "evil");
+  }
+
+  getCondition(requirement: RequirementObj) {
+    return gameState.evil >= (requirement.requirement as number);
+  }
+}
+
 export const requirements = new Map<string, Requirement[]>([
   ["Sun Fish", []],
   ["Perch", [new FishingRequirement([{ name: "Sun Fish", requirement: 10 }])]],
@@ -361,7 +441,7 @@ export const requirements = new Map<string, Requirement[]>([
   ["House", [new CoinRequirement([{ name: "Coins", requirement: 10000000 }])]],
 ]);
 
-export let GameData: Writable<GameDataType> = writable({
+export const gameState: GameDataType = $state({
   day: 0,
   coins: 0,
   fishingData: new Map(),
@@ -384,15 +464,16 @@ export let GameData: Writable<GameDataType> = writable({
 export const update = (
   paused: boolean,
   autoTrain: boolean,
-  autoFish: boolean
+  autoFish: boolean,
+  deltaSeconds: number
 ) => {
   if (paused) {
     return;
   }
-  increaseDay();
-  updateCurrentFish();
-  updateCurrentSkill();
-  updateItemExpenses();
+  increaseDay(deltaSeconds);
+  updateCurrentFish(deltaSeconds);
+  updateCurrentSkill(deltaSeconds);
+  updateItemExpenses(deltaSeconds);
   if (autoTrain) {
     autoSetCurrentSkill();
   }
@@ -400,150 +481,102 @@ export const update = (
     autoSetCurrentlyFishing();
   }
 };
-export const getGameData = (): GameDataType => {
-  let data_value;
-  GameData.subscribe((data) => {
-    data_value = data;
-  });
-  return data_value;
-};
-export const setGameData = (savedGameData) => {
-  let skill = savedGameData.currentSkill;
-  let fish = savedGameData.currentlyFishing;
-  GameData.set({
-    ...savedGameData,
-    currentSkill: new Skill(
-      skill.baseData,
-      skill.level,
-      skill.maxLevel,
-      skill.xp,
-      skill.xpMultipliers
-    ),
-    currentlyFishing: new Fishing(
-      fish.baseData,
-      fish.level,
-      fish.maxLevel,
-      fish.xp,
-      fish.xpMultipliers
-    ),
-  });
+export const getGameData = (): GameDataType => gameState;
+
+export const setGameData = (savedGameData: GameDataType) => {
+  // Point current*/fishingData+skillsData at the *same* instance rather than
+  // a separately-constructed copy: previously these were distinct objects
+  // that both accrued xp independently every tick, silently doubling
+  // progress and letting the two copies drift apart after a reload.
+  let skillName: string = (savedGameData.currentSkill as any)?.name;
+  let fishName: string = (savedGameData.currentlyFishing as any)?.name;
+  Object.assign(gameState, savedGameData);
+  gameState.currentSkill = gameState.skillsData.get(skillName)!;
+  gameState.currentlyFishing = gameState.fishingData.get(fishName)!;
 };
 
-export const increaseDay = () => {
-  GameData.update((data: GameDataType) => {
-    return { ...data, day: data.day + applySpeed(1) };
-  });
+export const increaseDay = (deltaSeconds: number) => {
+  gameState.day += applySpeed(1, deltaSeconds);
 };
 export const togglePause = () => {
-  GameData.update((data: GameDataType) => {
-    return { ...data, paused: !data.paused };
-  });
+  gameState.paused = !gameState.paused;
 };
 export const setCurrentlyFishing = (fishingKey: string) => {
-  GameData.update((data) => {
-    return { ...data, currentlyFishing: data.fishingData.get(fishingKey) };
-  });
+  gameState.currentlyFishing = gameState.fishingData.get(fishingKey)!;
 };
-export const updateCurrentFish = () => {
-  GameData.update((data) => {
-    let fish = data.currentlyFishing || data.fishingData.get("Sun Fish");
-    data.fishingData.get(fish.name).increaseXp();
-    fish.increaseXp();
+export const updateCurrentFish = (deltaSeconds: number) => {
+  let fish = gameState.currentlyFishing || gameState.fishingData.get("Sun Fish")!;
+  // Always resolve to the single canonical instance stored in fishingData
+  // (currentlyFishing can otherwise end up as a distinct object after a
+  // reload), and increase its xp exactly once.
+  fish = gameState.fishingData.get(fish.name)!;
+  fish.increaseXp(deltaSeconds);
 
-    return {
-      ...data,
-      fishingData: data.fishingData,
-      currentlyFishing: fish,
-      coins: (data.coins += applySpeed(fish.income)),
-    };
-  });
+  gameState.currentlyFishing = fish;
+  gameState.coins += applySpeed(fish.income, deltaSeconds);
 };
 
 export const setCurrentSkill = (skillKey: string) => {
-  GameData.update((data) => {
-    let currentSkill = data.skillsData.get(skillKey);
-    if (data.autoTrain) {
-      currentSkill = lowestLevelSkill(data);
-    }
-    return { ...data, currentSkill };
-  });
+  let currentSkill = gameState.skillsData.get(skillKey)!;
+  if (gameState.autoTrain) {
+    currentSkill = lowestLevelSkill(gameState);
+  }
+  gameState.currentSkill = currentSkill;
 };
 export const autoSetCurrentSkill = () => {
-  GameData.update((data) => {
-    let currentSkill = lowestLevelSkill(data);
-    return { ...data, currentSkill };
-  });
+  gameState.currentSkill = lowestLevelSkill(gameState);
 };
 export const autoSetCurrentlyFishing = () => {
-  GameData.update((data) => {
-    let currentlyFishing = highestTierFish(data);
-    return { ...data, currentlyFishing };
-  });
+  gameState.currentlyFishing = highestTierFish(gameState);
 };
 
-export const updateCurrentSkill = () => {
-  GameData.update((data) => {
-    let skill = data.currentSkill || data.skillsData.get("Strength");
-    data.skillsData.get(skill.name).increaseXp();
-    skill.increaseXp();
-
-    return {
-      ...data,
-      skillsData: data.skillsData,
-    };
-  });
+export const updateCurrentSkill = (deltaSeconds: number) => {
+  let skill = gameState.currentSkill || gameState.skillsData.get("Strength")!;
+  // Same canonical-instance fix as updateCurrentFish above.
+  skill = gameState.skillsData.get(skill.name)!;
+  skill.increaseXp(deltaSeconds);
+  gameState.currentSkill = skill;
 };
 
 export const subtractCoins = (amount: number) => {
-  GameData.update((data) => {
-    return { ...data, coins: (data.coins -= amount) };
-  });
+  gameState.coins -= amount;
 };
 
-export const updateItemExpenses = () => {
-  GameData.update((data) => {
-    if (data.coins <= 0) {
-      data.itemData.forEach((item) => item.deselect());
-      return { ...data, coins: 0, itemData: data.itemData };
-    }
-    return {
-      ...data,
-      coins: (data.coins -= applySpeed(getTotalExpenses(data))),
-    };
-  });
+export const updateItemExpenses = (deltaSeconds: number) => {
+  if (gameState.coins <= 0) {
+    gameState.itemData.forEach((item) => item.deselect());
+    gameState.coins = 0;
+    return;
+  }
+  gameState.coins -= applySpeed(getTotalExpenses(gameState), deltaSeconds);
 };
 
 export const rebirthReset = () => {
-  GameData.update((data) => {
-    data.fishingData.forEach((fish) => {
-      if (fish.level > fish.maxLevel) {
-        fish.maxLevel = fish.level;
-      }
-      fish.level = 0;
-      fish.xp = 0;
-    });
-    data.skillsData.forEach((skill) => {
-      if (skill.level > skill.maxLevel) {
-        skill.maxLevel = skill.level;
-      }
-      skill.level = 0;
-      skill.xp = 0;
-    });
-    data.boatData.forEach((boat) => {
-      boat.baseData.bought = false;
-    });
-    data.itemData.forEach((item) => {
-      item.level = 0;
-      item.deselect();
-    });
-    return {
-      ...data,
-      coins: 0,
-      day: 365 * 14,
-      currentlyFishing: data.fishingData.get("Black Drum"),
-      currentSkill: data.skillsData.get("Strength"),
-    };
+  gameState.fishingData.forEach((fish) => {
+    if (fish.level > fish.maxLevel) {
+      fish.maxLevel = fish.level;
+    }
+    fish.level = 0;
+    fish.xp = 0;
   });
+  gameState.skillsData.forEach((skill) => {
+    if (skill.level > skill.maxLevel) {
+      skill.maxLevel = skill.level;
+    }
+    skill.level = 0;
+    skill.xp = 0;
+  });
+  gameState.boatData.forEach((boat) => {
+    boat.baseData.bought = false;
+  });
+  gameState.itemData.forEach((item) => {
+    item.level = 0;
+    item.deselect();
+  });
+  gameState.coins = 0;
+  gameState.day = 365 * 14;
+  gameState.currentlyFishing = gameState.fishingData.get("Sun Fish")!;
+  gameState.currentSkill = gameState.skillsData.get("Strength")!;
 };
 
 export const hardReset = () => {
@@ -551,30 +584,9 @@ export const hardReset = () => {
   window.location.reload();
 };
 
-export const toggleTrain = () => {
-  GameData.update((data: GameDataType) => {
-    return { ...data, autoTrain: !data.autoTrain };
-  });
-};
-export const toggleFish = () => {
-  GameData.update((data: GameDataType) => {
-    return { ...data, autoFish: !data.autoFish };
-  });
-};
-
-export let tempData = {
-  requirements: {},
-};
-
-export let skillWithLowestMaxXp = null;
-
-export const updateSpeed = 20;
-
 export const baseLifespan = 365 * 70;
 
 export const baseGameSpeed = 10;
-
-export const permanentUnlocks = [];
 
 export const fishBaseData: Map<string, FishBaseData> = new Map(
   // Lake
@@ -1172,16 +1184,6 @@ export const boatBaseData: Map<string, BoatBaseData> = new Map([
       bought: false,
     },
   ],
-  // BOATS //
-  // Row Boat
-  // Silver Bullet
-  // Bass Boat
-  // Canoe
-  // River Skiff
-  // Airboat
-  // Sail Boat
-  // Yacht
-  // Whaling Ship
 ]);
 
 export const itemBaseData: Map<string, ItemBaseData> = new Map([
@@ -1296,20 +1298,16 @@ export const itemBaseData: Map<string, ItemBaseData> = new Map([
   ],
 ]);
 
-export const fishCategories = {
-  lake: ["Sun Fish", "Perch"],
-  river: ["Trout", "P"],
-  ocean: ["Cod", "Mackerel"],
-};
+export const fishCategories: { [category: string]: string[] } = {};
+fishBaseData.forEach((base) => {
+  (fishCategories[base.category] ??= []).push(base.name);
+});
 
-export const skillCategories = {
-  fundamentals: ["Strength", "Concentration"],
-  fishing: [],
-  boating: [],
-};
+export const skillCategories: { [category: string]: string[] } = {};
+skillBaseData.forEach((base) => {
+  (skillCategories[base.category] ??= []).push(base.name);
+});
 
 export const itemCategories = {};
 
 export const units = ["", "k", "M", "B", "T", "q", "Q", "Sx", "Sp", "Oc"];
-
-export const jobTabButton = document.getElementById("jobTabButton");

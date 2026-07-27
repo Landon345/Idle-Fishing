@@ -1,16 +1,12 @@
 <script lang="ts">
-  import type { GameDataType } from "src/Entities";
   import ProgressTable from "src/components/ProgressTable.svelte";
-  import type { Fishing } from "src/classes";
-  import { GameData, fishCategories } from "src/gameData";
+  import type { Fishing } from "src/classes.svelte";
+  import { gameState, fishCategories } from "src/gameData.svelte";
   import FishBars from "src/components/FishBars.svelte";
-  import { onMount } from "svelte";
-  import { filtered, getRequiredString, needRequirements } from "src/functions";
+  import { filtered, needRequirements } from "src/functions";
   import RequiredBar from "src/components/RequiredBar.svelte";
 
-  let data_value: GameDataType;
-  let fishingData;
-  let commonHeaders: string[] = [
+  const commonHeaders: string[] = [
     "Level",
     "Income/day",
     "Effect",
@@ -18,40 +14,40 @@
     "Xp left",
     "Max Level",
   ];
-  let allHeaders: string[][] = [[]];
 
-  onMount(() => {
-    Object.keys(fishCategories).forEach((key) => {
-      allHeaders.push([key, ...commonHeaders]);
-    });
-  });
+  const allHeaders: string[][] = Object.keys(fishCategories).map((key) => [
+    key,
+    ...commonHeaders,
+  ]);
 
-  GameData.subscribe((data) => {
-    data_value = data;
-  });
-
-  const getAllFish = (
-    fishingData: Map<string, Fishing>,
-    cateogry: string
-  ): Fishing[] => {
-    let fishArr = [];
+  const getAllFish = (fishingData: Map<string, Fishing>, category: string): Fishing[] => {
+    let fishArr: Fishing[] = [];
     fishingData.forEach((fish) => {
-      if (fish.baseData.category == cateogry) {
+      if (fish.baseData.category == category) {
         fishArr.push(fish);
       }
     });
     return fishArr;
   };
+
+  // Computed once per category instead of separately for the bars and the
+  // required-progress row below it (filtered()/getAllFish() are O(n) scans).
+  const categories = $derived(
+    allHeaders.map((headers) => {
+      const allFish = getAllFish(gameState.fishingData, headers[0]);
+      return { headers, allFish, visible: filtered(gameState, allFish) };
+    })
+  );
 </script>
 
-<div class="w-full h-full bg-gray-700 p-2 mt-2">
-  {#each allHeaders as headers}
-    <div class="mb-3">
+<div class="flex w-full flex-col gap-4 p-2">
+  {#each categories as { headers, allFish, visible }}
+    <div>
       <ProgressTable {headers}>
-        <FishBars allFish={getAllFish(data_value.fishingData, headers[0])} />
+        <FishBars {allFish} />
       </ProgressTable>
-      {#each filtered(data_value, getAllFish(data_value.fishingData, headers[0])) as fish, idx}
-        {#if needRequirements(data_value, fish)}
+      {#each visible as fish}
+        {#if needRequirements(gameState, fish)}
           <RequiredBar taskOrItem={fish} />
         {/if}
       {/each}

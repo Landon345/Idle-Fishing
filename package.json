@@ -1,36 +1,24 @@
 {
-  "name": "svelte-app",
-  "version": "1.0.0",
+  "name": "idle-fishing",
+  "version": "2.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
-    "build": "rollup -c",
-    "dev": "rollup -c -w",
-    "start": "sirv public --no-clear -p 5001",
-    "check": "svelte-check --tsconfig ./tsconfig.json"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "deploy": "npm run build && node gh-pages.js"
   },
   "devDependencies": {
-    "@rollup/plugin-commonjs": "^17.0.0",
-    "@rollup/plugin-node-resolve": "^11.0.0",
-    "@rollup/plugin-typescript": "^8.0.0",
-    "@tsconfig/svelte": "^2.0.0",
-    "rollup": "^2.3.4",
-    "rollup-plugin-css-only": "^3.1.0",
-    "rollup-plugin-livereload": "^2.0.0",
-    "rollup-plugin-svelte": "^7.0.0",
-    "rollup-plugin-terser": "^7.0.0",
-    "svelte": "^3.0.0",
-    "svelte-check": "^2.0.0",
-    "svelte-preprocess": "^4.0.0",
-    "tslib": "^2.0.0",
-    "typescript": "^4.4.2"
-  },
-  "dependencies": {
-    "@rollup/plugin-alias": "^3.1.5",
-    "autoprefixer": "^9.8.6",
-    "gh-pages": "^3.2.3",
-    "postcss": "^7.0.36",
-    "progressbar.js": "^1.1.0",
-    "sirv-cli": "^1.0.0",
-    "tailwindcss": "npm:@tailwindcss/postcss7-compat@^2.2.7"
+    "@sveltejs/vite-plugin-svelte": "^7.2.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "@tsconfig/svelte": "^5.0.8",
+    "gh-pages": "^6.3.0",
+    "svelte": "^5.56.8",
+    "svelte-check": "^4.7.3",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5.9.3",
+    "vite": "^8.1.5"
   }
 }

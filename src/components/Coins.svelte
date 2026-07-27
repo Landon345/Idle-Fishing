@@ -1,32 +1,31 @@
 <script lang="ts">
   import { coinAmounts } from "src/functions";
-  import { beforeUpdate } from "svelte";
 
-  export let amount: number;
-  export let large: boolean = false;
-  export let negative: boolean = undefined;
-  let coins;
-  beforeUpdate(() => {
-    coins = coinAmounts(amount);
-  });
+  interface Props {
+    amount: number;
+    large?: boolean;
+    negative?: boolean;
+  }
+
+  let { amount, large = false, negative = undefined }: Props = $props();
+
+  const coins = $derived(coinAmounts(amount));
 </script>
 
-<span
-  class={`flex justify-start items-center ${large ? "text-2xl" : "text-lg"}`}
->
+<span class={`flex items-center justify-start gap-0.5 ${large ? "text-2xl" : "text-lg"}`}>
   {#if negative}
-    <p class="text-red-500 text-xl">-</p>
+    <span class="text-rose-500">-</span>
   {:else if negative == false}
-    <p class="text-green-500 text-xl">+</p>
+    <span class="text-emerald-500">+</span>
   {/if}
   {#if coins.p > 0}
-    <p class="text-blue-500 w-1/4">{coins.p}p</p>
+    <span class="text-blue-400">{coins.p}p</span>
   {/if}
   {#if coins.g > 0 || coins.p > 0}
-    <p class="text-yellow-400 w-1/4">{coins.g}g</p>
+    <span class="text-yellow-400">{coins.g}g</span>
   {/if}
   {#if coins.s > 0 || coins.g > 0 || coins.p > 0}
-    <p class="text-gray-300 w-1/4">{coins.s}s</p>
+    <span class="text-slate-300">{coins.s}s</span>
   {/if}
-  <p class="text-yellow-800 w-1/4">{coins.c}c</p>
+  <span class="text-amber-700">{coins.c}c</span>
 </span>

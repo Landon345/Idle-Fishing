@@ -9,31 +9,22 @@ import type {
   RequirementObj,
   SkillBaseData,
 } from "src/Entities";
+import { Fishing, Skill, Item, Task, Boat } from "./classes.svelte";
 import {
-  Fishing,
-  Skill,
+  baseLifespan,
+  gameState,
+  getGameData,
+  units,
+  setGameData,
+  baseGameSpeed,
   SkillRequirement,
   FishingRequirement,
   AgeRequirement,
   CoinRequirement,
   EvilRequirement,
-  Item,
-  Task,
-  Boat,
   Requirement,
   BoatRequirement,
-} from "./classes";
-import {
-  baseLifespan,
-  GameData,
-  getGameData,
-  units,
-  tempData,
-  setGameData,
-  boatBaseData,
-  updateSpeed,
-  baseGameSpeed,
-} from "./gameData";
+} from "./gameData.svelte";
 
 export const daysToYears = (days: number) => Math.floor(days / 365);
 export const days = (day) => Math.floor(day % 365);
@@ -71,9 +62,8 @@ export function capitalize(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-export function applySpeed(value: number) {
-  // Make sure to divide by updateSpeed
-  return (value * getGameSpeed()) / updateSpeed;
+export function applySpeed(value: number, deltaSeconds: number) {
+  return value * getGameSpeed() * deltaSeconds;
 }
 
 export function getGameSpeed() {
@@ -106,7 +96,7 @@ export const filtered = (
   allRequiredFor: any[]
 ): any[] => {
   // returns all Fish that have completed requirements + 1 that doesn't.
-  const filteredTasks = [];
+  const filteredTasks: any[] = [];
   for (let i = 0; i < allRequiredFor.length; i++) {
     if (!needRequirements(data_value, allRequiredFor[i])) {
       filteredTasks.push(allRequiredFor[i]);
@@ -122,7 +112,7 @@ export const getRequiredString = (
   data_value: GameDataType,
   requiredFor: any
 ): string => {
-  let reqs: Requirement[] = data_value.requirements.get(requiredFor.name);
+  let reqs: Requirement[] = data_value.requirements.get(requiredFor.name)!;
   let requiredString = `Required: `;
   for (let i = 0; i < reqs.length; i++) {
     let sameTypeReqs: RequirementObj[] = reqs[i].requirements;
@@ -132,8 +122,8 @@ export const getRequiredString = (
         let name = sameTypeReqs[j].name;
         let levelNow =
           type == "skill"
-            ? data_value.skillsData.get(name).level
-            : data_value.fishingData.get(name).level;
+            ? data_value.skillsData.get(name)!.level
+            : data_value.fishingData.get(name)!.level;
         requiredString += `${name} level ${levelNow}/${sameTypeReqs[j].requirement}, `;
       } else if (type == "age") {
         requiredString += `${daysToYears(data_value.day)} years old, `;
@@ -197,11 +187,11 @@ export function lowestLevelSkill(data_value: GameDataType): Skill {
   });
 
   if (xpDict.size == 0) {
-    return skills.get("Strength");
+    return skills.get("Strength")!;
   }
 
   let lowest = new Map([...xpDict.entries()].sort((a, b) => a[1] - b[1]));
-  return skills.get(lowest.entries().next().value[0]);
+  return skills.get(lowest.entries().next().value![0])!;
 }
 
 export function highestTierFish(data_value: GameDataType): Fishing {
@@ -213,10 +203,10 @@ export function highestTierFish(data_value: GameDataType): Fishing {
     }
   });
   if (availableFish.size == 0) {
-    return fish.get("Sun Fish");
+    return fish.get("Sun Fish")!;
   }
   let highest = Array.from(availableFish.values()).pop();
-  return highest;
+  return highest!;
 }
 
 export function applyMultipliers(
@@ -402,17 +392,9 @@ export function coinAmounts(coins: number): {
 }
 
 export function replaceSaveDict(dict, saveDict) {
-  let requirements;
-  GameData.subscribe((data) => {
-    requirements = data.requirements;
-  });
   for (let key in dict) {
     if (!(key in saveDict)) {
       saveDict[key] = dict[key];
-    } else if (dict == requirements) {
-      if (saveDict[key].type != tempData["requirements"][key].type) {
-        saveDict[key] = tempData["requirements"][key];
-      }
     }
   }
 
@@ -428,7 +410,7 @@ export function replaceSavedItems(
   saveMap: Map<string, Item>
 ) {
   map.forEach((val, key) => {
-    let { baseData, expenseMultipliers, level } = saveMap.get(key);
+    let { baseData, expenseMultipliers, level } = saveMap.get(key)!;
     saveMap.set(key, new Item(baseData, expenseMultipliers, level));
   });
   return saveMap;
@@ -438,7 +420,7 @@ export function replaceSavedBoats(
   saveMap: Map<string, Boat>
 ) {
   map.forEach((val, key) => {
-    let { baseData } = saveMap.get(key);
+    let { baseData } = saveMap.get(key)!;
     saveMap.set(key, new Boat(baseData));
   });
   return saveMap;
@@ -450,7 +432,7 @@ export function replaceSavedFishing(
 ) {
   map.forEach((val, key) => {
     let { baseData, level, maxLevel, xp, xpMultipliers, incomeMultipliers } =
-      saveMap.get(key);
+      saveMap.get(key)!;
     saveMap.set(
       key,
       new Fishing(
@@ -470,7 +452,7 @@ export function replaceSavedSkills(
   saveMap: Map<string, Skill>
 ) {
   map.forEach((val, key) => {
-    let { baseData, level, maxLevel, xp, xpMultipliers } = saveMap.get(key);
+    let { baseData, level, maxLevel, xp, xpMultipliers } = saveMap.get(key)!;
     saveMap.set(key, new Skill(baseData, level, maxLevel, xp, xpMultipliers));
   });
   return saveMap;
@@ -481,7 +463,7 @@ export function replaceSavedRequirements(
   saveMap: Map<string, Requirement[]>
 ) {
   map.forEach((val, key) => {
-    let reqArr = saveMap.get(key);
+    let reqArr = saveMap.get(key)!;
     let newReqArr = reqArr.map((req: Requirement) => {
       let requirements = req.requirements as RequirementObj[];
       if (req.type == "fishing") {
@@ -552,30 +534,16 @@ export function saveGameData(data_value) {
 }
 
 export function loadGameData() {
-  let GameDataSave = JSON.parse(localStorage.getItem("GameDataSave"), reviver);
+  let rawSave = localStorage.getItem("GameDataSave");
+  let GameDataSave = rawSave ? JSON.parse(rawSave, reviver) : null;
 
   if (GameDataSave !== null) {
-    let data_value: GameDataType;
-    let requirements;
-    let fishingData;
-    let skillsData;
-    let itemData;
-    let boatData;
-
-    GameData.subscribe((data) => {
-      data_value = data;
-      requirements = data.requirements;
-      fishingData = data.fishingData;
-      skillsData = data.skillsData;
-      itemData = data.itemData;
-      boatData = data.boatData;
-    });
-    replaceSaveDict(data_value, GameDataSave);
-    replaceSavedRequirements(requirements, GameDataSave.requirements);
-    replaceSavedFishing(fishingData, GameDataSave.fishingData);
-    replaceSavedSkills(skillsData, GameDataSave.skillsData);
-    replaceSavedItems(itemData, GameDataSave.itemData);
-    replaceSavedBoats(boatData, GameDataSave.boatData);
+    replaceSaveDict(gameState, GameDataSave);
+    replaceSavedRequirements(gameState.requirements, GameDataSave.requirements);
+    replaceSavedFishing(gameState.fishingData, GameDataSave.fishingData);
+    replaceSavedSkills(gameState.skillsData, GameDataSave.skillsData);
+    replaceSavedItems(gameState.itemData, GameDataSave.itemData);
+    replaceSavedBoats(gameState.boatData, GameDataSave.boatData);
     setGameData(GameDataSave);
   }
 }

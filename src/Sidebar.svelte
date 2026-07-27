@@ -1,121 +1,78 @@
 <script lang="ts">
-  import type { GameDataType } from "src/Entities";
-  import type { Fishing, Skill } from "src/classes";
-
-  import {
-    calculatedAge,
-    getIncomeMultipliers,
-    getTotalExpenses,
-  } from "src/functions";
-  import { toggleTrain, togglePause, GameData, toggleFish } from "src/gameData";
+  import { calculatedAge, getTotalExpenses } from "src/functions";
+  import { togglePause, gameState } from "src/gameData.svelte";
 
   import Coins from "src/components/Coins.svelte";
   import XpBar from "src/components/XpBar.svelte";
 
-  let data_value: GameDataType;
-  let coins: number;
-  let currentlyFishing: Fishing;
-  let currentSkill: Skill;
+  const getNet = (income: number, expense: number): number =>
+    negative(income, expense) ? expense - income : income - expense;
+  const negative = (income: number, expense: number) => income - expense < 0;
 
-  GameData.subscribe((data) => {
-    data_value = data;
-    coins = data.coins;
-    currentlyFishing = data.currentlyFishing;
-    currentSkill = data.currentSkill;
-  });
-
-  const getNet = (income, expense): number => {
-    if (negative(income, expense)) {
-      return expense - income;
-    }
-    return income - expense;
-  };
-  const negative = (income, expense) => {
-    if (income - expense < 0) {
-      return true;
-    }
-    return false;
-  };
+  const expenses = $derived(getTotalExpenses(gameState));
 </script>
 
-<div class="flex flex-col w-1/4 bg-gray-900 text-white mx-2">
-  <div class="m-3 flex">
-    <p class="text-lg">{calculatedAge(data_value.day)}</p>
-  </div>
-  <div class="m-3 flex flex-col">
-    <button
-      class="px-9 py-4 bg-gray-700 hover:bg-gray-800 text-white"
-      on:click={togglePause}>{data_value.paused ? "Play" : "Pause"}</button
-    >
-  </div>
-  <div class="m-3 flex flex-col">
-    <p class="text-xl">Coins</p>
-    <Coins amount={coins} large={true} />
-  </div>
-  <div class="m-3 flex flex-col">
-    {#if currentlyFishing}
-      <span class="text-blue-400"
-        >Net/day:
+<aside class="flex w-full flex-col gap-4 rounded-xl border border-slate-800 bg-slate-950/60 p-4 shadow-lg md:w-72 md:shrink-0">
+  <p class="text-lg text-slate-300">{calculatedAge(gameState.day)}</p>
 
+  <button
+    class="rounded-lg bg-slate-800 px-6 py-3 font-medium text-white hover:bg-slate-700"
+    onclick={togglePause}>{gameState.paused ? "▶ Play" : "⏸ Pause"}</button
+  >
+
+  <div class="flex flex-col gap-1">
+    <p class="text-xl text-slate-200">Coins</p>
+    <Coins amount={gameState.coins} large={true} />
+  </div>
+
+  <div class="flex flex-col gap-1">
+    {#if gameState.currentlyFishing}
+      <span class="text-blue-400">
+        Net/day:
         <Coins
-          amount={getNet(currentlyFishing.income, getTotalExpenses(data_value))}
-          negative={negative(
-            currentlyFishing.income,
-            getTotalExpenses(data_value)
-          )}
-        /></span
-      >
-      <span class="text-green-400"
-        >Income/day: <Coins amount={currentlyFishing.income} /></span
-      >
+          amount={getNet(gameState.currentlyFishing.income, expenses)}
+          negative={negative(gameState.currentlyFishing.income, expenses)}
+        />
+      </span>
+      <span class="text-emerald-400">
+        Income/day: <Coins amount={gameState.currentlyFishing.income} />
+      </span>
     {/if}
-    <span class="text-red-500"
-      >Expense/day: <Coins amount={getTotalExpenses(data_value)} /></span
-    >
+    <span class="text-rose-500">
+      Expense/day: <Coins amount={expenses} />
+    </span>
   </div>
 
-  <div class="m-3 flex flex-col">
-    {#if currentlyFishing}
+  <div class="flex flex-col gap-2">
+    {#if gameState.currentlyFishing}
       <XpBar
-        name={currentlyFishing.name}
-        width={currentlyFishing.barWidth}
-        level={currentlyFishing.level}
+        name={gameState.currentlyFishing.name}
+        width={gameState.currentlyFishing.barWidth}
+        level={gameState.currentlyFishing.level}
         selected={true}
       />
-      <p class="text-lg text-gray-400">Currently Fishing</p>
+      <p class="text-sm text-slate-400">Currently Fishing</p>
     {/if}
   </div>
-  <div class="m-3 flex flex-col">
-    {#if currentSkill}
+  <div class="flex flex-col gap-2">
+    {#if gameState.currentSkill}
       <XpBar
-        name={currentSkill.name}
-        width={currentSkill.barWidth}
-        level={currentSkill.level}
+        name={gameState.currentSkill.name}
+        width={gameState.currentSkill.barWidth}
+        level={gameState.currentSkill.level}
         selected={true}
       />
     {/if}
-    <p class="text-lg text-gray-400">Current Skill</p>
+    <p class="text-sm text-slate-400">Current Skill</p>
   </div>
-  <div class="m-3 flex flex-col text-white">
-    <div class="flex items-center mb-1">
-      <input
-        class="mr-4 h-6 w-6"
-        name="autoTrain"
-        type="checkbox"
-        on:change={toggleTrain}
-        checked={data_value.autoTrain}
-      />
-      <label for="autoTrain">Auto Train</label>
-    </div>
-    <div class="flex items-center">
-      <input
-        class="mr-4 h-6 w-6"
-        name="autoFish"
-        type="checkbox"
-        on:change={toggleFish}
-        checked={data_value.autoFish}
-      />
-      <label for="autoTrain">Auto Promote Fish</label>
-    </div>
+  <div class="flex flex-col gap-2 text-white">
+    <label class="flex items-center gap-3">
+      <input class="h-5 w-5 accent-sky-600" type="checkbox" bind:checked={gameState.autoTrain} />
+      Auto Train
+    </label>
+    <label class="flex items-center gap-3">
+      <input class="h-5 w-5 accent-sky-600" type="checkbox" bind:checked={gameState.autoFish} />
+      Auto Promote Fish
+    </label>
   </div>
-</div>
+</aside>

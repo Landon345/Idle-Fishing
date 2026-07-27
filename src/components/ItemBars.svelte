@@ -1,42 +1,34 @@
 <script lang="ts">
-  import type { GameDataType } from "src/Entities";
-  import type { Item } from "src/classes";
-  import { GameData } from "src/gameData";
+  import type { Item } from "src/classes.svelte";
+  import { gameState } from "src/gameData.svelte";
   import Coins from "src/components/Coins.svelte";
-  import { filtered, getRequiredString, needRequirements } from "src/functions";
+  import { needRequirements } from "src/functions";
 
-  let data_value: GameDataType;
-  export let items: Item[] = [];
+  interface Props {
+    // Already run through `filtered()` by the caller — see FishBars.svelte.
+    items?: Item[];
+  }
 
-  GameData.subscribe((data) => {
-    data_value = data;
-  });
+  let { items = [] }: Props = $props();
 
   const getValues = (item: Item) => {
-    return [
-      item.name,
-      item.upgradePrice,
-      item.effectDescription,
-      item.level,
-      item.expense,
-    ];
+    return [item.name, item.upgradePrice, item.effectDescription, item.level, item.expense];
   };
 </script>
 
-{#each filtered(data_value, items) as item}
-  {#if !needRequirements(data_value, item)}
+{#each items as item}
+  {#if !needRequirements(gameState, item)}
     <tr>
       {#each getValues(item) as value, idx}
         {#if idx == 0}
           <td
-            class="cursor-pointer bg-purple-400 text-white"
-            class:bg-pink-900={item.selected}
-            on:click={() => item.select()}>{value}</td
+            class={`cursor-pointer text-white ${item.selected ? "bg-fuchsia-800" : "bg-fuchsia-600"}`}
+            onclick={() => item.select()}>{value}</td
           >
         {:else if idx == 1}
           <td
-            class="cursor-pointer bg-purple-700 text-white hover:bg-purple-800"
-            on:click={() => item.upgrade()}><Coins amount={+value} /></td
+            class="cursor-pointer bg-fuchsia-900 text-white hover:bg-fuchsia-800"
+            onclick={() => item.upgrade()}><Coins amount={+value} /></td
           >
         {:else if idx == 4}
           <td>

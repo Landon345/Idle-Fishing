@@ -1,22 +1,18 @@
 <script lang="ts">
-  import type { GameDataType } from "src/Entities";
-  import type { Fishing, Requirement } from "src/classes";
-  import { fishBaseData, GameData, setCurrentlyFishing } from "src/gameData";
-  import {
-    filtered,
-    formatNumber,
-    getRequiredString,
-    needRequirements,
-  } from "src/functions";
+  import type { Fishing } from "src/classes.svelte";
+  import { gameState, setCurrentlyFishing } from "src/gameData.svelte";
+  import { formatNumber, needRequirements } from "src/functions";
   import XpBar from "src/components/XpBar.svelte";
   import Coins from "src/components/Coins.svelte";
 
-  let data_value: GameDataType;
-  export let allFish: Fishing[] = [];
+  interface Props {
+    // Already run through `filtered()` by the caller — shared with the
+    // required-progress row rendered alongside this table, instead of
+    // recomputing the same O(n) scan a second time here.
+    allFish?: Fishing[];
+  }
 
-  GameData.subscribe((data) => {
-    data_value = data;
-  });
+  let { allFish = [] }: Props = $props();
 
   const setCurrent = (name: string) => {
     setCurrentlyFishing(name);
@@ -36,13 +32,16 @@
   };
 </script>
 
-{#each filtered(data_value, allFish) as fish, idx}
-  {#if !needRequirements(data_value, fish)}
-    <tr class="cursor-pointer" on:click={() => setCurrent(fish.name)}>
+{#each allFish as fish}
+  {#if !needRequirements(gameState, fish)}
+    <tr
+      class="cursor-pointer hover:bg-slate-700/40"
+      onclick={() => setCurrent(fish.name)}
+    >
       <XpBar
         name={fish.name}
         width={fish.barWidth}
-        selected={data_value.currentlyFishing.name === fish.name}
+        selected={gameState.currentlyFishing?.name === fish.name}
       />
       {#each getValues(fish) as value, idx}
         {#if idx == 1}

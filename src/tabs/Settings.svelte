@@ -1,18 +1,11 @@
 <script lang="ts">
-  import type { GameDataType } from "src/Entities";
-  import { GameData, hardReset } from "src/gameData";
-
-  let data_value: GameDataType;
-
-  GameData.subscribe((data) => {
-    data_value = data;
-  });
+  import { hardReset } from "src/gameData.svelte";
 </script>
 
-<div class="bg-gray-white w-full h-full">
-  <p class="p-10 bg-gray-500 text-white text-xl font-bold w-full">Settings!</p>
+<div class="flex w-full flex-col gap-4 p-2">
+  <p class="w-full rounded-lg bg-slate-600 p-6 text-xl font-bold text-white">Settings!</p>
   <button
-    class="btn bg-gray-800 border-red-500 border-2 text-red-500 font-bold"
-    on:click={hardReset}>Reset Full Game</button
+    class="btn w-fit rounded-lg border-2 border-rose-500 bg-slate-800 font-bold text-rose-500"
+    onclick={hardReset}>Reset Full Game</button
   >
 </div>

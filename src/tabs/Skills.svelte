@@ -1,33 +1,17 @@
 <script lang="ts">
-  import type { GameDataType } from "src/Entities";
   import ProgressTable from "src/components/ProgressTable.svelte";
-  import type { Skill } from "src/classes";
-  import { GameData, skillCategories } from "src/gameData";
+  import type { Skill } from "src/classes.svelte";
+  import { gameState, skillCategories } from "src/gameData.svelte";
   import SkillBars from "src/components/SkillBars.svelte";
-  import { onMount } from "svelte";
-  import { filtered, getRequiredString, needRequirements } from "src/functions";
+  import { filtered, needRequirements } from "src/functions";
   import RequiredBar from "src/components/RequiredBar.svelte";
 
-  let data_value: GameDataType;
-  let commonHeaders: string[] = [
-    "Level",
-    "Effect",
-    "Xp/day",
-    "Xp left",
-    "Max Level",
-  ];
+  const commonHeaders: string[] = ["Level", "Effect", "Xp/day", "Xp left", "Max Level"];
 
-  let allHeaders: string[][] = [[]];
-
-  onMount(() => {
-    Object.keys(skillCategories).forEach((key) => {
-      allHeaders.push([key, ...commonHeaders]);
-    });
-  });
-
-  GameData.subscribe((data) => {
-    data_value = data;
-  });
+  const allHeaders: string[][] = Object.keys(skillCategories).map((key) => [
+    key,
+    ...commonHeaders,
+  ]);
 
   const getSkills = (skills: Map<string, Skill>, category: string): Skill[] => {
     let skillArr: Skill[] = [];
@@ -38,16 +22,25 @@
     });
     return skillArr;
   };
+
+  // Computed once per category instead of separately for the bars and the
+  // required-progress row below it (filtered()/getSkills() are O(n) scans).
+  const categories = $derived(
+    allHeaders.map((headers) => {
+      const skills = getSkills(gameState.skillsData, headers[0]);
+      return { headers, skills, visible: filtered(gameState, skills) };
+    })
+  );
 </script>
 
-<div class="w-full h-full bg-gray-700 p-2 mt-2">
-  {#each allHeaders as headers}
-    <div class="mb-3">
+<div class="flex w-full flex-col gap-4 p-2">
+  {#each categories as { headers, skills, visible }}
+    <div>
       <ProgressTable {headers}>
-        <SkillBars skills={getSkills(data_value.skillsData, headers[0])} />
+        <SkillBars {skills} />
       </ProgressTable>
-      {#each filtered(data_value, getSkills(data_value.skillsData, headers[0])) as skill}
-        {#if needRequirements(data_value, skill)}
+      {#each visible as skill}
+        {#if needRequirements(gameState, skill)}
           <RequiredBar taskOrItem={skill} />
         {/if}
       {/each}

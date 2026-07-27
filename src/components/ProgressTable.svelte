@@ -1,20 +1,27 @@
 <script lang="ts">
-  export let headers: string[] = ["Unknown"];
-  export let headerColor: string = "#04aa6d";
   import { capitalize } from "src/functions";
+  import type { Snippet } from "svelte";
 
-  // headers I need:
-  // ["Fundamentals", "Level", "Effect", "Xp/day", "Xp left", "Max Level"]
-  // ["Ocean", "Level", "Income/day", "Effect", "Xp/day", "Xp left", "Max Level"]
+  interface Props {
+    headers?: string[];
+    headerColor?: string;
+    children?: Snippet;
+  }
+
+  let { headers = ["Unknown"], headerColor = "#0891b2", children }: Props = $props();
 </script>
 
-<table class="w-full">
-  <tr class="mt-4 mb-1">
-    {#each headers as header, idx}
-      <th style="background-color: {headerColor}">{capitalize(header)}</th>
-    {/each}
-  </tr>
-  <slot />
+<table class="w-full overflow-hidden rounded-lg">
+  <thead>
+    <tr>
+      {#each headers as header}
+        <th style="background-color: {headerColor}">{capitalize(header)}</th>
+      {/each}
+    </tr>
+  </thead>
+  <tbody>
+    {@render children?.()}
+  </tbody>
 </table>
 
 <style>
@@ -22,11 +29,6 @@
     padding: 12px 8px;
     text-align: left;
     color: white;
-  }
-
-  tr {
-    margin-bottom: 15px;
-    width: 100%;
   }
 
   table {

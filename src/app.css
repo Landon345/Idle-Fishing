@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+* {
+  transition:
+    background-color 0.1s linear,
+    color 0.1s linear,
+    border-color 0.1s linear;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+}
+
+.btn {
+  @apply px-6 py-3 text-white transition-colors hover:bg-slate-700/60;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+tr {
+  border-bottom: 1px solid rgb(255 255 255 / 0.08);
+}
+
+td {
+  padding: 0.75rem 0.5rem 0.75rem 0.75rem;
+}
