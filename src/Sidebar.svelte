@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { calculatedAge, daysToYears, getTotalExpenses, isAlive } from "src/functions";
+  import { calculatedAge, daysToYears, getTotalExpenses, isAlive, needRequirements } from "src/functions";
   import { togglePause, gameState, getLifespan } from "src/gameData.svelte";
 
   import Coins from "src/components/Coins.svelte";
@@ -12,6 +12,10 @@
   const expenses = $derived(getTotalExpenses(gameState));
   const alive = $derived(isAlive());
   const lifespanYears = $derived(daysToYears(getLifespan()));
+  const timeWarpingUnlocked = $derived.by(() => {
+    const timeWarping = gameState.skillsData.get("Time Warping");
+    return !!timeWarping && !needRequirements(gameState, timeWarping);
+  });
 </script>
 
 <aside class="flex w-full flex-col gap-4 rounded-xl border border-slate-800 bg-slate-950/60 p-4 shadow-lg md:w-72 md:shrink-0">
@@ -85,5 +89,15 @@
       <input class="h-5 w-5 accent-sky-600" type="checkbox" bind:checked={gameState.autoFish} />
       Auto Promote Fish
     </label>
+    {#if timeWarpingUnlocked}
+      <label class="flex items-center gap-3">
+        <input
+          class="h-5 w-5 accent-sky-600"
+          type="checkbox"
+          bind:checked={gameState.timeWarpingEnabled}
+        />
+        Time Warping
+      </label>
+    {/if}
   </div>
 </aside>

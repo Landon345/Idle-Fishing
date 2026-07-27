@@ -402,6 +402,10 @@ export const requirements = new Map<string, Requirement[]>([
     "Super Immortality",
     [new SkillRequirement([{ name: "Immortality", requirement: 500 }])],
   ],
+  [
+    "Time Warping",
+    [new SkillRequirement([{ name: "Immortality", requirement: 250 }])],
+  ],
   ["Row Boat", [new CoinRequirement([{ name: "Coins", requirement: 500 }])]],
   [
     "Silver Bullet",
@@ -477,6 +481,7 @@ export const gameState: GameDataType = $state({
   paused: false,
   autoTrain: false,
   autoFish: false,
+  timeWarpingEnabled: true,
 
   rebirthCount: 0,
   ascensionCount: 0,
@@ -1089,7 +1094,7 @@ export const skillBaseData: Map<string, SkillBaseData> = new Map([
       name: "Reeling",
       maxXp: 100,
       effect: 0.01,
-      description: "Northern Pay",
+      description: "Silver Drum Xp",
       category: "fishing",
     },
   ],
@@ -1211,6 +1216,18 @@ export const skillBaseData: Map<string, SkillBaseData> = new Map([
       maxXp: 100,
       effect: 0.01,
       description: "Longer Lifespan",
+      category: "immortality",
+    },
+  ],
+  [
+    "Time Warping",
+    {
+      name: "Time Warping",
+      maxXp: 100,
+      // Unused: TimeWarping (see classes.svelte.ts) overrides `effect` with
+      // a logarithmic formula instead of the standard 1 + effect*level.
+      effect: 0,
+      description: "Gamespeed",
       category: "immortality",
     },
   ],

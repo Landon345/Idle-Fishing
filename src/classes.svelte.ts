@@ -2,6 +2,7 @@ import type { Description } from "src/Entities";
 import {
   applySpeed,
   applyMultipliers,
+  getBaseLog,
   getXpMultipliers,
   getIncomeMultipliers,
   getExpenseMultipliers,
@@ -148,6 +149,15 @@ export class Skill extends Task {
     let description = this.baseData.description;
     let text = "x" + String(this.effect.toFixed(2)) + " " + description;
     return text;
+  }
+}
+
+// Mirrors Progress Knight's "Time warping" skill: a deliberately slow,
+// logarithmic (not linear) game-speed multiplier, since a normal +1%/level
+// effect would run away exponentially applied to speed itself.
+export class TimeWarping extends Skill {
+  get effect() {
+    return 1 + getBaseLog(13, this.level + 1);
   }
 }
 

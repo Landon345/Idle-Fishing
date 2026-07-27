@@ -14,6 +14,7 @@ export type Description =
   | "Hooking Xp"
   | "Trolling Xp"
   | "Reeling Xp"
+  | "Silver Drum Xp"
   | "Strength Xp"
   | "Concentration Xp"
   | "Intelligence Xp"
@@ -32,7 +33,8 @@ export type Description =
   | "Whale Pay"
   | "Expenses"
   | "Legend Point Gain"
-  | "Longer Lifespan";
+  | "Longer Lifespan"
+  | "Gamespeed";
 export interface BoatBaseData {
   name: string;
   price: number;
@@ -84,6 +86,7 @@ export interface GameDataType {
   paused: boolean;
   autoTrain: boolean;
   autoFish: boolean;
+  timeWarpingEnabled: boolean;
 
   // rebirthCount: small reset (keeps maxLevel as a permanent record).
   // ascensionCount: big reset (also wipes maxLevel, grants legendPoints).

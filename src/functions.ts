@@ -9,7 +9,7 @@ import type {
   RequirementObj,
   SkillBaseData,
 } from "src/Entities";
-import { Fishing, Skill, Item, Task, Boat } from "./classes.svelte";
+import { Fishing, Skill, TimeWarping, Item, Task, Boat } from "./classes.svelte";
 import {
   getLifespan,
   gameState,
@@ -67,7 +67,10 @@ export function applySpeed(value: number, deltaSeconds: number) {
 }
 
 export function getGameSpeed() {
-  return baseGameSpeed * +!getGameData().paused * +isAlive();
+  let timeWarping = getGameData().skillsData.get("Time Warping");
+  let warpMultiplier =
+    getGameData().timeWarpingEnabled && timeWarping ? timeWarping.effect : 1;
+  return baseGameSpeed * +!getGameData().paused * +isAlive() * warpMultiplier;
 }
 
 export function isAlive() {
@@ -334,6 +337,9 @@ export const getXpMultipliers = (task: Task): { [key: string]: number } => {
       case "Reeling Xp":
         if (task.name == "Reeling") return effect;
         break;
+      case "Silver Drum Xp":
+        if (task.name == "Silver Drum") return effect;
+        break;
       case "Strength Xp":
         if (task.name == "Strength") return effect;
         break;
@@ -441,7 +447,19 @@ export function replaceSavedItems(
   saveMap: Map<string, Item>
 ) {
   map.forEach((val, key) => {
-    let { baseData, expenseMultipliers, level } = saveMap.get(key)!;
+    let saved = saveMap.get(key);
+    if (!saved) {
+      // Item didn't exist yet when this save was made - keep the fresh
+      // default instance (already created from the current itemBaseData).
+      saveMap.set(key, val);
+      return;
+    }
+    let { expenseMultipliers, level } = saved;
+    // `selected` is the one bit of real per-save state living on baseData;
+    // everything else (expense, effect, description, upgradePrice) always
+    // comes from the current code, not a potentially stale save, so
+    // balance/data changes take effect without needing a save reset.
+    let baseData = { ...val.baseData, selected: saved.baseData.selected };
     saveMap.set(key, new Item(baseData, expenseMultipliers, level));
   });
   return saveMap;
@@ -451,7 +469,14 @@ export function replaceSavedBoats(
   saveMap: Map<string, Boat>
 ) {
   map.forEach((val, key) => {
-    let { baseData } = saveMap.get(key)!;
+    let saved = saveMap.get(key);
+    if (!saved) {
+      saveMap.set(key, val);
+      return;
+    }
+    // Same reasoning as replaceSavedItems above: `bought` is real save
+    // state, price/name always come from the current code.
+    let baseData = { ...val.baseData, bought: saved.baseData.bought };
     saveMap.set(key, new Boat(baseData));
   });
   return saveMap;
@@ -462,12 +487,19 @@ export function replaceSavedFishing(
   saveMap: Map<string, Fishing>
 ) {
   map.forEach((val, key) => {
-    let { baseData, level, maxLevel, xp, xpMultipliers, incomeMultipliers } =
-      saveMap.get(key)!;
+    let saved = saveMap.get(key);
+    if (!saved) {
+      saveMap.set(key, val);
+      return;
+    }
+    let { level, maxLevel, xp, xpMultipliers, incomeMultipliers } = saved;
+    // baseData comes from the live instance (current code), not the save,
+    // so balance/data changes (income, maxXp, description, ...) take
+    // effect without needing a save reset.
     saveMap.set(
       key,
       new Fishing(
-        baseData,
+        val.baseData,
         level,
         maxLevel,
         xp,
@@ -483,8 +515,21 @@ export function replaceSavedSkills(
   saveMap: Map<string, Skill>
 ) {
   map.forEach((val, key) => {
-    let { baseData, level, maxLevel, xp, xpMultipliers } = saveMap.get(key)!;
-    saveMap.set(key, new Skill(baseData, level, maxLevel, xp, xpMultipliers));
+    let saved = saveMap.get(key);
+    if (!saved) {
+      // Skill didn't exist yet when this save was made (e.g. Immortality,
+      // Time Warping, the legend line) - keep the fresh default instance
+      // instead of crashing on a missing save entry.
+      saveMap.set(key, val);
+      return;
+    }
+    let { level, maxLevel, xp, xpMultipliers } = saved;
+    // Time Warping needs its logarithmic effect override (see
+    // classes.svelte.ts) to survive a reload, not the plain Skill formula.
+    let SkillClass = key === "Time Warping" ? TimeWarping : Skill;
+    // baseData comes from the live instance (current code), not the save -
+    // same reasoning as replaceSavedFishing above.
+    saveMap.set(key, new SkillClass(val.baseData, level, maxLevel, xp, xpMultipliers));
   });
   return saveMap;
 }
@@ -494,7 +539,13 @@ export function replaceSavedRequirements(
   saveMap: Map<string, Requirement[]>
 ) {
   map.forEach((val, key) => {
-    let reqArr = saveMap.get(key)!;
+    let reqArr = saveMap.get(key);
+    if (!reqArr) {
+      // Requirement entry didn't exist yet when this save was made - keep
+      // the fresh set of requirement definitions instead of crashing.
+      saveMap.set(key, val);
+      return;
+    }
     let newReqArr = reqArr.map((req: Requirement) => {
       let requirements = req.requirements as RequirementObj[];
       if (req.type == "fishing") {
@@ -531,7 +582,12 @@ export function createEntity(data: Map<string, Classes>, entity: Bases) {
   if ("income" in entity) {
     data.set(entity.name, new Fishing(entity));
   } else if ("maxXp" in entity) {
-    data.set(entity.name, new Skill(entity));
+    // Time Warping needs its logarithmic effect override (see
+    // classes.svelte.ts) instead of the plain Skill formula.
+    data.set(
+      entity.name,
+      entity.name === "Time Warping" ? new TimeWarping(entity) : new Skill(entity)
+    );
   } else if ("bought" in entity) {
     data.set(entity.name, new Boat(entity));
   } else {
