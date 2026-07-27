@@ -292,7 +292,7 @@ export const getXpMultipliers = (task: Task): { [key: string]: number } => {
       multipliers[item.name] = effect;
     }
   });
-  function kind(task: Task, description: string, effect: number) {
+  function kind(task: Task, description: Description, effect: number): number {
     switch (description) {
       case "All Xp":
         return effect;
@@ -300,7 +300,7 @@ export const getXpMultipliers = (task: Task): { [key: string]: number } => {
         if (task instanceof Skill && task.baseData.category == "fishing")
           return effect;
         break;
-      case "Boating Skill Xp":
+      case "Boating Xp":
         if (task instanceof Skill && task.baseData.category == "boating")
           return effect;
         break;
