@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { calculatedAge, getTotalExpenses } from "src/functions";
-  import { togglePause, gameState } from "src/gameData.svelte";
+  import { calculatedAge, daysToYears, getTotalExpenses, isAlive } from "src/functions";
+  import { togglePause, gameState, getLifespan } from "src/gameData.svelte";
 
   import Coins from "src/components/Coins.svelte";
   import XpBar from "src/components/XpBar.svelte";
@@ -10,10 +10,21 @@
   const negative = (income: number, expense: number) => income - expense < 0;
 
   const expenses = $derived(getTotalExpenses(gameState));
+  const alive = $derived(isAlive());
+  const lifespanYears = $derived(daysToYears(getLifespan()));
 </script>
 
 <aside class="flex w-full flex-col gap-4 rounded-xl border border-slate-800 bg-slate-950/60 p-4 shadow-lg md:w-72 md:shrink-0">
-  <p class="text-lg text-slate-300">{calculatedAge(gameState.day)}</p>
+  <div>
+    <p class="text-lg text-slate-300">{calculatedAge(gameState.day)}</p>
+    <p class="text-xs text-slate-500">Lifespan: {lifespanYears + 14} years</p>
+  </div>
+
+  {#if !alive}
+    <p class="rounded-lg border border-rose-700 bg-rose-950/40 px-3 py-2 text-sm text-rose-300">
+      You've reached the end of this life. Visit Reincarnation to continue.
+    </p>
+  {/if}
 
   <button
     class="rounded-lg bg-slate-800 px-6 py-3 font-medium text-white hover:bg-slate-700"

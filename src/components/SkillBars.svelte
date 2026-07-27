@@ -34,11 +34,13 @@
       class="cursor-pointer hover:bg-slate-700/40"
       onclick={() => setCurrent(skill.name)}
     >
-      <XpBar
-        name={skill.name}
-        width={skill.barWidth}
-        selected={gameState.currentSkill?.name === skill.name}
-      />
+      <td>
+        <XpBar
+          name={skill.name}
+          width={skill.barWidth}
+          selected={gameState.currentSkill?.name === skill.name}
+        />
+      </td>
       {#each getValues(skill) as value}
         <td>{value}</td>
       {/each}

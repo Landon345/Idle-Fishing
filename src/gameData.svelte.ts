@@ -100,13 +100,13 @@ export class BoatRequirement extends Requirement {
   }
 }
 
-export class EvilRequirement extends Requirement {
+export class LegendRequirement extends Requirement {
   constructor(requirements: RequirementObj[]) {
-    super(requirements, "evil");
+    super(requirements, "legend");
   }
 
   getCondition(requirement: RequirementObj) {
-    return gameState.evil >= (requirement.requirement as number);
+    return gameState.legendPoints >= (requirement.requirement as number);
   }
 }
 
@@ -393,6 +393,15 @@ export const requirements = new Map<string, Requirement[]>([
     "Stability",
     [new SkillRequirement([{ name: "Anchoring", requirement: 500 }])],
   ],
+  // IMMORTALITY SKILLS //
+  [
+    "Immortality",
+    [new SkillRequirement([{ name: "Ambition", requirement: 100 }])],
+  ],
+  [
+    "Super Immortality",
+    [new SkillRequirement([{ name: "Immortality", requirement: 500 }])],
+  ],
   ["Row Boat", [new CoinRequirement([{ name: "Coins", requirement: 500 }])]],
   [
     "Silver Bullet",
@@ -439,6 +448,22 @@ export const requirements = new Map<string, Requirement[]>([
     [new CoinRequirement([{ name: "Coins", requirement: 5000000 }])],
   ],
   ["House", [new CoinRequirement([{ name: "Coins", requirement: 10000000 }])]],
+  // LEGEND SKILLS //
+  ["Sea Legend", [new LegendRequirement([{ name: "Legend Points", requirement: 1 }])]],
+  ["Tidal Focus", [new LegendRequirement([{ name: "Legend Points", requirement: 1 }])]],
+  ["Old Haggler", [new LegendRequirement([{ name: "Legend Points", requirement: 1 }])]],
+  [
+    "Weathered Instinct",
+    [new LegendRequirement([{ name: "Legend Points", requirement: 25 }])],
+  ],
+  [
+    "Deep Meditation",
+    [new LegendRequirement([{ name: "Legend Points", requirement: 75 }])],
+  ],
+  [
+    "Sunken Fortune",
+    [new LegendRequirement([{ name: "Legend Points", requirement: 500 }])],
+  ],
 ]);
 
 export const gameState: GameDataType = $state({
@@ -453,12 +478,12 @@ export const gameState: GameDataType = $state({
   autoTrain: false,
   autoFish: false,
 
-  rebirthOneCount: 0,
-  rebirthTwoCount: 0,
+  rebirthCount: 0,
+  ascensionCount: 0,
 
   currentlyFishing: null,
   currentSkill: null,
-  evil: 0,
+  legendPoints: 0,
 });
 
 export const update = (
@@ -551,7 +576,7 @@ export const updateItemExpenses = (deltaSeconds: number) => {
   gameState.coins -= applySpeed(getTotalExpenses(gameState), deltaSeconds);
 };
 
-export const rebirthReset = () => {
+const applyBaseReset = () => {
   gameState.fishingData.forEach((fish) => {
     if (fish.level > fish.maxLevel) {
       fish.maxLevel = fish.level;
@@ -573,10 +598,54 @@ export const rebirthReset = () => {
     item.level = 0;
     item.deselect();
   });
+  // Re-lock everything: since levels/coins/boats reset above, anything still
+  // genuinely gated (level/coin/boat requirements) needs re-earning again.
+  // Requirements gated on legendPoints re-derive as completed immediately
+  // (legendPoints itself is never reset), so the legend skill line stays
+  // unlocked across rebirths/ascensions as intended.
+  gameState.requirements.forEach((reqArr) => {
+    reqArr.forEach((req) => {
+      req.completed = false;
+    });
+  });
   gameState.coins = 0;
-  gameState.day = 365 * 14;
+  // 0, not 365*14: calculatedAge() already displays 14 + years-elapsed, so a
+  // fresh game (day: 0 in the initial gameState below) already shows "Age
+  // 14". Setting day to 365*14 here double-counted that offset and reset to
+  // "Age 28" instead.
+  gameState.day = 0;
   gameState.currentlyFishing = gameState.fishingData.get("Sun Fish")!;
   gameState.currentSkill = gameState.skillsData.get("Strength")!;
+};
+
+// legendPoints gained per ascension, before it's added: Tidal Focus and Deep
+// Meditation are the two "legend" skills that boost this (mirrors Progress
+// Knight's Evil control x Blood meditation formula for evil gain).
+export const getLegendPointGain = (): number => {
+  let tidalFocus = gameState.skillsData.get("Tidal Focus")!;
+  let deepMeditation = gameState.skillsData.get("Deep Meditation")!;
+  return tidalFocus.effect * deepMeditation.effect;
+};
+
+// Tier 1 (small): resets progress but keeps maxLevel as a permanent record,
+// which boosts future xpGain via Task.maxLevelMultiplier.
+export const rebirth = () => {
+  applyBaseReset();
+  gameState.rebirthCount += 1;
+};
+
+// Tier 2 (big): also wipes maxLevel, but grants legendPoints - a currency
+// that's never reset and unlocks the permanent "legend" skill line.
+export const ascend = () => {
+  gameState.legendPoints += getLegendPointGain();
+  applyBaseReset();
+  gameState.fishingData.forEach((fish) => {
+    fish.maxLevel = 0;
+  });
+  gameState.skillsData.forEach((skill) => {
+    skill.maxLevel = 0;
+  });
+  gameState.ascensionCount += 1;
 };
 
 export const hardReset = () => {
@@ -584,7 +653,19 @@ export const hardReset = () => {
   window.location.reload();
 };
 
-export const baseLifespan = 365 * 70;
+// calculatedAge() displays 14 + years-elapsed, so 365*56 here is displayed
+// "Age 70" - the natural, unmodified end of life.
+export const baseLifespan = 365 * 56;
+
+// Mirrors Progress Knight: your actual lifespan is the base lifespan
+// multiplied by the Immortality/Super Immortality skills' effects, so
+// investing in them (across ordinary Rebirths) is the only way to survive
+// past the natural Age 70 wall and eventually reach Ascension.
+export const getLifespan = (): number => {
+  let immortality = gameState.skillsData.get("Immortality")!;
+  let superImmortality = gameState.skillsData.get("Super Immortality")!;
+  return baseLifespan * immortality.effect * superImmortality.effect;
+};
 
 export const baseGameSpeed = 10;
 
@@ -1109,14 +1190,109 @@ export const skillBaseData: Map<string, SkillBaseData> = new Map([
       category: "boating",
     },
   ],
+  // IMMORTALITY SKILLS //
+  // Reachable through ordinary progression (unlike the legend line below) -
+  // these are the only way to extend your lifespan past the natural Age 70
+  // wall, mirroring Progress Knight's Immortality/Super immortality skills.
+  [
+    "Immortality",
+    {
+      name: "Immortality",
+      maxXp: 100,
+      effect: 0.01,
+      description: "Longer Lifespan",
+      category: "immortality",
+    },
+  ],
+  [
+    "Super Immortality",
+    {
+      name: "Super Immortality",
+      maxXp: 100,
+      effect: 0.01,
+      description: "Longer Lifespan",
+      category: "immortality",
+    },
+  ],
+  // LEGEND SKILLS //
+  // Unlocked by ascending at least once (legendPoints > 0). Mirrors
+  // Progress Knight's "Dark magic" skill line, reskinned for fishing.
+  // Sea Legend
+  // Tidal Focus
+  // Old Haggler
+  // Weathered Instinct
+  // Deep Meditation
+  // Sunken Fortune
+  [
+    "Sea Legend",
+    {
+      name: "Sea Legend",
+      maxXp: 100,
+      effect: 0.01,
+      description: "All Xp",
+      category: "legend",
+    },
+  ],
+  [
+    "Tidal Focus",
+    {
+      name: "Tidal Focus",
+      maxXp: 100,
+      effect: 0.01,
+      description: "Legend Point Gain",
+      category: "legend",
+    },
+  ],
+  [
+    "Old Haggler",
+    {
+      name: "Old Haggler",
+      maxXp: 100,
+      effect: -0.01,
+      description: "Expenses",
+      category: "legend",
+    },
+  ],
+  [
+    "Weathered Instinct",
+    {
+      name: "Weathered Instinct",
+      maxXp: 100,
+      effect: 0.01,
+      description: "All Xp",
+      category: "legend",
+    },
+  ],
+  [
+    "Deep Meditation",
+    {
+      name: "Deep Meditation",
+      maxXp: 100,
+      effect: 0.01,
+      description: "Legend Point Gain",
+      category: "legend",
+    },
+  ],
+  [
+    "Sunken Fortune",
+    {
+      name: "Sunken Fortune",
+      maxXp: 100,
+      effect: 0.002,
+      description: "Fishing Pay",
+      category: "legend",
+    },
+  ],
 ]);
 
+// Boat prices doubled (2x) from their original values to make boats a
+// bigger investment relative to items/income, per balance feedback.
 export const boatBaseData: Map<string, BoatBaseData> = new Map([
   [
     "Row Boat",
     {
       name: "Row Boat",
-      price: 300,
+      price: 600,
       bought: false,
     },
   ],
@@ -1124,7 +1300,7 @@ export const boatBaseData: Map<string, BoatBaseData> = new Map([
     "Silver Bullet",
     {
       name: "Silver Bullet",
-      price: 1500,
+      price: 3000,
       bought: false,
     },
   ],
@@ -1132,7 +1308,7 @@ export const boatBaseData: Map<string, BoatBaseData> = new Map([
     "Bass Boat",
     {
       name: "Bass Boat",
-      price: 30000,
+      price: 60000,
       bought: false,
     },
   ],
@@ -1140,7 +1316,7 @@ export const boatBaseData: Map<string, BoatBaseData> = new Map([
     "Canoe",
     {
       name: "Canoe",
-      price: 100000,
+      price: 200000,
       bought: false,
     },
   ],
@@ -1148,7 +1324,7 @@ export const boatBaseData: Map<string, BoatBaseData> = new Map([
     "River Skiff",
     {
       name: "River Skiff",
-      price: 300000,
+      price: 600000,
       bought: false,
     },
   ],
@@ -1156,7 +1332,7 @@ export const boatBaseData: Map<string, BoatBaseData> = new Map([
     "Airboat",
     {
       name: "Airboat",
-      price: 900000,
+      price: 1800000,
       bought: false,
     },
   ],
@@ -1164,7 +1340,7 @@ export const boatBaseData: Map<string, BoatBaseData> = new Map([
     "Sail Boat",
     {
       name: "Sail Boat",
-      price: 2700000,
+      price: 5400000,
       bought: false,
     },
   ],
@@ -1172,7 +1348,7 @@ export const boatBaseData: Map<string, BoatBaseData> = new Map([
     "Yacht",
     {
       name: "Yacht",
-      price: 8100000,
+      price: 16200000,
       bought: false,
     },
   ],
@@ -1180,12 +1356,14 @@ export const boatBaseData: Map<string, BoatBaseData> = new Map([
     "Whaling Ship",
     {
       name: "Whaling Ship",
-      price: 30000000,
+      price: 60000000,
       bought: false,
     },
   ],
 ]);
 
+// Item running expense and upgrade price both halved (0.5x) from their
+// original values per balance feedback.
 export const itemBaseData: Map<string, ItemBaseData> = new Map([
   // ITEMS //
   // Rod
@@ -1201,99 +1379,99 @@ export const itemBaseData: Map<string, ItemBaseData> = new Map([
     "Rod",
     {
       name: "Rod",
-      expense: 10,
+      expense: 5,
       effect: 1.5,
       description: "Strength Xp",
       selected: false,
-      upgradePrice: 200,
+      upgradePrice: 100,
     },
   ],
   [
     "Book",
     {
       name: "Book",
-      expense: 50,
+      expense: 25,
       effect: 1.5,
       description: "Skill Xp",
       selected: false,
-      upgradePrice: 1000,
+      upgradePrice: 500,
     },
   ],
   [
     "Net",
     {
       name: "Net",
-      expense: 200,
+      expense: 100,
       effect: 2,
       description: "Fishing Xp",
       selected: false,
-      upgradePrice: 3000,
+      upgradePrice: 1500,
     },
   ],
   [
     "Hook",
     {
       name: "Hook",
-      expense: 1000,
+      expense: 500,
       effect: 2,
       description: "River Xp",
       selected: false,
-      upgradePrice: 5000,
+      upgradePrice: 2500,
     },
   ],
   [
     "Bait",
     {
       name: "Bait",
-      expense: 7500,
+      expense: 3750,
       effect: 1.5,
       description: "All Xp",
       selected: false,
-      upgradePrice: 8000,
+      upgradePrice: 4000,
     },
   ],
   [
     "Ham Sandwich",
     {
       name: "Ham Sandwich",
-      expense: 50000,
+      expense: 25000,
       effect: 3,
       description: "Boating Xp",
       selected: false,
-      upgradePrice: 10000,
+      upgradePrice: 5000,
     },
   ],
   [
     "Pliers",
     {
       name: "Pliers",
-      expense: 1000000,
+      expense: 500000,
       effect: 2,
       description: "Skill Xp",
       selected: false,
-      upgradePrice: 15000,
+      upgradePrice: 7500,
     },
   ],
   [
     "Fish Finder",
     {
       name: "Fish Finder",
-      expense: Math.pow(10, 7),
+      expense: Math.pow(10, 7) / 2,
       effect: 1.5,
       description: "Skill Xp",
       selected: false,
-      upgradePrice: 20000,
+      upgradePrice: 10000,
     },
   ],
   [
     "House",
     {
       name: "House",
-      expense: Math.pow(10, 8),
+      expense: Math.pow(10, 8) / 2,
       effect: 3,
       description: "All Xp",
       selected: false,
-      upgradePrice: 200000,
+      upgradePrice: 100000,
     },
   ],
 ]);

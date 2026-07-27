@@ -11,7 +11,7 @@ import type {
 } from "src/Entities";
 import { Fishing, Skill, Item, Task, Boat } from "./classes.svelte";
 import {
-  baseLifespan,
+  getLifespan,
   gameState,
   getGameData,
   units,
@@ -21,7 +21,7 @@ import {
   FishingRequirement,
   AgeRequirement,
   CoinRequirement,
-  EvilRequirement,
+  LegendRequirement,
   Requirement,
   BoatRequirement,
 } from "./gameData.svelte";
@@ -71,7 +71,7 @@ export function getGameSpeed() {
 }
 
 export function isAlive() {
-  return getGameData().day < baseLifespan;
+  return getGameData().day < getLifespan();
 }
 
 export const needRequirements = (
@@ -258,7 +258,7 @@ export const getIncomeMultipliers = (task: Task): { [key: string]: number } => {
         if (task.name == "Payara") return effect;
         break;
       case "Northern Pay":
-        if (task.name == "Northern") return effect;
+        if (task.name == "Northern Pike") return effect;
         break;
       case "Whale Pay":
         if (task.name == "Whale") return effect;
@@ -367,7 +367,38 @@ export const getXpMultipliers = (task: Task): { [key: string]: number } => {
   return multipliers;
 };
 
+// Applies uniformly to every item's running expense (there's no per-item
+// targeting like the income/xp multipliers above), mirroring how Progress
+// Knight's "Intimidation" skill discounts every item's expense.
+export const getExpenseMultipliers = (): { [key: string]: number } => {
+  let multipliers: { [key: string]: number } = {};
+  const kind = (description: Description, effect: number): number =>
+    description == "Expenses" ? effect : 1;
+
+  getGameData().fishingData.forEach((fish) => {
+    let effect = kind(fish.baseData.description, fish.effect);
+    if (effect != 1) {
+      multipliers[fish.name] = effect;
+    }
+  });
+  getGameData().skillsData.forEach((skill) => {
+    let effect = kind(skill.baseData.description, skill.effect);
+    if (effect != 1) {
+      multipliers[skill.name] = effect;
+    }
+  });
+  getGameData().itemData.forEach((item) => {
+    let effect = kind(item.baseData.description, item.effect);
+    if (effect != 1) {
+      multipliers[item.name] = effect;
+    }
+  });
+
+  return multipliers;
+};
+
 export function coinAmounts(coins: number): {
+  r: number;
   p: number;
   g: number;
   s: number;
@@ -375,10 +406,10 @@ export function coinAmounts(coins: number): {
 } {
   let coinsObj: any = {};
   if (coins < 0) {
-    return { p: 0, g: 0, s: 0, c: 0 };
+    return { r: 0, p: 0, g: 0, s: 0, c: 0 };
   }
 
-  let tiers = ["p", "g", "s"];
+  let tiers = ["r", "p", "g", "s"];
   let leftOver = coins;
   let i = 0;
   for (let tier of tiers) {
@@ -472,8 +503,8 @@ export function replaceSavedRequirements(
         return new SkillRequirement(requirements);
       } else if (req.type == "coins") {
         return new CoinRequirement(requirements);
-      } else if (req.type == "evil") {
-        return new EvilRequirement(requirements);
+      } else if (req.type == "legend") {
+        return new LegendRequirement(requirements);
       } else if (req.type == "boat") {
         return new BoatRequirement(requirements);
       } else if (req.type == "age") {

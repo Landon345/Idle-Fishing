@@ -93,7 +93,9 @@
               onclick={() => selectTab(tab.key)}>{tab.label}</button
             >
           {/each}
-          {#if gameState.day > 365 * 50}
+          <!-- calculatedAge() displays 14 + years-elapsed, so 365*36 here is
+               displayed "Age 50" (matches the Reincarnation tab's narrative). -->
+          {#if gameState.day > 365 * 36}
             <button
               class={`btn rounded-lg text-sm font-medium ${selectedTab === "reincarnation" ? "bg-sky-700 text-white" : "text-slate-300 hover:bg-slate-800"}`}
               onclick={() => selectTab("reincarnation")}>Reincarnation</button

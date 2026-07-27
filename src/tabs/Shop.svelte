@@ -1,5 +1,4 @@
 <script lang="ts">
-  import ProgressTable from "src/components/ProgressTable.svelte";
   import type { Boat, Item } from "src/classes.svelte";
   import { gameState } from "src/gameData.svelte";
   import { filtered, needRequirements } from "src/functions";
@@ -30,11 +29,10 @@
   const visibleItems = $derived(filtered(gameState, items));
 </script>
 
-<div class="flex w-full flex-col gap-6 p-2">
-  <div>
-    <ProgressTable headers={["Boats", "Price"]}>
-      <BoatBars {boats} />
-    </ProgressTable>
+<div class="flex w-full flex-col gap-8 p-2">
+  <div class="flex flex-col gap-3">
+    <h2 class="text-lg font-bold text-sky-200">🚤 Boats</h2>
+    <BoatBars {boats} />
     {#each visibleBoats as boat}
       {#if needRequirements(gameState, boat)}
         <div class="w-full">
@@ -44,10 +42,9 @@
     {/each}
   </div>
 
-  <div>
-    <ProgressTable headers={["Item", "Upgrade", "Effect", "Level", "Expense/Day"]}>
-      <ItemBars {items} />
-    </ProgressTable>
+  <div class="flex flex-col gap-3">
+    <h2 class="text-lg font-bold text-sky-200">🎒 Items</h2>
+    <ItemBars {items} />
     {#each visibleItems as item}
       {#if needRequirements(gameState, item)}
         <RequiredBar taskOrItem={item} />

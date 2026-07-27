@@ -29,7 +29,10 @@ export type Description =
   | "Ocean Pay"
   | "Payara Pay"
   | "Northern Pay"
-  | "Whale Pay";
+  | "Whale Pay"
+  | "Expenses"
+  | "Legend Point Gain"
+  | "Longer Lifespan";
 export interface BoatBaseData {
   name: string;
   price: number;
@@ -82,10 +85,12 @@ export interface GameDataType {
   autoTrain: boolean;
   autoFish: boolean;
 
-  rebirthOneCount: number;
-  rebirthTwoCount: number;
+  // rebirthCount: small reset (keeps maxLevel as a permanent record).
+  // ascensionCount: big reset (also wipes maxLevel, grants legendPoints).
+  rebirthCount: number;
+  ascensionCount: number;
 
   currentlyFishing: Fishing | null;
   currentSkill: Skill | null;
-  evil: number;
+  legendPoints: number;
 }

@@ -28,6 +28,11 @@ tr {
   border-bottom: 1px solid rgb(255 255 255 / 0.08);
 }
 
-td {
-  padding: 0.75rem 0.5rem 0.75rem 0.75rem;
+td,
+th {
+  padding: 0.75rem 0.5rem;
+  /* Without this, a cell whose content is shorter than the row (e.g. the
+     XpBar next to a two-line "Effect" cell) sticks to the top instead of
+     centering, making the row's top/bottom margins look uneven. */
+  vertical-align: middle;
 }

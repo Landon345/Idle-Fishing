@@ -4,6 +4,7 @@ import {
   applyMultipliers,
   getXpMultipliers,
   getIncomeMultipliers,
+  getExpenseMultipliers,
 } from "./functions";
 import { getGameData, subtractCoins } from "./gameData.svelte";
 
@@ -36,8 +37,11 @@ export class Task {
   }
 
   get maxXp(): number {
+    // 0.75x = xp requirements are ~25% lower than the base curve, i.e.
+    // leveling is ~25% faster, per balance feedback. Applies to both
+    // Fishing and Skill (both extend Task).
     let maxXp = Math.round(
-      this.baseData.maxXp * (this.level + 1) * Math.pow(1.01, this.level)
+      this.baseData.maxXp * 0.75 * (this.level + 1) * Math.pow(1.01, this.level)
     );
     return maxXp;
   }
@@ -52,8 +56,9 @@ export class Task {
   }
 
   get xpGain() {
+    // Base Xp/day doubled (10 -> 20) per balance feedback.
     this.xpMultipliers = getXpMultipliers(this);
-    return applyMultipliers(10, this.xpMultipliers) * this.maxLevelMultiplier;
+    return applyMultipliers(20, this.xpMultipliers) * this.maxLevelMultiplier;
   }
 
   get barWidth(): number {
@@ -157,7 +162,10 @@ export class Item {
   } = $state(undefined as any);
   level = $state(0);
   name: string;
-  expenseMultipliers: { [key: string]: number } = $state({});
+  // Recomputed fresh on every read inside the `expense` getter below, so
+  // this is a plain cache field, not `$state` (same reasoning as
+  // Task.xpMultipliers above).
+  expenseMultipliers: { [key: string]: number };
   constructor(baseData, expenseMultipliers = {}, level = 0) {
     this.baseData = baseData;
     this.name = baseData.name;
@@ -183,7 +191,10 @@ export class Item {
 
   get effect() {
     if (!this.selected) return 1;
-    let effect = this.baseData.effect * (1 + this.level / 100);
+    // Exponential (2% compounding per level) instead of the old flat +1%
+    // per level, so upgrades keep paying off at higher levels instead of
+    // flattening out relative to the exponential upgradePrice curve above.
+    let effect = this.baseData.effect * Math.pow(1.02, this.level);
     return effect;
   }
 
@@ -194,7 +205,11 @@ export class Item {
   }
 
   get expense() {
-    return applyMultipliers(this.baseData.expense, this.expenseMultipliers);
+    this.expenseMultipliers = getExpenseMultipliers();
+    // Floored at 0: "Old Haggler" discounts expenses by a flat amount per
+    // level and would otherwise flip expenses negative (i.e. pay you to
+    // hold items) at very high levels.
+    return Math.max(0, applyMultipliers(this.baseData.expense, this.expenseMultipliers));
   }
 
   upgrade() {

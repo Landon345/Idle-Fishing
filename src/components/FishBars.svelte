@@ -38,11 +38,13 @@
       class="cursor-pointer hover:bg-slate-700/40"
       onclick={() => setCurrent(fish.name)}
     >
-      <XpBar
-        name={fish.name}
-        width={fish.barWidth}
-        selected={gameState.currentlyFishing?.name === fish.name}
-      />
+      <td>
+        <XpBar
+          name={fish.name}
+          width={fish.barWidth}
+          selected={gameState.currentlyFishing?.name === fish.name}
+        />
+      </td>
       {#each getValues(fish) as value, idx}
         {#if idx == 1}
           <td><Coins amount={value} /></td>
