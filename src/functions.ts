@@ -17,25 +17,24 @@ import {
   units,
   setGameData,
   baseGameSpeed,
-  SkillRequirement,
-  FishingRequirement,
-  AgeRequirement,
-  CoinRequirement,
-  LegendRequirement,
   Requirement,
-  BoatRequirement,
+  DAYS_PER_YEAR,
+  STARTING_AGE,
+  AUTO_FISH_ROTATION_DAYS,
+  FISH,
+  SKILL,
 } from "./gameData.svelte";
 
-export const daysToYears = (days: number) => Math.floor(days / 365);
-export const days = (day) => Math.floor(day % 365);
+export const daysToYears = (days: number) => Math.floor(days / DAYS_PER_YEAR);
+export const days = (day) => Math.floor(day % DAYS_PER_YEAR);
 
 export function calculatedAge(day: number): string {
-  return `Age ${14 + daysToYears(day)} Day ${days(day)}`;
+  return `Age ${STARTING_AGE + daysToYears(day)} Day ${days(day)}`;
 }
 
-// Inverse of calculatedAge's "Age 14 + years elapsed" display: the raw `day`
-// value at which a given displayed age is first reached.
-export const ageToDay = (age: number) => (age - 14) * 365;
+// Inverse of calculatedAge's "STARTING_AGE + years elapsed" display: the raw
+// `day` value at which a given displayed age is first reached.
+export const ageToDay = (age: number) => (age - STARTING_AGE) * DAYS_PER_YEAR;
 
 export const getTotalExpenses = (game_data: GameDataType): number => {
   let totalExpense = 0;
@@ -71,7 +70,7 @@ export function applySpeed(value: number, deltaSeconds: number) {
 }
 
 export function getGameSpeed() {
-  let timeWarping = getGameData().skillsData.get("Time Warping");
+  let timeWarping = getGameData().skillsData.get(SKILL.TIME_WARPING);
   let warpMultiplier =
     getGameData().timeWarpingEnabled && timeWarping ? timeWarping.effect : 1;
   return baseGameSpeed * +!getGameData().paused * +isAlive() * warpMultiplier;
@@ -194,26 +193,46 @@ export function lowestLevelSkill(data_value: GameDataType): Skill {
   });
 
   if (xpDict.size == 0) {
-    return skills.get("Strength")!;
+    return skills.get(SKILL.STRENGTH)!;
   }
 
   let lowest = new Map([...xpDict.entries()].sort((a, b) => a[1] - b[1]));
   return skills.get(lowest.entries().next().value![0])!;
 }
 
-export function highestTierFish(data_value: GameDataType): Fishing {
-  const fish = data_value.fishingData;
-  let availableFish = new Map<string, Fishing>();
-  fish.forEach((f) => {
+// The deepest unlocked fish in each region, in region order (lake, river,
+// ocean). Regions with nothing unlocked yet are omitted rather than returned
+// empty, so the rotation below only ever cycles through real choices.
+export function highestTierFishPerCategory(data_value: GameDataType): Fishing[] {
+  // A Map keyed by category keeps the *first* insertion position for each key
+  // while `set` overwrites the value, so iterating fishingData in its natural
+  // order leaves each entry holding that region's last unlocked fish.
+  let deepestPerCategory = new Map<string, Fishing>();
+  data_value.fishingData.forEach((f) => {
     if (!needRequirements(data_value, f)) {
-      availableFish.set(f.name, f);
+      deepestPerCategory.set(f.baseData.category, f);
     }
   });
-  if (availableFish.size == 0) {
-    return fish.get("Sun Fish")!;
+  return Array.from(deepestPerCategory.values());
+}
+
+// autoFish target: round-robins the deepest unlocked fish of each region,
+// swapping every AUTO_FISH_ROTATION_DAYS in-game days.
+//
+// This replaces "always fish the single globally-deepest unlocked fish", which
+// could strand a whole region permanently: Pirana unlocks off a Strength gate
+// rather than off another fish, so autoFish would leave the lake the moment it
+// appeared - and Bass needs Perch at level 10, which it would then never
+// reach. Deriving the slot from `day` rather than a counter keeps this
+// stateless, so it needs no new save field and resumes consistently on reload.
+export function roundRobinFish(data_value: GameDataType): Fishing {
+  const candidates = highestTierFishPerCategory(data_value);
+  if (candidates.length == 0) {
+    return data_value.fishingData.get(FISH.SUN_FISH)!;
   }
-  let highest = Array.from(availableFish.values()).pop();
-  return highest!;
+  const slot =
+    Math.floor(data_value.day / AUTO_FISH_ROTATION_DAYS) % candidates.length;
+  return candidates[slot];
 }
 
 export function applyMultipliers(
@@ -530,7 +549,7 @@ export function replaceSavedSkills(
     let { level, maxLevel, xp, xpMultipliers } = saved;
     // Time Warping needs its logarithmic effect override (see
     // classes.svelte.ts) to survive a reload, not the plain Skill formula.
-    let SkillClass = key === "Time Warping" ? TimeWarping : Skill;
+    let SkillClass = key === SKILL.TIME_WARPING ? TimeWarping : Skill;
     // baseData comes from the live instance (current code), not the save -
     // same reasoning as replaceSavedFishing above.
     saveMap.set(key, new SkillClass(val.baseData, level, maxLevel, xp, xpMultipliers));
@@ -542,33 +561,22 @@ export function replaceSavedRequirements(
   map: Map<string, Requirement[]>,
   saveMap: Map<string, Requirement[]>
 ) {
-  map.forEach((val, key) => {
-    let reqArr = saveMap.get(key);
-    if (!reqArr) {
-      // Requirement entry didn't exist yet when this save was made - keep
-      // the fresh set of requirement definitions instead of crashing.
-      saveMap.set(key, val);
-      return;
-    }
-    let newReqArr = reqArr.map((req: Requirement) => {
-      let requirements = req.requirements as RequirementObj[];
-      if (req.type == "fishing") {
-        return new FishingRequirement(requirements);
-      } else if (req.type == "skill") {
-        return new SkillRequirement(requirements);
-      } else if (req.type == "coins") {
-        return new CoinRequirement(requirements);
-      } else if (req.type == "legend") {
-        return new LegendRequirement(requirements);
-      } else if (req.type == "boat") {
-        return new BoatRequirement(requirements);
-      } else if (req.type == "age") {
-        return new AgeRequirement(requirements);
-      } else {
-        return new Requirement(requirements, "Unknown");
-      }
+  map.forEach((liveReqs, key) => {
+    // Requirement *thresholds* always come from the current code, never from
+    // the save - same reasoning as replaceSavedFishing/replaceSavedSkills
+    // above, so balance changes to the unlock graph take effect without a
+    // save reset. Previously this rebuilt each Requirement from the saved
+    // `req.requirements`, which pinned every existing save to whatever gate
+    // values were in force when it was written.
+    //
+    // `completed` is a pure cache over current game state (see
+    // Requirement.isCompleted), so clearing it just makes the next read
+    // re-derive it - which is also what the old code did, since the
+    // constructors it called all reset `completed` to false.
+    liveReqs.forEach((req) => {
+      req.completed = false;
     });
-    saveMap.set(key, newReqArr);
+    saveMap.set(key, liveReqs);
   });
   return saveMap;
 }
@@ -590,7 +598,7 @@ export function createEntity(data: Map<string, Classes>, entity: Bases) {
     // classes.svelte.ts) instead of the plain Skill formula.
     data.set(
       entity.name,
-      entity.name === "Time Warping" ? new TimeWarping(entity) : new Skill(entity)
+      entity.name === SKILL.TIME_WARPING ? new TimeWarping(entity) : new Skill(entity)
     );
   } else if ("bought" in entity) {
     data.set(entity.name, new Boat(entity));
