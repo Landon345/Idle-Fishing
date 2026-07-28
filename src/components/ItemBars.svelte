@@ -18,33 +18,45 @@
   {#each items as item}
     {#if !needRequirements(gameState, item)}
       <div
-        class={`flex flex-col gap-2 rounded-xl border p-4 transition-colors ${item.selected ? "border-emerald-600 bg-emerald-950/30" : "border-slate-700 bg-slate-800/40"}`}
+        class={`flex flex-col overflow-hidden rounded-xl border transition-colors ${item.selected ? "border-emerald-600 bg-emerald-950/30" : "border-slate-700 bg-slate-800/40"}`}
       >
-        <div class="flex items-start justify-between gap-2">
-          <button
-            class={`text-left font-semibold hover:underline ${item.selected ? "text-emerald-300" : "text-slate-200"}`}
-            onclick={() => item.select()}>{item.name}</button
-          >
-          <span
-            class={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${item.selected ? "bg-emerald-600 text-white" : "bg-slate-700 text-slate-400"}`}
-          >
-            {item.selected ? "Equipped" : "Unequipped"}
-          </span>
-        </div>
-
-        <p class="text-sm text-sky-300">{item.effectDescription}</p>
-
-        <div class="flex items-center justify-between text-sm text-slate-400">
-          <span>Level {item.level}</span>
-          <span class="flex items-center gap-1">Expense/day <Coins amount={item.expense} /></span>
-        </div>
-
+        <!-- The whole upper block toggles equip, not just the name, so the
+             target is card-sized rather than text-sized. Upgrade has to be a
+             sibling rather than sit inside it: a button cannot contain a
+             button. -->
         <button
-          class={`btn mt-1 flex items-center justify-center gap-1 rounded-lg text-sm font-medium ${canAfford(item.upgradePrice) ? "bg-sky-700 text-white hover:bg-sky-600" : "cursor-not-allowed bg-slate-700 text-slate-500"}`}
-          onclick={() => item.upgrade()}
+          type="button"
+          aria-pressed={item.selected}
+          class="flex w-full cursor-pointer flex-col gap-2 p-4 text-left transition-colors hover:bg-white/5"
+          onclick={() => item.select()}
         >
-          Upgrade &mdash; <Coins amount={item.upgradePrice} />
+          <span class="flex w-full items-start justify-between gap-2">
+            <span class={`font-semibold ${item.selected ? "text-emerald-300" : "text-slate-200"}`}>
+              {item.name}
+            </span>
+            <span
+              class={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${item.selected ? "bg-emerald-600 text-white" : "bg-slate-700 text-slate-400"}`}
+            >
+              {item.selected ? "Equipped" : "Unequipped"}
+            </span>
+          </span>
+
+          <span class="text-sm text-sky-300">{item.effectDescription}</span>
+
+          <span class="flex w-full items-center justify-between text-sm text-slate-400">
+            <span>Level {item.level}</span>
+            <span class="flex items-center gap-1">Expense/day <Coins amount={item.expense} /></span>
+          </span>
         </button>
+
+        <div class="px-4 pb-4">
+          <button
+            class={`btn flex w-full items-center justify-center gap-1 rounded-lg text-sm font-medium ${canAfford(item.upgradePrice) ? "bg-sky-700 text-white hover:bg-sky-600" : "cursor-not-allowed bg-slate-700 text-slate-500"}`}
+            onclick={() => item.upgrade()}
+          >
+            Upgrade &mdash; <Coins amount={item.upgradePrice} />
+          </button>
+        </div>
       </div>
     {/if}
   {/each}
