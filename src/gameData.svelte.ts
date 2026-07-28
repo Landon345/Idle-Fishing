@@ -33,6 +33,8 @@ const BASE_LIFESPAN_YEARS = 56;
 // The natural, unmodified end of life: displayed "Age 70".
 export const baseLifespan = DAYS_PER_YEAR * BASE_LIFESPAN_YEARS;
 export const baseGameSpeed = 10;
+// Xp every task earns per in-game day before any multipliers.
+export const BASE_XP_PER_DAY = 20;
 // How long autoFish spends on one region before rotating to the next. At the
 // base game speed of 10 days/second this is ~3 real seconds per region.
 export const AUTO_FISH_ROTATION_DAYS = 30;
@@ -226,7 +228,10 @@ const EFFECT = {
   LIFESPAN: 0.01,
   LEGEND: 0.01,
   LEGEND_PAY: 0.002,
-  EXPENSE_DISCOUNT: -0.01,
+  // Read by ExpenseDiscount (classes.svelte.ts) as a per-level *decay* factor,
+  // not as the usual `1 + effect * level` slope: expenses fall by 1% of what
+  // they were per level, approaching zero without ever reaching it.
+  EXPENSE_DECAY: 0.99,
   // Time Warping overrides `effect` with a logarithmic formula (see
   // TimeWarping in classes.svelte.ts), so its base value is never read.
   UNUSED: 0,
@@ -277,11 +282,26 @@ const NEXT_FISH_LEVEL = 10;
 const FISH_ADEPT_LEVEL = 15;
 
 // Skill level gates, as one deliberate ladder rather than ad-hoc numbers.
-// Task.maxXp carries a 1.01^level term, so cost per level roughly triples
-// every +100 levels past ~200: the old ocean gates of 1000-2500 cost upwards
-// of 10^16 xp for a *single* level and were unreachable in any number of
-// lives. The ladder therefore tops out at MYTHIC (500).
+//
+// Task.maxXp carries a 1.01^level term, so a gate's cost is roughly
+// `base * level * 1.01^level` - doubling a gate's level multiplies its xp by
+// a few hundred. That non-linearity cuts both ways, and this ladder has been
+// wrong in both directions:
+//
+//  - The original gates (up to Stability 2500) were not hard, they were
+//    *unreachable*: ~1.1e18 xp, several thousand lifetimes of focused
+//    training even at endgame xp rates.
+//  - Correcting for that overshot into free. Measured against real xp rates,
+//    a 500-level gate cost ~0% of a lifetime by the time you met it.
+//
+// The top of the ladder is now anchored to measurement: at each stage of the
+// game there is a level reachable in one focused 56-year life (~816 at ocean
+// entry, ~1276 mid-ocean, ~1723 late ocean), and the deep rungs sit at ~80%
+// of that. So a late gate is a genuine project you can watch yourself climb,
+// while the early rungs - which pace fine - are untouched.
 const GATE = {
+  // Early rungs: unchanged. These gate the lake and early river, where xp
+  // rates are low and small numbers already mean real time.
   DABBLING: 10,
   NOVICE: 20,
   APPRENTICE: 30,
@@ -290,25 +310,55 @@ const GATE = {
   SKILLED: 60,
   PRACTISED: 80,
   ACCOMPLISHED: 100,
-  SEASONED: 120,
-  VETERAN: 150,
-  EXPERT: 200,
-  MASTER: 250,
-  GRANDMASTER: 300,
-  RENOWNED: 350,
-  ELITE: 400,
-  LEGENDARY: 450,
-  MYTHIC: 500,
+  // Deep rungs: stretched, because multipliers compound so steeply that the
+  // old values had stopped costing anything by the time they were reached.
+  //
+  // These sit in the 10-25% band of a focused life at the stage they're met,
+  // deliberately short of the ceiling. The band from "3% of a lifetime" to
+  // "an entire lifetime" is only ~150 levels wide, so a gate placed near the
+  // ceiling stops being a grind and becomes a wall for anyone whose boats,
+  // items and maxLevels are behind the ideal - which is how the original
+  // Stability 2500 ended up unreachable.
+  SEASONED: 150,
+  VETERAN: 200,
+  EXPERT: 300,
+  MASTER: 450,
+  GRANDMASTER: 600,
+  RENOWNED: 700,
+  ELITE: 950,
+  LEGENDARY: 1150,
+  MYTHIC: 1350,
+  FABLED: 1500,
+  IMMORTAL: 1600,
 };
 
-// Legend-point thresholds for the legend skill line. Left at their original
-// values - the legend-point *economy* (flat 1 point per ascension) needs
-// fixing before these thresholds mean anything.
+// ─── Ascension economy ─────────────────────────────────────────────────────
+// Legend point gain used to be `tidalFocus.effect * deepMeditation.effect`
+// alone. Both start at 1.0, so *every* early ascension granted exactly 1
+// point regardless of how far the run got - there was nothing to optimise and
+// nothing to compound. Worse, Deep Meditation (one of the two multipliers)
+// was gated behind 75 points you could only earn one at a time.
+//
+// Gain now scales with how deep the run actually got, so "ascend now or push
+// one more fish tier" is a real decision.
+export const LEGEND_POINT_DEPTH_SCALE = 400;
+// Floor, so a first ascension always unlocks the legend line - which is the
+// entire point of ascending.
+export const LEGEND_POINT_MIN_GAIN = 1;
+// Ascension wipes maxLevel for everything, so the legend skills must be
+// re-ground from scratch every cycle. Legend points are the one thing it never
+// resets, so they are what makes each cycle faster than the last: this is the
+// compounding loop. It speeds up the legend line only, which is precisely what
+// ascending costs you.
+export const LEGEND_POINT_XP_BONUS = 0.05;
+
+// Retuned to match the gain curve above. At the old 1-point-per-ascension
+// rate, Sunken Fortune's 500 would have taken 500 ascensions.
 const LEGEND_GATE = {
   INITIATE: 1,
-  VETERAN: 25,
-  DEEP: 75,
-  APEX: 500,
+  VETERAN: 20,
+  DEEP: 50,
+  APEX: 150,
 };
 
 // ─── Boats ─────────────────────────────────────────────────────────────────
@@ -526,7 +576,7 @@ export const requirements = new Map<string, Requirement[]>([
   ],
   [
     FISH.ARMOURED_CATFISH,
-    [afterFish(FISH.SILVER_DRUM), needSkills([SKILL.CASTING, GATE.ACCOMPLISHED])],
+    [afterFish(FISH.SILVER_DRUM), needSkills([SKILL.CASTING, GATE.VETERAN])],
   ],
   [
     FISH.ELECTRIC_EEL,
@@ -536,15 +586,14 @@ export const requirements = new Map<string, Requirement[]>([
       needBoat(BOAT.RIVER_SKIFF),
     ],
   ],
-  // Trolling MASTER, down from 500: at the fishing-skill xp base of 300, a
-  // 500 gate costs ~1.6e9 xp for a fish sitting mid-river.
-  [FISH.PACU, [afterFish(FISH.ELECTRIC_EEL), needSkills([SKILL.TROLLING, GATE.MASTER])]],
-  // Reeling RENOWNED, down from 1000 (~10^11 xp at the old flat base of 100).
+  [FISH.PACU, [afterFish(FISH.ELECTRIC_EEL), needSkills([SKILL.TROLLING, GATE.EXPERT])]],
+  // The river capstone: Reeling MASTER is ~1.6 lives of focused training at
+  // the xp rates you actually have mid-river.
   [
     FISH.PAYARA,
     [
       afterFish(FISH.PACU),
-      needSkills([SKILL.REELING, GATE.RENOWNED]),
+      needSkills([SKILL.REELING, GATE.MASTER]),
       needBoat(BOAT.AIRBOAT),
     ],
   ],
@@ -563,30 +612,33 @@ export const requirements = new Map<string, Requirement[]>([
     FISH.MACKEREL,
     [
       afterFish(FISH.COD),
-      needSkills([SKILL.DOCKING, GATE.VETERAN], [SKILL.NETTING, GATE.SEASONED]),
+      needSkills([SKILL.DOCKING, GATE.GRANDMASTER], [SKILL.NETTING, GATE.MASTER]),
     ],
   ],
   [
     FISH.ANGLE_FISH,
     [
       afterFish(FISH.MACKEREL),
-      needSkills([SKILL.DOCKING, GATE.MASTER], [SKILL.TURNING, GATE.EXPERT]),
+      needSkills([SKILL.DOCKING, GATE.RENOWNED], [SKILL.TURNING, GATE.GRANDMASTER]),
     ],
   ],
-  [FISH.GROUPER, [afterFish(FISH.ANGLE_FISH), needSkills([SKILL.ANCHORING, GATE.MASTER])]],
-  [FISH.STINGRAY, [afterFish(FISH.GROUPER), needSkills([SKILL.DOCKING, GATE.RENOWNED])]],
-  [FISH.BARRACUDA, [afterFish(FISH.STINGRAY), needSkills([SKILL.TURNING, GATE.RENOWNED])]],
+  [
+    FISH.GROUPER,
+    [afterFish(FISH.ANGLE_FISH), needSkills([SKILL.ANCHORING, GATE.ELITE])],
+  ],
+  [FISH.STINGRAY, [afterFish(FISH.GROUPER), needSkills([SKILL.DOCKING, GATE.LEGENDARY])]],
+  [FISH.BARRACUDA, [afterFish(FISH.STINGRAY), needSkills([SKILL.TURNING, GATE.LEGENDARY])]],
   [
     FISH.BLUEFIN_TUNA,
     [
       afterFish(FISH.BARRACUDA),
-      needSkills([SKILL.SAILING, GATE.RENOWNED]),
+      needSkills([SKILL.SAILING, GATE.LEGENDARY]),
       needBoat(BOAT.YACHT),
     ],
   ],
-  [FISH.BLUE_MARLIN, [afterFish(FISH.BLUEFIN_TUNA), needSkills([SKILL.SAILING, GATE.ELITE])]],
-  [FISH.SWORDFISH, [afterFish(FISH.BLUE_MARLIN), needSkills([SKILL.NAVIGATION, GATE.ELITE])]],
-  [FISH.SHARK, [afterFish(FISH.SWORDFISH), needSkills([SKILL.STABILITY, GATE.LEGENDARY])]],
+  [FISH.BLUE_MARLIN, [afterFish(FISH.BLUEFIN_TUNA), needSkills([SKILL.SAILING, GATE.MYTHIC])]],
+  [FISH.SWORDFISH, [afterFish(FISH.BLUE_MARLIN), needSkills([SKILL.NAVIGATION, GATE.MYTHIC])]],
+  [FISH.SHARK, [afterFish(FISH.SWORDFISH), needSkills([SKILL.STABILITY, GATE.FABLED])]],
   // Whaling gates the Whale. It previously gated nothing at all - the skill
   // was unlockable, trainable, and completely inert, and its "Whale Pay"
   // effect duplicated Navigation's.
@@ -594,7 +646,7 @@ export const requirements = new Map<string, Requirement[]>([
     FISH.WHALE,
     [
       afterFish(FISH.SHARK),
-      needSkills([SKILL.STABILITY, GATE.MYTHIC], [SKILL.WHALING, GATE.RENOWNED]),
+      needSkills([SKILL.STABILITY, GATE.IMMORTAL], [SKILL.WHALING, GATE.MYTHIC]),
       needBoat(BOAT.WHALING_SHIP),
     ],
   ],
@@ -623,7 +675,7 @@ export const requirements = new Map<string, Requirement[]>([
   ],
   [
     SKILL.TURNING,
-    [needSkills([SKILL.CONCENTRATION, GATE.GRANDMASTER], [SKILL.PATIENCE, GATE.MASTER])],
+    [needSkills([SKILL.CONCENTRATION, GATE.MASTER], [SKILL.PATIENCE, GATE.EXPERT])],
   ],
   [SKILL.ANCHORING, [afterFish(FISH.COD, FISH_ADEPT_LEVEL)]],
   [SKILL.SAILING, [afterFish(FISH.ANGLE_FISH)]],
@@ -633,8 +685,11 @@ export const requirements = new Map<string, Requirement[]>([
   [SKILL.STABILITY, [needSkills([SKILL.ANCHORING, GATE.GRANDMASTER])]],
   // ─── IMMORTALITY ─────────────────────────────────────────────────────────
   [SKILL.IMMORTALITY, [needSkills([SKILL.AMBITION, GATE.ACCOMPLISHED])]],
-  [SKILL.SUPER_IMMORTALITY, [needSkills([SKILL.IMMORTALITY, GATE.ELITE])]],
-  [SKILL.TIME_WARPING, [needSkills([SKILL.IMMORTALITY, GATE.EXPERT])]],
+  // Deliberately left near their old levels. Immortality is the engine that
+  // buys the lifespan every other gate is measured against, so hardening it
+  // alongside them would compound into a stall rather than a grind.
+  [SKILL.SUPER_IMMORTALITY, [needSkills([SKILL.IMMORTALITY, GATE.MASTER])]],
+  [SKILL.TIME_WARPING, [needSkills([SKILL.IMMORTALITY, GATE.VETERAN])]],
   // ─── BOATS & ITEMS ───────────────────────────────────────────────────────
   ...BOATS.map((b): [string, Requirement[]] => [
     b.name,
@@ -803,13 +858,35 @@ const applyBaseReset = () => {
   gameState.currentSkill = gameState.skillsData.get(SKILL.STRENGTH)!;
 };
 
-// legendPoints gained per ascension, before it's added: Tidal Focus and Deep
-// Meditation are the two "legend" skills that boost this (mirrors Progress
-// Knight's Evil control x Blood meditation formula for evil gain).
+// How far this run actually got. Each fish is weighted by its position in the
+// chain, so a deeper run counts for more and grinding shallow fish is never a
+// substitute for progressing - the chain can't be cheesed, since every fish
+// needs the previous one at NEXT_FISH_LEVEL plus its own skill gates.
+export const getRunDepth = (): number => {
+  let depth = 0;
+  let tier = 0;
+  gameState.fishingData.forEach((fish) => {
+    tier += 1;
+    depth += fish.level * tier;
+  });
+  return depth;
+};
+
+// legendPoints gained per ascension, before it's added. Tidal Focus and Deep
+// Meditation multiply it (mirrors Progress Knight's Evil control x Blood
+// meditation), but the base now comes from run depth rather than being a flat
+// 1 - see LEGEND_POINT_DEPTH_SCALE above. The square root keeps the reward
+// growing while making each extra tier worth a little less than the last, so
+// there's a point where ascending beats pushing on.
 export const getLegendPointGain = (): number => {
   let tidalFocus = gameState.skillsData.get(SKILL.TIDAL_FOCUS)!;
   let deepMeditation = gameState.skillsData.get(SKILL.DEEP_MEDITATION)!;
-  return tidalFocus.effect * deepMeditation.effect;
+  let fromDepth = Math.sqrt(getRunDepth() / LEGEND_POINT_DEPTH_SCALE);
+  return (
+    Math.max(LEGEND_POINT_MIN_GAIN, fromDepth) *
+    tidalFocus.effect *
+    deepMeditation.effect
+  );
 };
 
 // Tier 1 (small): resets progress but keeps maxLevel as a permanent record,
@@ -945,7 +1022,7 @@ export const skillBaseData: Map<string, SkillBaseData> = new Map([
   // Knight's "Dark magic" skill line, reskinned for fishing.
   skill(SKILL.SEA_LEGEND,         CATEGORY.LEGEND,       EFFECT.LEGEND,           DESC.ALL_XP),
   skill(SKILL.TIDAL_FOCUS,        CATEGORY.LEGEND,       EFFECT.LEGEND,           DESC.LEGEND_POINT_GAIN),
-  skill(SKILL.OLD_HAGGLER,        CATEGORY.LEGEND,       EFFECT.EXPENSE_DISCOUNT, DESC.EXPENSES),
+  skill(SKILL.OLD_HAGGLER,        CATEGORY.LEGEND,       EFFECT.EXPENSE_DECAY,    DESC.EXPENSES),
   skill(SKILL.WEATHERED_INSTINCT, CATEGORY.LEGEND,       EFFECT.LEGEND,           DESC.OCEAN_XP),
   skill(SKILL.DEEP_MEDITATION,    CATEGORY.LEGEND,       EFFECT.LEGEND,           DESC.LEGEND_POINT_GAIN),
   skill(SKILL.SUNKEN_FORTUNE,     CATEGORY.LEGEND,       EFFECT.LEGEND_PAY,       DESC.FISHING_PAY),

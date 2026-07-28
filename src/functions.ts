@@ -9,7 +9,15 @@ import type {
   RequirementObj,
   SkillBaseData,
 } from "src/Entities";
-import { Fishing, Skill, TimeWarping, Item, Task, Boat } from "./classes.svelte";
+import {
+  Fishing,
+  Skill,
+  TimeWarping,
+  ExpenseDiscount,
+  Item,
+  Task,
+  Boat,
+} from "./classes.svelte";
 import {
   getLifespan,
   gameState,
@@ -452,11 +460,11 @@ export function replaceSavedSkills(
       return;
     }
     let { level, maxLevel, xp, xpMultipliers } = saved;
-    // Time Warping needs its logarithmic effect override (see
-    // classes.svelte.ts) to survive a reload, not the plain Skill formula.
-    let SkillClass = key === SKILL.TIME_WARPING ? TimeWarping : Skill;
     // baseData comes from the live instance (current code), not the save -
-    // same reasoning as replaceSavedFishing above.
+    // same reasoning as replaceSavedFishing above. The subclass has to be
+    // re-picked too, or a reloaded save silently falls back to the plain
+    // `1 + effect * level` formula for the skills that override it.
+    let SkillClass = skillClassFor(key);
     saveMap.set(key, new SkillClass(val.baseData, level, maxLevel, xp, xpMultipliers));
   });
   return saveMap;
@@ -486,6 +494,22 @@ export function replaceSavedRequirements(
   return saveMap;
 }
 
+// Skills whose `effect` is not the standard `1 + effect * level`. Both
+// construction and save-loading have to agree on this, so the mapping lives in
+// one place rather than as a conditional duplicated at each site.
+//
+// Resolved per call rather than as a module-level lookup table: `SKILL` comes
+// from gameData.svelte.ts, which imports *this* module, so reading it while
+// this module body is still evaluating sees an uninitialised binding and
+// throws. Same import cycle the Requirement classes are kept in
+// gameData.svelte.ts to avoid - and neither svelte-check nor the build catches
+// it, since it only fails when the modules actually load.
+const skillClassFor = (name: string): typeof Skill => {
+  if (name === SKILL.TIME_WARPING) return TimeWarping;
+  if (name === SKILL.OLD_HAGGLER) return ExpenseDiscount;
+  return Skill;
+};
+
 export function createData(
   data: Map<string, Classes>,
   baseData: Map<string, Bases>
@@ -499,12 +523,7 @@ export function createEntity(data: Map<string, Classes>, entity: Bases) {
   if ("income" in entity) {
     data.set(entity.name, new Fishing(entity));
   } else if ("maxXp" in entity) {
-    // Time Warping needs its logarithmic effect override (see
-    // classes.svelte.ts) instead of the plain Skill formula.
-    data.set(
-      entity.name,
-      entity.name === SKILL.TIME_WARPING ? new TimeWarping(entity) : new Skill(entity)
-    );
+    data.set(entity.name, new (skillClassFor(entity.name))(entity));
   } else if ("bought" in entity) {
     data.set(entity.name, new Boat(entity));
   } else {

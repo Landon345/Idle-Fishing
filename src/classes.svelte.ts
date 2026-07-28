@@ -10,6 +10,9 @@ import {
 import {
   getGameData,
   subtractCoins,
+  BASE_XP_PER_DAY,
+  CATEGORY,
+  LEGEND_POINT_XP_BONUS,
   FISH_INCOME_LEVEL_EXPONENT,
   FISH_INCOME_LEVEL_SCALE,
   ITEM_EFFECT_GROWTH_PER_LEVEL,
@@ -64,10 +67,22 @@ export class Task {
     return maxLevelMultiplier;
   }
 
+  // Legend points are the only thing ascension never resets, so they - not
+  // maxLevel, which ascension wipes - are what makes each ascension cycle
+  // faster than the last. Applies to the legend line only, which is exactly
+  // what re-grinding after an ascension costs you.
+  get legendPointMultiplier(): number {
+    if (this.baseData.category != CATEGORY.LEGEND) return 1;
+    return 1 + getGameData().legendPoints * LEGEND_POINT_XP_BONUS;
+  }
+
   get xpGain() {
-    // Base Xp/day doubled (10 -> 20) per balance feedback.
     this.xpMultipliers = getXpMultipliers(this);
-    return applyMultipliers(20, this.xpMultipliers) * this.maxLevelMultiplier;
+    return (
+      applyMultipliers(BASE_XP_PER_DAY, this.xpMultipliers) *
+      this.maxLevelMultiplier *
+      this.legendPointMultiplier
+    );
   }
 
   get barWidth(): number {
@@ -173,6 +188,18 @@ export class Skill extends Task {
 export class TimeWarping extends Skill {
   get effect() {
     return 1 + getBaseLog(13, this.level + 1);
+  }
+}
+
+// "Old Haggler" discounts expenses, so its effect has to decay towards zero
+// rather than grow. The standard `1 + effect * level` with a negative effect
+// hit exactly 0 at level 100 - every item permanently free, and negative
+// beyond that - which the Math.max(0, ...) in Item.expense only papered over.
+// Compounding decay asymptotes instead, so the discount is always worth more
+// but never total.
+export class ExpenseDiscount extends Skill {
+  get effect() {
+    return Math.pow(this.baseData.effect, this.level);
   }
 }
 
