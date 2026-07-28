@@ -3,6 +3,7 @@ import {
   daysToYears,
   getTotalExpenses,
   lowestLevelSkill,
+  needRequirements,
   roundRobinFish,
 } from "src/functions";
 
@@ -12,6 +13,7 @@ import type {
   FishBaseData,
   GameDataType,
   ItemBaseData,
+  MasteryData,
   RequirementObj,
   SkillBaseData,
 } from "src/Entities";
@@ -367,6 +369,81 @@ const LEGEND_GATE = {
   VETERAN: 20,
   DEEP: 50,
   APEX: 150,
+};
+
+// ─── Mastery (roguelite picks) ─────────────────────────────────────────────
+// The Mastery tab opens once total levels across every fish and skill reach
+// MASTERY_LEVELS_PER_PICK, and offers another choice of MASTERY_OFFER_SIZE
+// every time that total climbs by the same again. Picks are per-run: they
+// reset on reincarnation, unlike legendPoints.
+export const MASTERY_LEVELS_PER_PICK = 200;
+export const MASTERY_OFFER_SIZE = 3;
+// Each pick is bound to a single fish or skill, so it can afford to be strong.
+export const MASTERY_EFFECT = 2;
+
+// Every Mastery targets one entity and multiplies its xp. The description is
+// always "<target> Xp", which the generic per-entity rule in functions.ts
+// resolves without any switch case - so the cast is safe by construction:
+// `target` always comes from the FISH/SKILL tables, never a hand-typed string.
+const masteryXpOf = (target: string) => `${target} Xp` as Description;
+
+// One named pick per fish and per skill. The name is the flavour; the key it
+// maps from is the entity whose xp it doubles.
+const MASTERY_NAMES: { [target: string]: string } = {
+  [FISH.SUN_FISH]: "Pond Prodigy",
+  [FISH.PERCH]: "Perch Hunter",
+  [FISH.BASS]: "Bass Whisperer",
+  [FISH.TROUT]: "Trout Stalker",
+  [FISH.WALEYE]: "Golden Eye",
+  [FISH.NORTHERN_PIKE]: "Pike Whisperer",
+  [FISH.LAKE_STURGEON]: "Sturgeon Hauler",
+  [FISH.PIRANA]: "Piranha Handler",
+  [FISH.SALMON]: "Salmon Runner",
+  [FISH.SILVER_DRUM]: "Drum Listener",
+  [FISH.ARMOURED_CATFISH]: "Plate Breaker",
+  [FISH.ELECTRIC_EEL]: "Insulated Hands",
+  [FISH.PACU]: "Pacu Charmer",
+  [FISH.PAYARA]: "Fang Wrangler",
+  [FISH.COD]: "Cod Father",
+  [FISH.MACKEREL]: "Shoal Reader",
+  [FISH.ANGLE_FISH]: "Lantern Chaser",
+  [FISH.GROUPER]: "Reef Wrestler",
+  [FISH.STINGRAY]: "Barb Handler",
+  [FISH.BARRACUDA]: "Cuda Catcher",
+  [FISH.BLUEFIN_TUNA]: "Bluefin Specialist",
+  [FISH.BLUE_MARLIN]: "Marlin Master",
+  [FISH.SWORDFISH]: "Broadbill Hunter",
+  [FISH.SHARK]: "Shark Baiter",
+  [FISH.WHALE]: "Leviathan Seeker",
+
+  [SKILL.STRENGTH]: "Iron Grip",
+  [SKILL.CONCENTRATION]: "Deep Focus",
+  [SKILL.INTELLIGENCE]: "Well Read",
+  [SKILL.PATIENCE]: "Still Waters",
+  [SKILL.AMBITION]: "Hungry Heart",
+  [SKILL.COMMUNICATION]: "Dock Talk",
+  [SKILL.CASTING]: "Perfect Arc",
+  [SKILL.JIGGING]: "Twitch Timing",
+  [SKILL.TROLLING]: "Spread Setter",
+  [SKILL.REELING]: "Smooth Retrieve",
+  [SKILL.HOOKING]: "Sharp Set",
+  [SKILL.NETTING]: "Clean Scoop",
+  [SKILL.WHALING]: "Harpoon Form",
+  [SKILL.DOCKING]: "Tight Berth",
+  [SKILL.TURNING]: "Hard Rudder",
+  [SKILL.ANCHORING]: "Sure Hold",
+  [SKILL.SAILING]: "Wind Sense",
+  [SKILL.NAVIGATION]: "Dead Reckoning",
+  [SKILL.STABILITY]: "Sea Legs",
+  [SKILL.IMMORTALITY]: "Old Salt",
+  [SKILL.SUPER_IMMORTALITY]: "Ageless Mariner",
+  [SKILL.TIME_WARPING]: "Tide Bender",
+  [SKILL.SEA_LEGEND]: "Living Legend",
+  [SKILL.TIDAL_FOCUS]: "Moon Pull",
+  [SKILL.OLD_HAGGLER]: "Sharp Tongue",
+  [SKILL.WEATHERED_INSTINCT]: "Storm Sense",
+  [SKILL.DEEP_MEDITATION]: "Silent Depths",
+  [SKILL.SUNKEN_FORTUNE]: "Treasure Sense",
 };
 
 // ─── Boats ─────────────────────────────────────────────────────────────────
@@ -734,6 +811,10 @@ export const gameState: GameDataType = $state({
   currentlyFishing: null,
   currentSkill: null,
   legendPoints: 0,
+
+  masteryTaken: [],
+  masteryOffer: [],
+  masteryPassed: [],
 });
 
 export const update = (
@@ -749,6 +830,7 @@ export const update = (
   updateCurrentFish(deltaSeconds);
   updateCurrentSkill(deltaSeconds);
   updateItemExpenses(deltaSeconds);
+  updateMasteryOffer();
   if (autoTrain) {
     autoSetCurrentSkill();
   }
@@ -817,6 +899,86 @@ export const subtractCoins = (amount: number) => {
   gameState.coins -= amount;
 };
 
+// ─── Mastery ───────────────────────────────────────────────────────────────
+// Combined levels across every fish and skill - the currency Mastery picks are
+// earned with.
+export const getTotalLevels = (): number => {
+  let total = 0;
+  gameState.fishingData.forEach((fish) => (total += fish.level));
+  gameState.skillsData.forEach((skill) => (total += skill.level));
+  return total;
+};
+
+export const getMasteryPicksEarned = (): number =>
+  Math.floor(getTotalLevels() / MASTERY_LEVELS_PER_PICK);
+
+// Levels still to climb before the next choice appears.
+export const getLevelsUntilNextMastery = (): number =>
+  (getMasteryPicksEarned() + 1) * MASTERY_LEVELS_PER_PICK - getTotalLevels();
+
+export const masteryUnlocked = (): boolean =>
+  getTotalLevels() >= MASTERY_LEVELS_PER_PICK || gameState.masteryTaken.length > 0;
+
+// Only the taken picks are handed to the multiplier walk - see Mastery in
+// classes.svelte.ts for why they aren't tracked on the instances.
+export const takenMasteries = (): MasteryData[] =>
+  gameState.masteryTaken
+    .map((name) => masteryData.get(name))
+    .filter((mastery): mastery is MasteryData => mastery !== undefined);
+
+// Three picks drawn from whatever the player has actually unlocked, so an
+// offer is never dead weight. Anything already taken - or turned down earlier
+// this run - is out of the pool for good.
+const rollMasteryOffer = (): string[] => {
+  const spent = new Set([...gameState.masteryTaken, ...gameState.masteryPassed]);
+  const candidates: string[] = [];
+  masteryData.forEach((mastery, name) => {
+    if (spent.has(name)) return;
+    const target =
+      gameState.fishingData.get(mastery.baseData.target) ??
+      gameState.skillsData.get(mastery.baseData.target);
+    if (!target || needRequirements(gameState, target)) return;
+    candidates.push(name);
+  });
+
+  const offer: string[] = [];
+  while (offer.length < MASTERY_OFFER_SIZE && candidates.length > 0) {
+    const index = Math.floor(Math.random() * candidates.length);
+    offer.push(candidates.splice(index, 1)[0]);
+  }
+  return offer;
+};
+
+// Rolled once and stored, so the three on the table survive a reload rather
+// than being re-rolled every time the page loads.
+export const updateMasteryOffer = () => {
+  // Drop names the pool no longer knows about. A Mastery renamed or removed
+  // since a save was written would otherwise wedge this permanently: the offer
+  // stays non-empty so it never re-rolls, while being unrenderable and
+  // unchoosable. Stale taken picks are pruned for the same reason - they grant
+  // nothing (takenMasteries skips them) but would still consume a pick.
+  gameState.masteryOffer = gameState.masteryOffer.filter((name) =>
+    masteryData.has(name)
+  );
+  gameState.masteryTaken = gameState.masteryTaken.filter((name) =>
+    masteryData.has(name)
+  );
+
+  if (gameState.masteryOffer.length > 0) return;
+  if (gameState.masteryTaken.length >= getMasteryPicksEarned()) return;
+  gameState.masteryOffer = rollMasteryOffer();
+};
+
+export const chooseMastery = (name: string) => {
+  if (!gameState.masteryOffer.includes(name)) return;
+  gameState.masteryTaken.push(name);
+  // The two not chosen are burned for the rest of the run.
+  gameState.masteryPassed.push(
+    ...gameState.masteryOffer.filter((offered) => offered !== name)
+  );
+  gameState.masteryOffer = [];
+};
+
 export const updateItemExpenses = (deltaSeconds: number) => {
   if (gameState.coins <= 0) {
     gameState.itemData.forEach((item) => item.deselect());
@@ -859,6 +1021,11 @@ const applyBaseReset = () => {
     });
   });
   gameState.coins = 0;
+  // Mastery picks are per-run: reincarnation puts every one of them back in
+  // the pool, including the ones that were turned down.
+  gameState.masteryTaken = [];
+  gameState.masteryOffer = [];
+  gameState.masteryPassed = [];
   // 0, not DAYS_PER_YEAR * STARTING_AGE: calculatedAge() already displays
   // STARTING_AGE + years-elapsed, so a fresh game (day: 0 in the initial
   // gameState above) already shows "Age 14". Setting day to the offset here
@@ -1064,6 +1231,19 @@ export const itemBaseData: Map<string, ItemBaseData> = new Map(
       description: i.description,
       selected: false,
       upgradePrice: i.expense * ITEM_UPGRADE_PRICE_DAYS,
+    },
+  ])
+);
+
+// Static: the pool never changes, and which picks are live is tracked by
+// gameState.masteryTaken rather than on these entries.
+export const masteryData: Map<string, MasteryData> = new Map(
+  Object.entries(MASTERY_NAMES).map(([target, name]): [string, MasteryData] => [
+    name,
+    {
+      name,
+      effect: MASTERY_EFFECT,
+      baseData: { name, target, description: masteryXpOf(target) },
     },
   ])
 );

@@ -84,6 +84,26 @@ export interface SkillBaseData {
   category: string;
 }
 
+// A roguelite Mastery pick: a flat multiplier bound to exactly one fish or one
+// skill. `description` is always "<target> Xp", which the generic per-entity
+// rule in functions.ts already resolves - see masteryBaseData.
+export interface MasteryBaseData {
+  name: string;
+  target: string;
+  description: Description;
+}
+
+// Deliberately a plain object rather than a class: masteryData is built during
+// gameData.svelte.ts's module body, and anything constructed there cannot come
+// from classes.svelte.ts, which imports back from gameData - the same cycle
+// that the Requirement classes are kept out of classes.svelte.ts to avoid.
+// The shape matches what the multiplier walk in functions.ts needs.
+export interface MasteryData {
+  name: string;
+  effect: number;
+  baseData: MasteryBaseData;
+}
+
 export interface RequirementObj {
   name: string;
   requirement: number | boolean;
@@ -113,4 +133,13 @@ export interface GameDataType {
   currentlyFishing: Fishing | null;
   currentSkill: Skill | null;
   legendPoints: number;
+
+  // Mastery (roguelite picks). Names index masteryBaseData. All three reset on
+  // reincarnation - the picks are per-run, unlike legendPoints.
+  //   masteryTaken  - chosen, and currently applying their multiplier
+  //   masteryOffer  - the three on the table right now, empty if none pending
+  //   masteryPassed - the ones turned down, locked out for the rest of the run
+  masteryTaken: string[];
+  masteryOffer: string[];
+  masteryPassed: string[];
 }

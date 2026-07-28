@@ -32,6 +32,7 @@ import {
   CATEGORY,
   FISH,
   SKILL,
+  takenMasteries,
 } from "./gameData.svelte";
 
 export const daysToYears = (days: number) => Math.floor(days / DAYS_PER_YEAR);
@@ -273,6 +274,8 @@ const effectSources = (): EffectSource[] => [
   ...getGameData().skillsData.values(),
   ...getGameData().itemData.values(),
   ...getGameData().boatData.values(),
+  // Only the picks actually taken, not the whole ~50-entry Mastery pool.
+  ...takenMasteries(),
 ];
 
 // The three collectors below differ only in how they resolve one source's

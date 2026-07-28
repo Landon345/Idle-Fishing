@@ -17,9 +17,11 @@
     update,
     setCurrentSkill,
     setCurrentlyFishing,
+    masteryUnlocked,
   } from "./gameData.svelte";
   import Sidebar from "src/Sidebar.svelte";
   import Reincarnation from "src/tabs/Reincarnation.svelte";
+  import Mastery from "src/tabs/Mastery.svelte";
 
   type Tab =
     | "goneFishing"
@@ -27,7 +29,8 @@
     | "shop"
     | "achievements"
     | "settings"
-    | "reincarnation";
+    | "reincarnation"
+    | "mastery";
   let selectedTab: Tab = $state("skills");
 
   createData(gameState.fishingData, fishBaseData);
@@ -93,6 +96,18 @@
               onclick={() => selectTab(tab.key)}>{tab.label}</button
             >
           {/each}
+          <!-- Opens at MASTERY_LEVELS_PER_PICK combined levels. The dot marks
+               a choice waiting to be made. -->
+          {#if masteryUnlocked()}
+            <button
+              class={`btn rounded-lg text-sm font-medium ${selectedTab === "mastery" ? "bg-amber-600 text-white" : "text-slate-300 hover:bg-slate-800"}`}
+              onclick={() => selectTab("mastery")}
+            >
+              Mastery{#if gameState.masteryOffer.length > 0}<span
+                  class="ml-1 inline-block h-2 w-2 rounded-full bg-amber-400 align-middle"
+                ></span>{/if}
+            </button>
+          {/if}
           <!-- calculatedAge() displays 14 + years-elapsed, so 365*36 here is
                displayed "Age 50" (matches the Reincarnation tab's narrative). -->
           {#if gameState.day > 365 * 36}
@@ -119,6 +134,8 @@
           <Shop />
         {:else if selectedTab == "reincarnation"}
           <Reincarnation />
+        {:else if selectedTab == "mastery"}
+          <Mastery />
         {:else}
           <Settings />
         {/if}
