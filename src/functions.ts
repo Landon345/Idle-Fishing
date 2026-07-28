@@ -255,66 +255,51 @@ export function applyMultipliers(
 const XP_SUFFIX = " Xp";
 const PAY_SUFFIX = " Pay";
 
-export const getIncomeMultipliers = (task: Task): { [key: string]: number } => {
-  let multipliers = {};
-  getGameData().fishingData.forEach((fish) => {
-    let effect = kind(task, fish.baseData.description, fish.effect);
-    if (effect != 1) {
-      multipliers[fish.name] = effect;
-    }
-  });
-  getGameData().skillsData.forEach((skill) => {
-    let effect = kind(task, skill.baseData.description, skill.effect);
-    if (effect != 1) {
-      multipliers[skill.name] = effect;
-    }
-  });
-  getGameData().itemData.forEach((item) => {
-    let effect = kind(task, item.baseData.description, item.effect);
-    if (effect != 1) {
-      multipliers[item.name] = effect;
-    }
-  });
+// Anything that can carry an effect. Boats are in here too now that they're
+// upgrades rather than pure paywalls - a Boat exposes `effect` (flat, and only
+// once bought) and `baseData.description` just like a Task or an Item does.
+type EffectSource = { name: string; effect: number; baseData: { description: Description } };
 
-  // Income descriptions come in three shapes: the global "Fishing Pay", a
-  // "<Region> Pay" whose first word is the task's category, and a
-  // "<Entity Name> Pay" naming exactly one fish. The latter two are rules
-  // rather than one case per entity, so adding a new target needs no edit here.
-  function kind(task: Task, description: Description, effect: number): number {
+const effectSources = (): EffectSource[] => [
+  ...getGameData().fishingData.values(),
+  ...getGameData().skillsData.values(),
+  ...getGameData().itemData.values(),
+  ...getGameData().boatData.values(),
+];
+
+// The three collectors below differ only in how they resolve one source's
+// description into a multiplier, so the walk over every source lives here once.
+const collectMultipliers = (
+  resolve: (description: Description, effect: number) => number
+): { [key: string]: number } => {
+  const multipliers: { [key: string]: number } = {};
+  for (const source of effectSources()) {
+    const effect = resolve(source.baseData.description, source.effect);
+    if (effect != 1) {
+      multipliers[source.name] = effect;
+    }
+  }
+  return multipliers;
+};
+
+// Income descriptions come in three shapes: the global "Fishing Pay", a
+// "<Region> Pay" whose first word is the task's category, and a
+// "<Entity Name> Pay" naming exactly one fish. The latter two are rules rather
+// than one case per entity, so adding a new target needs no edit here.
+export const getIncomeMultipliers = (task: Task): { [key: string]: number } =>
+  collectMultipliers((description, effect) => {
     if (description == "Fishing Pay") return effect;
     if (!description.endsWith(PAY_SUFFIX)) return 1;
     const target = description.slice(0, -PAY_SUFFIX.length);
     if (target.toLowerCase() == task.baseData.category) return effect;
     if (target == task.name) return effect;
     return 1;
-  }
+  });
 
-  return multipliers;
-};
-
-export const getXpMultipliers = (task: Task): { [key: string]: number } => {
-  let multipliers = {};
-  getGameData().fishingData.forEach((fish) => {
-    let effect = kind(task, fish.baseData.description, fish.effect);
-    if (effect != 1) {
-      multipliers[fish.name] = effect;
-    }
-  });
-  getGameData().skillsData.forEach((skill) => {
-    let effect = kind(task, skill.baseData.description, skill.effect);
-    if (effect != 1) {
-      multipliers[skill.name] = effect;
-    }
-  });
-  getGameData().itemData.forEach((item) => {
-    let effect = kind(task, item.baseData.description, item.effect);
-    if (effect != 1) {
-      multipliers[item.name] = effect;
-    }
-  });
-  // The four broad kinds need their own handling; everything else is either
-  // "<Region> Xp" or "<Entity Name> Xp" and falls through to the rule below.
-  function kind(task: Task, description: Description, effect: number): number {
+// The five broad kinds need their own handling; everything else is either
+// "<Region> Xp" or "<Entity Name> Xp" and falls through to the rule below.
+export const getXpMultipliers = (task: Task): { [key: string]: number } =>
+  collectMultipliers((description, effect) => {
     switch (description) {
       case "All Xp":
         return effect;
@@ -336,40 +321,15 @@ export const getXpMultipliers = (task: Task): { [key: string]: number } => {
     if (target.toLowerCase() == task.baseData.category) return effect;
     if (target == task.name) return effect;
     return 1;
-  }
-
-  return multipliers;
-};
+  });
 
 // Applies uniformly to every item's running expense (there's no per-item
 // targeting like the income/xp multipliers above), mirroring how Progress
 // Knight's "Intimidation" skill discounts every item's expense.
-export const getExpenseMultipliers = (): { [key: string]: number } => {
-  let multipliers: { [key: string]: number } = {};
-  const kind = (description: Description, effect: number): number =>
-    description == "Expenses" ? effect : 1;
-
-  getGameData().fishingData.forEach((fish) => {
-    let effect = kind(fish.baseData.description, fish.effect);
-    if (effect != 1) {
-      multipliers[fish.name] = effect;
-    }
-  });
-  getGameData().skillsData.forEach((skill) => {
-    let effect = kind(skill.baseData.description, skill.effect);
-    if (effect != 1) {
-      multipliers[skill.name] = effect;
-    }
-  });
-  getGameData().itemData.forEach((item) => {
-    let effect = kind(item.baseData.description, item.effect);
-    if (effect != 1) {
-      multipliers[item.name] = effect;
-    }
-  });
-
-  return multipliers;
-};
+export const getExpenseMultipliers = (): { [key: string]: number } =>
+  collectMultipliers((description, effect) =>
+    description == "Expenses" ? effect : 1
+  );
 
 export function coinAmounts(coins: number): {
   r: number;

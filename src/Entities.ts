@@ -45,6 +45,10 @@ export interface BoatBaseData {
   name: string;
   price: number;
   bought: boolean;
+  // Boats have no level, so this is a flat multiplier that applies once the
+  // boat is bought - see Boat.effect in classes.svelte.ts.
+  effect: number;
+  description: Description;
 }
 
 export interface ItemBaseData {

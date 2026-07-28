@@ -10,6 +10,8 @@ import {
 import {
   getGameData,
   subtractCoins,
+  FISH_INCOME_LEVEL_EXPONENT,
+  FISH_INCOME_LEVEL_SCALE,
   ITEM_EFFECT_GROWTH_PER_LEVEL,
   ITEM_EXPENSE_GROWTH_PER_LEVEL,
   ITEM_UPGRADE_PRICE_GROWTH_PER_LEVEL,
@@ -112,9 +114,16 @@ export class Fishing extends Task {
     this.incomeMultipliers = incomeMultipliers;
   }
 
+  // Income scales with a root of the fish's level rather than its logarithm.
+  // log10 gave only 3x at level 100 and 4x at level 1000, so a fish's income
+  // was set almost entirely by *which* fish it was - "stay here and earn
+  // versus push to the next fish" was never a real question. The tier gap
+  // still dwarfs this (Sun Fish pays 5/day, Whale 3.2M), so levelling is now
+  // worth doing without ever making a shallow fish out-earn a deep one.
   get levelMultiplier() {
-    let levelMultiplier = 1 + Math.log10(this.level + 1);
-    return levelMultiplier;
+    return (
+      1 + Math.pow(this.level, FISH_INCOME_LEVEL_EXPONENT) * FISH_INCOME_LEVEL_SCALE
+    );
   }
 
   get income() {
@@ -261,9 +270,13 @@ export class Item {
 
 export class Boat {
   name: string;
-  baseData: { name: string; price: number; bought: boolean } = $state(
-    undefined as any
-  );
+  baseData: {
+    name: string;
+    price: number;
+    bought: boolean;
+    effect: number;
+    description: Description;
+  } = $state(undefined as any);
   constructor(baseData) {
     this.baseData = baseData;
     this.name = baseData.name;
@@ -271,6 +284,17 @@ export class Boat {
 
   get bought() {
     return this.baseData.bought;
+  }
+
+  // Unlike Task and Item, a boat has no level: its multiplier is flat, and
+  // applies only once the boat is actually bought. Boats used to carry no
+  // effect at all, which made them pure paywalls.
+  get effect() {
+    return this.bought ? this.baseData.effect : 1;
+  }
+
+  get effectDescription() {
+    return "x" + String(this.effect.toFixed(2)) + " " + this.baseData.description;
   }
 
   buy() {

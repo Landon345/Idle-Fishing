@@ -29,6 +29,12 @@
           {/if}
         </div>
 
+        <!-- `boat.effect` is 1 until bought, so show what buying it *would*
+             give rather than the currently-inactive x1.00. -->
+        <span class={`text-sm ${boat.bought ? "text-emerald-300" : "text-slate-400"}`}>
+          x{boat.baseData.effect.toFixed(2)} {boat.baseData.description}
+        </span>
+
         {#if !boat.bought}
           <button
             class={`btn mt-1 flex items-center justify-center gap-1 rounded-lg text-sm font-medium ${canAfford(boat.baseData.price) ? "bg-sky-700 text-white hover:bg-sky-600" : "cursor-not-allowed bg-slate-700 text-slate-500"}`}

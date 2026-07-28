@@ -232,6 +232,13 @@ const EFFECT = {
   UNUSED: 0,
 };
 
+// ─── Fish income curve ─────────────────────────────────────────────────────
+// A fish's income is `base * multipliers * (1 + level^EXPONENT * SCALE)` - see
+// Fishing.levelMultiplier. At 0.5/0.5 a fish is worth ~6x at level 100 and
+// ~17x at level 1000, against the old logarithm's 3x and 4x.
+export const FISH_INCOME_LEVEL_EXPONENT = 0.5;
+export const FISH_INCOME_LEVEL_SCALE = 0.5;
+
 // ─── Fish xp curves ────────────────────────────────────────────────────────
 // A fish's base maxXp is `base * growth^tier` within its region, replacing
 // three inconsistent hand-written curves (lake stepped 2x/tier, river and
@@ -309,16 +316,27 @@ const LEGEND_GATE = {
 // `price` is what it costs. From Canoe onward revealAt currently sits well
 // *above* price, so those boats only appear once already affordable - a
 // separate pass.
-const BOATS: { name: string; price: number; revealAt: number }[] = [
-  { name: BOAT.ROW_BOAT, price: 600, revealAt: 500 },
-  { name: BOAT.SILVER_BULLET, price: 3_000, revealAt: 1_000 },
-  { name: BOAT.BASS_BOAT, price: 60_000, revealAt: 50_000 },
-  { name: BOAT.CANOE, price: 200_000, revealAt: 500_000 },
-  { name: BOAT.RIVER_SKIFF, price: 600_000, revealAt: 1_000_000 },
-  { name: BOAT.AIRBOAT, price: 1_800_000, revealAt: 5_000_000 },
-  { name: BOAT.SAIL_BOAT, price: 5_400_000, revealAt: 10_000_000 },
-  { name: BOAT.YACHT, price: 16_200_000, revealAt: 50_000_000 },
-  { name: BOAT.WHALING_SHIP, price: 60_000_000, revealAt: 500_000_000 },
+// A boat becomes visible in the shop once you hold this fraction of its price,
+// so it always reads as a savings goal. The thresholds used to be hand-set and
+// inverted from the Canoe onward - the Whaling Ship only appeared once you held
+// 8.3x its price, i.e. long after it stopped being a goal at all.
+export const BOAT_REVEAL_FRACTION = 0.75;
+
+// Boats are no longer pure paywalls. Each one carries a flat multiplier (they
+// have no level) that boosts the water it opens up, so buying one is an upgrade
+// rather than a toll booth. The three region-capstone boats instead point
+// forward at the skill gating the next region's content.
+const BOATS: { name: string; price: number; effect: number; description: Description }[] = [
+  //  name                    price        effect  target
+  { name: BOAT.ROW_BOAT,      price: 600,         effect: 1.25, description: DESC.LAKE_XP },
+  { name: BOAT.SILVER_BULLET, price: 3_000,       effect: 1.5,  description: DESC.LAKE_PAY },
+  { name: BOAT.BASS_BOAT,     price: 60_000,      effect: 1.5,  description: DESC.CASTING_XP },   // Armoured Catfish
+  { name: BOAT.CANOE,         price: 200_000,     effect: 1.75, description: DESC.RIVER_XP },
+  { name: BOAT.RIVER_SKIFF,   price: 600_000,     effect: 2,    description: DESC.RIVER_PAY },
+  { name: BOAT.AIRBOAT,       price: 1_800_000,   effect: 2,    description: DESC.NETTING_XP },   // Mackerel
+  { name: BOAT.SAIL_BOAT,     price: 5_400_000,   effect: 2.5,  description: DESC.OCEAN_XP },
+  { name: BOAT.YACHT,         price: 16_200_000,  effect: 3,    description: DESC.OCEAN_PAY },
+  { name: BOAT.WHALING_SHIP,  price: 60_000_000,  effect: 3,    description: DESC.WHALING_XP },   // Whale
 ];
 
 // ─── Items ─────────────────────────────────────────────────────────────────
@@ -618,7 +636,10 @@ export const requirements = new Map<string, Requirement[]>([
   [SKILL.SUPER_IMMORTALITY, [needSkills([SKILL.IMMORTALITY, GATE.ELITE])]],
   [SKILL.TIME_WARPING, [needSkills([SKILL.IMMORTALITY, GATE.EXPERT])]],
   // ─── BOATS & ITEMS ───────────────────────────────────────────────────────
-  ...BOATS.map((b): [string, Requirement[]] => [b.name, [needCoins(b.revealAt)]]),
+  ...BOATS.map((b): [string, Requirement[]] => [
+    b.name,
+    [needCoins(Math.round(b.price * BOAT_REVEAL_FRACTION))],
+  ]),
   ...ITEMS.map((i): [string, Requirement[]] => [i.name, [needCoins(i.revealAt)]]),
   // ─── LEGEND SKILLS ───────────────────────────────────────────────────────
   [SKILL.SEA_LEGEND, [needLegendPoints(LEGEND_GATE.INITIATE)]],
@@ -933,7 +954,13 @@ export const skillBaseData: Map<string, SkillBaseData> = new Map([
 export const boatBaseData: Map<string, BoatBaseData> = new Map(
   BOATS.map((b): [string, BoatBaseData] => [
     b.name,
-    { name: b.name, price: b.price, bought: false },
+    {
+      name: b.name,
+      price: b.price,
+      bought: false,
+      effect: b.effect,
+      description: b.description,
+    },
   ])
 );
 
