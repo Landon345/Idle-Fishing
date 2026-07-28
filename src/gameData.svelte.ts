@@ -105,7 +105,11 @@ const DESC = {
   BLUEFIN_TUNA_XP: "Bluefin Tuna Xp",
   BLUE_MARLIN_XP: "Blue Marlin Xp",
   WHALE_XP: "Whale Xp",
-  // Income.
+  // Income. Effects generally avoid stacking more than a few owners deep, so
+  // that no two things the player is choosing between do the same job - but
+  // OCEAN_PAY is deliberately the exception, carried by Communication,
+  // Docking, Shark and the Yacht at once. The ocean is late game, and it is
+  // meant to pay out disproportionately once you get there.
   FISHING_PAY: "Fishing Pay",
   LAKE_PAY: "Lake Pay",
   RIVER_PAY: "River Pay",
