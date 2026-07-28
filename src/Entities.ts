@@ -84,23 +84,28 @@ export interface SkillBaseData {
   category: string;
 }
 
-// A roguelite Mastery pick: a flat multiplier bound to exactly one fish or one
-// skill. `description` is always "<target> Xp", which the generic per-entity
-// rule in functions.ts already resolves - see masteryBaseData.
+// A roguelite Mastery pick, bound to exactly one fish or one skill.
+// `description` is always "<target> Xp", which the generic per-entity rule in
+// functions.ts already resolves - see masteryData.
 export interface MasteryBaseData {
   name: string;
   target: string;
   description: Description;
 }
 
-// Deliberately a plain object rather than a class: masteryData is built during
-// gameData.svelte.ts's module body, and anything constructed there cannot come
-// from classes.svelte.ts, which imports back from gameData - the same cycle
-// that the Requirement classes are kept out of classes.svelte.ts to avoid.
-// The shape matches what the multiplier walk in functions.ts needs.
+// One taken Mastery, with its multiplier already folded across however many
+// times it was picked. Built on demand rather than stored, since the stack
+// count lives in gameState.masteryTaken.
+//
+// Deliberately a plain object rather than a class: these are produced inside
+// gameData.svelte.ts, which cannot construct anything from classes.svelte.ts -
+// that module imports back from gameData, the same cycle the Requirement
+// classes are kept out of classes.svelte.ts to avoid. The shape matches what
+// the multiplier walk in functions.ts needs.
 export interface MasteryData {
   name: string;
   effect: number;
+  stacks: number;
   baseData: MasteryBaseData;
 }
 
@@ -134,12 +139,11 @@ export interface GameDataType {
   currentSkill: Skill | null;
   legendPoints: number;
 
-  // Mastery (roguelite picks). Names index masteryBaseData. All three reset on
+  // Mastery (roguelite picks). Names index masteryData. Both reset on
   // reincarnation - the picks are per-run, unlike legendPoints.
-  //   masteryTaken  - chosen, and currently applying their multiplier
-  //   masteryOffer  - the three on the table right now, empty if none pending
-  //   masteryPassed - the ones turned down, locked out for the rest of the run
+  //   masteryTaken - every pick made this run, in order. A name appearing more
+  //                  than once is stacked: each repeat raises its multiplier.
+  //   masteryOffer - the choices on the table right now, empty if none pending
   masteryTaken: string[];
   masteryOffer: string[];
-  masteryPassed: string[];
 }

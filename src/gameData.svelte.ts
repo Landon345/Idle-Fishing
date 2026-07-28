@@ -13,6 +13,7 @@ import type {
   FishBaseData,
   GameDataType,
   ItemBaseData,
+  MasteryBaseData,
   MasteryData,
   RequirementObj,
   SkillBaseData,
@@ -378,8 +379,12 @@ const LEGEND_GATE = {
 // reset on reincarnation, unlike legendPoints.
 export const MASTERY_LEVELS_PER_PICK = 200;
 export const MASTERY_OFFER_SIZE = 3;
-// Each pick is bound to a single fish or skill, so it can afford to be strong.
-export const MASTERY_EFFECT = 2;
+// Picks stack: taking the same Mastery again raises its multiplier by this
+// much rather than being wasted, so pouring every choice into one fish is a
+// real strategy. Additive rather than compounding - at one pick per 200 levels
+// a run yields enough choices that x2 per stack would run away.
+// One stack is x2, two is x3, three is x4.
+export const MASTERY_EFFECT_PER_STACK = 1;
 
 // Every Mastery targets one entity and multiplies its xp. The description is
 // always "<target> Xp", which the generic per-entity rule in functions.ts
@@ -814,7 +819,6 @@ export const gameState: GameDataType = $state({
 
   masteryTaken: [],
   masteryOffer: [],
-  masteryPassed: [],
 });
 
 export const update = (
@@ -919,24 +923,44 @@ export const getLevelsUntilNextMastery = (): number =>
 export const masteryUnlocked = (): boolean =>
   getTotalLevels() >= MASTERY_LEVELS_PER_PICK || gameState.masteryTaken.length > 0;
 
-// Only the taken picks are handed to the multiplier walk - see Mastery in
-// classes.svelte.ts for why they aren't tracked on the instances.
-export const takenMasteries = (): MasteryData[] =>
-  gameState.masteryTaken
-    .map((name) => masteryData.get(name))
-    .filter((mastery): mastery is MasteryData => mastery !== undefined);
+// How many times this Mastery has been picked this run.
+export const getMasteryStacks = (name: string): number =>
+  gameState.masteryTaken.filter((taken) => taken === name).length;
 
-// Three picks drawn from whatever the player has actually unlocked, so an
-// offer is never dead weight. Anything already taken - or turned down earlier
-// this run - is out of the pool for good.
+// The multiplier a given number of stacks is worth. Zero stacks is x1, i.e.
+// no effect at all, which is what an unpicked Mastery is.
+export const masteryEffect = (stacks: number): number =>
+  1 + MASTERY_EFFECT_PER_STACK * stacks;
+
+// One entry per *distinct* Mastery taken, with its stacks already folded into
+// a single multiplier. It has to be aggregated rather than emitted per pick:
+// the multiplier map in functions.ts is keyed by name, so three separate
+// entries called "Pike Whisperer" would overwrite each other and apply once.
+export const takenMasteries = (): MasteryData[] => {
+  const stacks = new Map<string, number>();
+  for (const name of gameState.masteryTaken) {
+    stacks.set(name, (stacks.get(name) ?? 0) + 1);
+  }
+
+  const taken: MasteryData[] = [];
+  stacks.forEach((count, name) => {
+    const base = masteryData.get(name);
+    if (!base) return;
+    taken.push({ name, effect: masteryEffect(count), stacks: count, baseData: base });
+  });
+  return taken;
+};
+
+// Drawn from whatever the player has actually unlocked, so an offer is never
+// dead weight. Masteries already taken stay in the pool - offering one again
+// is how stacking happens - but `splice` keeps a single offer from showing the
+// same Mastery twice.
 const rollMasteryOffer = (): string[] => {
-  const spent = new Set([...gameState.masteryTaken, ...gameState.masteryPassed]);
   const candidates: string[] = [];
   masteryData.forEach((mastery, name) => {
-    if (spent.has(name)) return;
     const target =
-      gameState.fishingData.get(mastery.baseData.target) ??
-      gameState.skillsData.get(mastery.baseData.target);
+      gameState.fishingData.get(mastery.target) ??
+      gameState.skillsData.get(mastery.target);
     if (!target || needRequirements(gameState, target)) return;
     candidates.push(name);
   });
@@ -969,13 +993,11 @@ export const updateMasteryOffer = () => {
   gameState.masteryOffer = rollMasteryOffer();
 };
 
+// The ones not chosen are simply not taken: they stay in the pool and can be
+// offered again later.
 export const chooseMastery = (name: string) => {
   if (!gameState.masteryOffer.includes(name)) return;
   gameState.masteryTaken.push(name);
-  // The two not chosen are burned for the rest of the run.
-  gameState.masteryPassed.push(
-    ...gameState.masteryOffer.filter((offered) => offered !== name)
-  );
   gameState.masteryOffer = [];
 };
 
@@ -1021,11 +1043,9 @@ const applyBaseReset = () => {
     });
   });
   gameState.coins = 0;
-  // Mastery picks are per-run: reincarnation puts every one of them back in
-  // the pool, including the ones that were turned down.
+  // Mastery picks are per-run: reincarnation clears every stack earned.
   gameState.masteryTaken = [];
   gameState.masteryOffer = [];
-  gameState.masteryPassed = [];
   // 0, not DAYS_PER_YEAR * STARTING_AGE: calculatedAge() already displays
   // STARTING_AGE + years-elapsed, so a fresh game (day: 0 in the initial
   // gameState above) already shows "Age 14". Setting day to the offset here
@@ -1235,16 +1255,12 @@ export const itemBaseData: Map<string, ItemBaseData> = new Map(
   ])
 );
 
-// Static: the pool never changes, and which picks are live is tracked by
-// gameState.masteryTaken rather than on these entries.
-export const masteryData: Map<string, MasteryData> = new Map(
-  Object.entries(MASTERY_NAMES).map(([target, name]): [string, MasteryData] => [
+// Static: the pool never changes. How many times each has been picked - and
+// so what it is currently worth - lives in gameState.masteryTaken.
+export const masteryData: Map<string, MasteryBaseData> = new Map(
+  Object.entries(MASTERY_NAMES).map(([target, name]): [string, MasteryBaseData] => [
     name,
-    {
-      name,
-      effect: MASTERY_EFFECT,
-      baseData: { name, target, description: masteryXpOf(target) },
-    },
+    { name, target, description: masteryXpOf(target) },
   ])
 );
 
