@@ -52,38 +52,57 @@ export const CATEGORY = {
 } as const;
 
 // ─── Effect descriptions ───────────────────────────────────────────────────
-// Each string is matched by the `kind()` switches in functions.ts to decide
-// what an entity's effect actually multiplies. A typo here silently produces
-// an entity whose effect does nothing, which is why they're named.
+// Each string is matched by the `kind()` helpers in functions.ts to decide what
+// an entity's effect actually multiplies. A typo here silently produces an
+// entity whose effect does nothing, which is why they're named.
+//
+// The strings are structured, not arbitrary: a trailing " Xp"/" Pay" marks what
+// is multiplied, and the text before it names either a region (matched against
+// a task's category) or one entity. Adding a "<Skill> Xp" therefore needs an
+// entry here and in the Description union - no switch case.
 const DESC = {
+  // Broad - the four special cases in getXpMultipliers.
   ALL_XP: "All Xp",
   FISHING_XP: "Fishing Xp",
   SKILL_XP: "Skill Xp",
+  FISHING_SKILL_XP: "Fishing Skill Xp",
   BOATING_XP: "Boating Xp",
+  // Region xp.
   LAKE_XP: "Lake Xp",
   RIVER_XP: "River Xp",
   OCEAN_XP: "Ocean Xp",
-  JIGGING_XP: "Jigging Xp",
-  CASTING_XP: "Casting Xp",
-  HOOKING_XP: "Hooking Xp",
-  TROLLING_XP: "Trolling Xp",
-  REELING_XP: "Reeling Xp",
-  SILVER_DRUM_XP: "Silver Drum Xp",
+  // Single-skill xp. Every skill that gates a fish has one, so each fish can
+  // point forward at whatever unlocks the fish after it.
   STRENGTH_XP: "Strength Xp",
   CONCENTRATION_XP: "Concentration Xp",
   INTELLIGENCE_XP: "Intelligence Xp",
   PATIENCE_XP: "Patience Xp",
-  COMMUNICATION_XP: "Communication Xp",
   AMBITION_XP: "Ambition Xp",
+  COMMUNICATION_XP: "Communication Xp",
+  CASTING_XP: "Casting Xp",
+  JIGGING_XP: "Jigging Xp",
+  TROLLING_XP: "Trolling Xp",
+  REELING_XP: "Reeling Xp",
+  HOOKING_XP: "Hooking Xp",
+  NETTING_XP: "Netting Xp",
+  WHALING_XP: "Whaling Xp",
+  DOCKING_XP: "Docking Xp",
+  TURNING_XP: "Turning Xp",
+  ANCHORING_XP: "Anchoring Xp",
   SAILING_XP: "Sailing Xp",
   NAVIGATION_XP: "Navigation Xp",
+  STABILITY_XP: "Stability Xp",
+  // Single-fish xp.
+  SILVER_DRUM_XP: "Silver Drum Xp",
+  // Income.
   FISHING_PAY: "Fishing Pay",
   LAKE_PAY: "Lake Pay",
   RIVER_PAY: "River Pay",
   OCEAN_PAY: "Ocean Pay",
   PAYARA_PAY: "Payara Pay",
-  NORTHERN_PAY: "Northern Pay",
+  NORTHERN_PIKE_PAY: "Northern Pike Pay",
   WHALE_PAY: "Whale Pay",
+  // Everything else.
   EXPENSES: "Expenses",
   LEGEND_POINT_GAIN: "Legend Point Gain",
   LONGER_LIFESPAN: "Longer Lifespan",
@@ -303,25 +322,42 @@ const BOATS: { name: string; price: number; revealAt: number }[] = [
 ];
 
 // ─── Items ─────────────────────────────────────────────────────────────────
-// `expense` is charged per day while the item is selected; `upgradePrice` is
-// the one-off cost of the first upgrade (it compounds in Item.upgradePrice).
+// `expense` is charged per day while the item is selected. The ladder runs
+// narrow-and-cheap to broad-and-expensive, and no two items share a target -
+// previously Book, Pliers and Fish Finder all bought "Skill Xp", which made
+// Fish Finder strictly dominated (10x the cost of Pliers for a *smaller*
+// multiplier on the same thing) rather than a choice.
+//
+// Item.upgradePrice compounds from a base of ITEM_UPGRADE_PRICE_DAYS days of
+// the item's own expense, so the upgrade ladder stays proportional to what the
+// item costs to run instead of being hand-set per item.
+export const ITEM_UPGRADE_PRICE_DAYS = 10;
+// Effect grows faster per upgrade than expense (see Item in classes.svelte.ts),
+// so upgrading still pays off long-term - but it now eats into income rather
+// than being pure upside, which is what made "upgrade whenever affordable" the
+// only decision available.
+export const ITEM_EFFECT_GROWTH_PER_LEVEL = 1.02;
+export const ITEM_EXPENSE_GROWTH_PER_LEVEL = 1.015;
+// Each successive upgrade costs sqrt(2)x the last.
+export const ITEM_UPGRADE_PRICE_GROWTH_PER_LEVEL = Math.SQRT2;
+
 const ITEMS: {
   name: string;
   expense: number;
   effect: number;
   description: Description;
-  upgradePrice: number;
   revealAt: number;
 }[] = [
-  { name: ITEM.ROD, expense: 5, effect: 1.5, description: DESC.STRENGTH_XP, upgradePrice: 100, revealAt: 500 },
-  { name: ITEM.BOOK, expense: 25, effect: 1.5, description: DESC.SKILL_XP, upgradePrice: 500, revealAt: 3_000 },
-  { name: ITEM.NET, expense: 100, effect: 2, description: DESC.FISHING_XP, upgradePrice: 1_500, revealAt: 30_000 },
-  { name: ITEM.HOOK, expense: 500, effect: 2, description: DESC.RIVER_XP, upgradePrice: 2_500, revealAt: 50_000 },
-  { name: ITEM.BAIT, expense: 3_750, effect: 1.5, description: DESC.ALL_XP, upgradePrice: 4_000, revealAt: 300_000 },
-  { name: ITEM.HAM_SANDWICH, expense: 25_000, effect: 3, description: DESC.BOATING_XP, upgradePrice: 5_000, revealAt: 500_000 },
-  { name: ITEM.PLIERS, expense: 500_000, effect: 2, description: DESC.SKILL_XP, upgradePrice: 7_500, revealAt: 1_000_000 },
-  { name: ITEM.FISH_FINDER, expense: 5_000_000, effect: 1.5, description: DESC.SKILL_XP, upgradePrice: 10_000, revealAt: 5_000_000 },
-  { name: ITEM.HOUSE, expense: 50_000_000, effect: 3, description: DESC.ALL_XP, upgradePrice: 100_000, revealAt: 10_000_000 },
+  //  name                 expense/day  effect  target                    revealed at
+  { name: ITEM.ROD,          expense: 5,          effect: 2,    description: DESC.STRENGTH_XP,      revealAt: 500 },
+  { name: ITEM.BOOK,         expense: 40,         effect: 1.75, description: DESC.SKILL_XP,         revealAt: 3_000 },
+  { name: ITEM.NET,          expense: 200,        effect: 1.75, description: DESC.FISHING_XP,       revealAt: 30_000 },
+  { name: ITEM.HOOK,         expense: 1_200,      effect: 2,    description: DESC.RIVER_XP,         revealAt: 50_000 },
+  { name: ITEM.BAIT,         expense: 6_000,      effect: 2.25, description: DESC.FISHING_SKILL_XP, revealAt: 300_000 },
+  { name: ITEM.HAM_SANDWICH, expense: 30_000,     effect: 2.5,  description: DESC.BOATING_XP,       revealAt: 500_000 },
+  { name: ITEM.PLIERS,       expense: 200_000,    effect: 2.75, description: DESC.OCEAN_XP,         revealAt: 1_000_000 },
+  { name: ITEM.FISH_FINDER,  expense: 1_200_000,  effect: 3,    description: DESC.OCEAN_PAY,        revealAt: 5_000_000 },
+  { name: ITEM.HOUSE,        expense: 8_000_000,  effect: 3,    description: DESC.ALL_XP,           revealAt: 10_000_000 },
 ];
 
 // These classes are constructed eagerly below (inside the `requirements` map
@@ -533,11 +569,14 @@ export const requirements = new Map<string, Requirement[]>([
   [FISH.BLUE_MARLIN, [afterFish(FISH.BLUEFIN_TUNA), needSkills([SKILL.SAILING, GATE.ELITE])]],
   [FISH.SWORDFISH, [afterFish(FISH.BLUE_MARLIN), needSkills([SKILL.NAVIGATION, GATE.ELITE])]],
   [FISH.SHARK, [afterFish(FISH.SWORDFISH), needSkills([SKILL.STABILITY, GATE.LEGENDARY])]],
+  // Whaling gates the Whale. It previously gated nothing at all - the skill
+  // was unlockable, trainable, and completely inert, and its "Whale Pay"
+  // effect duplicated Navigation's.
   [
     FISH.WHALE,
     [
       afterFish(FISH.SHARK),
-      needSkills([SKILL.STABILITY, GATE.MYTHIC]),
+      needSkills([SKILL.STABILITY, GATE.MYTHIC], [SKILL.WHALING, GATE.RENOWNED]),
       needBoat(BOAT.WHALING_SHIP),
     ],
   ],
@@ -814,34 +853,39 @@ const skill = (
 // Insertion order matters: roundRobinFish() (autoFish) takes the last unlocked
 // entry per region and rotates regions in this order, and the UI renders
 // categories in this order too.
+// Every fish's effect points *forward*, at a skill that gates a later fish, so
+// whatever you are currently catching is always shortening the next unlock.
+// Previously several pointed backwards or nowhere: Angle Fish (ocean) buffed
+// Payara's income, a river fish long since abandoned by the time you catch it.
+// The trailing comment on each line is what that effect is buying you.
 export const fishBaseData: Map<string, FishBaseData> = new Map([
   //     name                    region           tier  income     effect         description
-  fish(FISH.SUN_FISH,         CATEGORY.LAKE,      0,        5, EFFECT.BASIC,   DESC.FISHING_PAY),
-  fish(FISH.PERCH,            CATEGORY.LAKE,      1,        9, EFFECT.BASIC,   DESC.JIGGING_XP),
-  fish(FISH.BASS,             CATEGORY.LAKE,      2,       15, EFFECT.BASIC,   DESC.CASTING_XP),
-  fish(FISH.TROUT,            CATEGORY.LAKE,      3,       40, EFFECT.BASIC,   DESC.CONCENTRATION_XP),
-  fish(FISH.WALEYE,           CATEGORY.LAKE,      4,       80, EFFECT.BASIC,   DESC.HOOKING_XP),
-  fish(FISH.NORTHERN_PIKE,    CATEGORY.LAKE,      5,      150, EFFECT.BASIC,   DESC.TROLLING_XP),
-  fish(FISH.LAKE_STURGEON,    CATEGORY.LAKE,      6,      300, EFFECT.BASIC,   DESC.FISHING_PAY),
+  fish(FISH.SUN_FISH,         CATEGORY.LAKE,      0,        5, EFFECT.BASIC,   DESC.FISHING_PAY),      // the starter farm
+  fish(FISH.PERCH,            CATEGORY.LAKE,      1,        9, EFFECT.BASIC,   DESC.STRENGTH_XP),      // Trout, Waleye
+  fish(FISH.BASS,             CATEGORY.LAKE,      2,       15, EFFECT.BASIC,   DESC.AMBITION_XP),      // Northern Pike
+  fish(FISH.TROUT,            CATEGORY.LAKE,      3,       40, EFFECT.BASIC,   DESC.PATIENCE_XP),      // Lake Sturgeon, Cod
+  fish(FISH.WALEYE,           CATEGORY.LAKE,      4,       80, EFFECT.BASIC,   DESC.CONCENTRATION_XP), // Cod, Docking, Turning
+  fish(FISH.NORTHERN_PIKE,    CATEGORY.LAKE,      5,      150, EFFECT.BASIC,   DESC.CASTING_XP),       // Armoured Catfish
+  fish(FISH.LAKE_STURGEON,    CATEGORY.LAKE,      6,      300, EFFECT.BASIC,   DESC.JIGGING_XP),       // Hooking
 
-  fish(FISH.PIRANA,           CATEGORY.RIVER,     0,        5, EFFECT.ADEPT,   DESC.AMBITION_XP),
-  fish(FISH.SALMON,           CATEGORY.RIVER,     1,       50, EFFECT.ADEPT,   DESC.PATIENCE_XP),
-  fish(FISH.SILVER_DRUM,      CATEGORY.RIVER,     2,      120, EFFECT.ADEPT,   DESC.INTELLIGENCE_XP),
-  fish(FISH.ARMOURED_CATFISH, CATEGORY.RIVER,     3,      300, EFFECT.ADEPT,   DESC.REELING_XP),
-  fish(FISH.ELECTRIC_EEL,     CATEGORY.RIVER,     4,     1000, EFFECT.ADEPT,   DESC.RIVER_XP),
-  fish(FISH.PACU,             CATEGORY.RIVER,     5,     3000, EFFECT.ADEPT,   DESC.CONCENTRATION_XP),
-  fish(FISH.PAYARA,           CATEGORY.RIVER,     6,    15000, EFFECT.ADEPT,   DESC.RIVER_PAY),
+  fish(FISH.PIRANA,           CATEGORY.RIVER,     0,        5, EFFECT.ADEPT,   DESC.INTELLIGENCE_XP),  // Silver Drum, Docking
+  fish(FISH.SALMON,           CATEGORY.RIVER,     1,       50, EFFECT.ADEPT,   DESC.TROLLING_XP),      // Pacu, Navigation
+  fish(FISH.SILVER_DRUM,      CATEGORY.RIVER,     2,      120, EFFECT.ADEPT,   DESC.REELING_XP),       // Payara
+  fish(FISH.ARMOURED_CATFISH, CATEGORY.RIVER,     3,      300, EFFECT.ADEPT,   DESC.RIVER_PAY),        // River Skiff, Airboat
+  fish(FISH.ELECTRIC_EEL,     CATEGORY.RIVER,     4,     1000, EFFECT.ADEPT,   DESC.RIVER_XP),         // the rest of the river
+  fish(FISH.PACU,             CATEGORY.RIVER,     5,     3000, EFFECT.ADEPT,   DESC.HOOKING_XP),
+  fish(FISH.PAYARA,           CATEGORY.RIVER,     6,    15000, EFFECT.ADEPT,   DESC.NETTING_XP),       // Mackerel
 
-  fish(FISH.COD,              CATEGORY.OCEAN,     0,      100, EFFECT.DEEP,    DESC.HOOKING_XP),
-  fish(FISH.MACKEREL,         CATEGORY.OCEAN,     1,     1000, EFFECT.DEEP,    DESC.SAILING_XP),
-  fish(FISH.ANGLE_FISH,       CATEGORY.OCEAN,     2,     7500, EFFECT.DEEP,    DESC.PAYARA_PAY),
-  fish(FISH.GROUPER,          CATEGORY.OCEAN,     3,    50000, EFFECT.DEEPER,  DESC.STRENGTH_XP),
-  fish(FISH.STINGRAY,         CATEGORY.OCEAN,     4,   100000, EFFECT.DEEPER,  DESC.REELING_XP),
-  fish(FISH.BARRACUDA,        CATEGORY.OCEAN,     5,   200000, EFFECT.DEEPER,  DESC.TROLLING_XP),
-  fish(FISH.BLUEFIN_TUNA,     CATEGORY.OCEAN,     6,   400000, EFFECT.ABYSSAL, DESC.PATIENCE_XP),
+  fish(FISH.COD,              CATEGORY.OCEAN,     0,      100, EFFECT.DEEP,    DESC.DOCKING_XP),       // Mackerel, Angle Fish, Stingray
+  fish(FISH.MACKEREL,         CATEGORY.OCEAN,     1,     1000, EFFECT.DEEP,    DESC.TURNING_XP),       // Angle Fish, Barracuda
+  fish(FISH.ANGLE_FISH,       CATEGORY.OCEAN,     2,     7500, EFFECT.DEEP,    DESC.ANCHORING_XP),     // Grouper, Stability
+  fish(FISH.GROUPER,          CATEGORY.OCEAN,     3,    50000, EFFECT.DEEPER,  DESC.SAILING_XP),       // Bluefin Tuna, Blue Marlin
+  fish(FISH.STINGRAY,         CATEGORY.OCEAN,     4,   100000, EFFECT.DEEPER,  DESC.NAVIGATION_XP),    // Swordfish
+  fish(FISH.BARRACUDA,        CATEGORY.OCEAN,     5,   200000, EFFECT.DEEPER,  DESC.STABILITY_XP),     // Shark, Whale
+  fish(FISH.BLUEFIN_TUNA,     CATEGORY.OCEAN,     6,   400000, EFFECT.ABYSSAL, DESC.WHALING_XP),       // Whale
   fish(FISH.BLUE_MARLIN,      CATEGORY.OCEAN,     7,   800000, EFFECT.ABYSSAL, DESC.COMMUNICATION_XP),
-  fish(FISH.SWORDFISH,        CATEGORY.OCEAN,     8,  1600000, EFFECT.ABYSSAL, DESC.NAVIGATION_XP),
-  fish(FISH.SHARK,            CATEGORY.OCEAN,     9,  2400000, EFFECT.APEX,    DESC.ALL_XP),
+  fish(FISH.SWORDFISH,        CATEGORY.OCEAN,     8,  1600000, EFFECT.ABYSSAL, DESC.BOATING_XP),
+  fish(FISH.SHARK,            CATEGORY.OCEAN,     9,  2400000, EFFECT.APEX,    DESC.OCEAN_PAY),
   fish(FISH.WHALE,            CATEGORY.OCEAN,    10,  3200000, EFFECT.APEX,    DESC.ALL_XP),
 ]);
 
@@ -849,25 +893,25 @@ export const skillBaseData: Map<string, SkillBaseData> = new Map([
   //      name                       category                 effect            description
   skill(SKILL.STRENGTH,           CATEGORY.FUNDAMENTALS, EFFECT.BASIC,            DESC.FISHING_XP),
   skill(SKILL.CONCENTRATION,      CATEGORY.FUNDAMENTALS, EFFECT.BASIC,            DESC.SKILL_XP),
-  skill(SKILL.INTELLIGENCE,       CATEGORY.FUNDAMENTALS, EFFECT.BASIC,            DESC.RIVER_XP),
+  skill(SKILL.INTELLIGENCE,       CATEGORY.FUNDAMENTALS, EFFECT.BASIC,            DESC.FISHING_SKILL_XP),
   skill(SKILL.PATIENCE,           CATEGORY.FUNDAMENTALS, EFFECT.BASIC,            DESC.LAKE_PAY),
   skill(SKILL.AMBITION,           CATEGORY.FUNDAMENTALS, EFFECT.BASIC,            DESC.RIVER_PAY),
   skill(SKILL.COMMUNICATION,      CATEGORY.FUNDAMENTALS, EFFECT.BASIC,            DESC.OCEAN_PAY),
 
   skill(SKILL.CASTING,            CATEGORY.FISHING,      EFFECT.ADEPT,            DESC.LAKE_XP),
-  skill(SKILL.JIGGING,            CATEGORY.FISHING,      EFFECT.ADEPT,            DESC.LAKE_PAY),
-  skill(SKILL.TROLLING,           CATEGORY.FISHING,      EFFECT.ADEPT,            DESC.NORTHERN_PAY),
+  skill(SKILL.JIGGING,            CATEGORY.FISHING,      EFFECT.ADEPT,            DESC.NORTHERN_PIKE_PAY),
+  skill(SKILL.TROLLING,           CATEGORY.FISHING,      EFFECT.ADEPT,            DESC.PAYARA_PAY),
   skill(SKILL.REELING,            CATEGORY.FISHING,      EFFECT.ADEPT,            DESC.SILVER_DRUM_XP),
-  skill(SKILL.HOOKING,            CATEGORY.FISHING,      EFFECT.ADEPT,            DESC.RIVER_PAY),
-  skill(SKILL.NETTING,            CATEGORY.FISHING,      EFFECT.ADEPT,            DESC.OCEAN_PAY),
+  skill(SKILL.HOOKING,            CATEGORY.FISHING,      EFFECT.ADEPT,            DESC.RIVER_XP),
+  skill(SKILL.NETTING,            CATEGORY.FISHING,      EFFECT.ADEPT,            DESC.FISHING_PAY),
   skill(SKILL.WHALING,            CATEGORY.FISHING,      EFFECT.ADEPT,            DESC.WHALE_PAY),
 
-  skill(SKILL.DOCKING,            CATEGORY.BOATING,      EFFECT.DEEP,             DESC.SKILL_XP),
-  skill(SKILL.TURNING,            CATEGORY.BOATING,      EFFECT.DEEP,             DESC.RIVER_XP),
+  skill(SKILL.DOCKING,            CATEGORY.BOATING,      EFFECT.DEEP,             DESC.BOATING_XP),
+  skill(SKILL.TURNING,            CATEGORY.BOATING,      EFFECT.DEEP,             DESC.FISHING_SKILL_XP),
   skill(SKILL.ANCHORING,          CATEGORY.BOATING,      EFFECT.DEEP,             DESC.LAKE_XP),
   skill(SKILL.SAILING,            CATEGORY.BOATING,      EFFECT.DEEP,             DESC.OCEAN_XP),
-  skill(SKILL.NAVIGATION,         CATEGORY.BOATING,      EFFECT.DEEP,             DESC.WHALE_PAY),
-  skill(SKILL.STABILITY,          CATEGORY.BOATING,      EFFECT.DEEP,             DESC.FISHING_PAY),
+  skill(SKILL.NAVIGATION,         CATEGORY.BOATING,      EFFECT.DEEP,             DESC.FISHING_XP),
+  skill(SKILL.STABILITY,          CATEGORY.BOATING,      EFFECT.DEEP,             DESC.SKILL_XP),
 
   // Reachable through ordinary progression (unlike the legend line below) -
   // these are the only way to extend your lifespan past the natural Age 70
@@ -881,7 +925,7 @@ export const skillBaseData: Map<string, SkillBaseData> = new Map([
   skill(SKILL.SEA_LEGEND,         CATEGORY.LEGEND,       EFFECT.LEGEND,           DESC.ALL_XP),
   skill(SKILL.TIDAL_FOCUS,        CATEGORY.LEGEND,       EFFECT.LEGEND,           DESC.LEGEND_POINT_GAIN),
   skill(SKILL.OLD_HAGGLER,        CATEGORY.LEGEND,       EFFECT.EXPENSE_DISCOUNT, DESC.EXPENSES),
-  skill(SKILL.WEATHERED_INSTINCT, CATEGORY.LEGEND,       EFFECT.LEGEND,           DESC.ALL_XP),
+  skill(SKILL.WEATHERED_INSTINCT, CATEGORY.LEGEND,       EFFECT.LEGEND,           DESC.OCEAN_XP),
   skill(SKILL.DEEP_MEDITATION,    CATEGORY.LEGEND,       EFFECT.LEGEND,           DESC.LEGEND_POINT_GAIN),
   skill(SKILL.SUNKEN_FORTUNE,     CATEGORY.LEGEND,       EFFECT.LEGEND_PAY,       DESC.FISHING_PAY),
 ]);
@@ -902,7 +946,7 @@ export const itemBaseData: Map<string, ItemBaseData> = new Map(
       effect: i.effect,
       description: i.description,
       selected: false,
-      upgradePrice: i.upgradePrice,
+      upgradePrice: i.expense * ITEM_UPGRADE_PRICE_DAYS,
     },
   ])
 );

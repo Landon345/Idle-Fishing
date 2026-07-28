@@ -7,7 +7,13 @@ import {
   getIncomeMultipliers,
   getExpenseMultipliers,
 } from "./functions";
-import { getGameData, subtractCoins } from "./gameData.svelte";
+import {
+  getGameData,
+  subtractCoins,
+  ITEM_EFFECT_GROWTH_PER_LEVEL,
+  ITEM_EXPENSE_GROWTH_PER_LEVEL,
+  ITEM_UPGRADE_PRICE_GROWTH_PER_LEVEL,
+} from "./gameData.svelte";
 
 export class Task {
   baseData: {
@@ -196,15 +202,19 @@ export class Item {
   }
 
   get upgradePrice() {
-    return this.baseData.upgradePrice * Math.pow(2, 0.5 * this.level);
+    return (
+      this.baseData.upgradePrice *
+      Math.pow(ITEM_UPGRADE_PRICE_GROWTH_PER_LEVEL, this.level)
+    );
   }
 
   get effect() {
     if (!this.selected) return 1;
-    // Exponential (2% compounding per level) instead of the old flat +1%
-    // per level, so upgrades keep paying off at higher levels instead of
+    // Exponential compounding per level instead of the old flat +1% per
+    // level, so upgrades keep paying off at higher levels instead of
     // flattening out relative to the exponential upgradePrice curve above.
-    let effect = this.baseData.effect * Math.pow(1.02, this.level);
+    let effect =
+      this.baseData.effect * Math.pow(ITEM_EFFECT_GROWTH_PER_LEVEL, this.level);
     return effect;
   }
 
@@ -216,10 +226,18 @@ export class Item {
 
   get expense() {
     this.expenseMultipliers = getExpenseMultipliers();
+    // Running cost rises with the item's level, more slowly than `effect`
+    // above does (1.015 vs 1.02). Previously expense ignored level entirely,
+    // so an upgrade was pure upside for a one-off cost and the answer was
+    // always "yes, when affordable" - not a decision. Now upgrading a big
+    // item pressures your income and can force you to switch another off.
+    let expense =
+      this.baseData.expense *
+      Math.pow(ITEM_EXPENSE_GROWTH_PER_LEVEL, this.level);
     // Floored at 0: "Old Haggler" discounts expenses by a flat amount per
     // level and would otherwise flip expenses negative (i.e. pay you to
     // hold items) at very high levels.
-    return Math.max(0, applyMultipliers(this.baseData.expense, this.expenseMultipliers));
+    return Math.max(0, applyMultipliers(expense, this.expenseMultipliers));
   }
 
   upgrade() {

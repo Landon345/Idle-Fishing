@@ -21,6 +21,7 @@ import {
   DAYS_PER_YEAR,
   STARTING_AGE,
   AUTO_FISH_ROTATION_DAYS,
+  CATEGORY,
   FISH,
   SKILL,
 } from "./gameData.svelte";
@@ -246,6 +247,14 @@ export function applyMultipliers(
   return totalAfter;
 }
 
+// Effect descriptions are structured, not arbitrary: a trailing " Xp" or
+// " Pay" marks what the effect multiplies, and the text before it names either
+// a region (matching a task's category) or a single entity. The two `kind()`
+// helpers below read that structure instead of enumerating one switch case per
+// target, so adding a new "<Skill> Xp" effect needs no change here.
+const XP_SUFFIX = " Xp";
+const PAY_SUFFIX = " Pay";
+
 export const getIncomeMultipliers = (task: Task): { [key: string]: number } => {
   let multipliers = {};
   getGameData().fishingData.forEach((fish) => {
@@ -267,31 +276,16 @@ export const getIncomeMultipliers = (task: Task): { [key: string]: number } => {
     }
   });
 
+  // Income descriptions come in three shapes: the global "Fishing Pay", a
+  // "<Region> Pay" whose first word is the task's category, and a
+  // "<Entity Name> Pay" naming exactly one fish. The latter two are rules
+  // rather than one case per entity, so adding a new target needs no edit here.
   function kind(task: Task, description: Description, effect: number): number {
-    switch (description) {
-      case "Fishing Pay":
-        return effect;
-      case "Lake Pay":
-        if (task.baseData.category == "lake") return effect;
-        break;
-      case "River Pay":
-        if (task.baseData.category == "river") return effect;
-        break;
-      case "Ocean Pay":
-        if (task.baseData.category == "ocean") return effect;
-        break;
-      case "Payara Pay":
-        if (task.name == "Payara") return effect;
-        break;
-      case "Northern Pay":
-        if (task.name == "Northern Pike") return effect;
-        break;
-      case "Whale Pay":
-        if (task.name == "Whale") return effect;
-        break;
-      default:
-        return 1;
-    }
+    if (description == "Fishing Pay") return effect;
+    if (!description.endsWith(PAY_SUFFIX)) return 1;
+    const target = description.slice(0, -PAY_SUFFIX.length);
+    if (target.toLowerCase() == task.baseData.category) return effect;
+    if (target == task.name) return effect;
     return 1;
   }
 
@@ -318,78 +312,29 @@ export const getXpMultipliers = (task: Task): { [key: string]: number } => {
       multipliers[item.name] = effect;
     }
   });
+  // The four broad kinds need their own handling; everything else is either
+  // "<Region> Xp" or "<Entity Name> Xp" and falls through to the rule below.
   function kind(task: Task, description: Description, effect: number): number {
     switch (description) {
       case "All Xp":
         return effect;
-      case "Fishing Skill Xp":
-        if (task instanceof Skill && task.baseData.category == "fishing")
-          return effect;
-        break;
-      case "Boating Xp":
-        if (task instanceof Skill && task.baseData.category == "boating")
-          return effect;
-        break;
       case "Fishing Xp":
-        if (task instanceof Fishing) return effect;
-        break;
+        return task instanceof Fishing ? effect : 1;
       case "Skill Xp":
-        if (task instanceof Skill) return effect;
-        break;
-      case "Lake Xp":
-        if (task.baseData.category == "lake") return effect;
-        break;
-      case "River Xp":
-        if (task.baseData.category == "river") return effect;
-        break;
-      case "Ocean Xp":
-        if (task.baseData.category == "ocean") return effect;
-        break;
-      case "Jigging Xp":
-        if (task.name == "Jigging") return effect;
-        break;
-      case "Casting Xp":
-        if (task.name == "Casting") return effect;
-        break;
-      case "Hooking Xp":
-        if (task.name == "Hooking") return effect;
-        break;
-      case "Trolling Xp":
-        if (task.name == "Trolling") return effect;
-        break;
-      case "Reeling Xp":
-        if (task.name == "Reeling") return effect;
-        break;
-      case "Silver Drum Xp":
-        if (task.name == "Silver Drum") return effect;
-        break;
-      case "Strength Xp":
-        if (task.name == "Strength") return effect;
-        break;
-      case "Concentration Xp":
-        if (task.name == "Concentration") return effect;
-        break;
-      case "Intelligence Xp":
-        if (task.name == "Intelligence") return effect;
-        break;
-      case "Patience Xp":
-        if (task.name == "Patience") return effect;
-        break;
-      case "Communication Xp":
-        if (task.name == "Communication") return effect;
-        break;
-      case "Ambition Xp":
-        if (task.name == "Ambition") return effect;
-        break;
-      case "Sailing Xp":
-        if (task.name == "Sailing") return effect;
-        break;
-      case "Navigation Xp":
-        if (task.name == "Navigation") return effect;
-        break;
-      default:
-        return 1;
+        return task instanceof Skill ? effect : 1;
+      case "Fishing Skill Xp":
+        return task instanceof Skill && task.baseData.category == CATEGORY.FISHING
+          ? effect
+          : 1;
+      case "Boating Xp":
+        return task instanceof Skill && task.baseData.category == CATEGORY.BOATING
+          ? effect
+          : 1;
     }
+    if (!description.endsWith(XP_SUFFIX)) return 1;
+    const target = description.slice(0, -XP_SUFFIX.length);
+    if (target.toLowerCase() == task.baseData.category) return effect;
+    if (target == task.name) return effect;
     return 1;
   }
 
