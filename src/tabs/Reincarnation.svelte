@@ -1,16 +1,12 @@
 <script lang="ts">
-  import { gameState, rebirth, ascend, getLegendPointGain, getLifespan, baseLifespan } from "src/gameData.svelte";
+  import { gameState, rebirth, ascend, getLegendPointGain } from "src/gameData.svelte";
+  import { ageToDay } from "src/functions";
 
   const legendGain = $derived(getLegendPointGain());
-  const lifespan = $derived(getLifespan());
-  // On a completely fresh life lifespan == baseLifespan (Immortality hasn't
-  // been leveled), and day can't exceed lifespan (isAlive() freezes progress
-  // there) - so without requiring lifespan to actually be *extended*,
-  // Ascension would appear right alongside Rebirth at the very first death.
-  // Requiring the extension keeps Rebirth as the only way out until the
-  // player has invested in Immortality/Super Immortality across some prior
-  // Rebirths, matching Progress Knight's Age-200 gate.
-  const canAscend = $derived(gameState.day >= lifespan && lifespan > baseLifespan);
+  // Matches Progress Knight's Age-200 gate: reaching day 200 requires
+  // Immortality/Super Immortality to have already extended the base (Age 70)
+  // lifespan far enough that isAlive() doesn't freeze the game before then.
+  const canAscend = $derived(gameState.day >= ageToDay(200));
 </script>
 
 <div class="flex w-full flex-col gap-4 p-2">

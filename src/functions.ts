@@ -33,6 +33,10 @@ export function calculatedAge(day: number): string {
   return `Age ${14 + daysToYears(day)} Day ${days(day)}`;
 }
 
+// Inverse of calculatedAge's "Age 14 + years elapsed" display: the raw `day`
+// value at which a given displayed age is first reached.
+export const ageToDay = (age: number) => (age - 14) * 365;
+
 export const getTotalExpenses = (game_data: GameDataType): number => {
   let totalExpense = 0;
   game_data.itemData.forEach((item) => {
