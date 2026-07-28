@@ -70,7 +70,7 @@ const DESC = {
   ALL_XP: "All Xp",
   FISHING_XP: "Fishing Xp",
   SKILL_XP: "Skill Xp",
-  FISHING_SKILL_XP: "Fishing Skill Xp",
+  TECHNIQUE_XP: "Technique Xp",
   BOATING_XP: "Boating Xp",
   // Region xp.
   LAKE_XP: "Lake Xp",
@@ -512,7 +512,7 @@ const ITEMS: {
   { name: ITEM.BOOK,         expense: 40,         effect: 1.75, description: DESC.SKILL_XP,         revealAt: 3_000 },
   { name: ITEM.NET,          expense: 200,        effect: 1.75, description: DESC.FISHING_XP,       revealAt: 30_000 },
   { name: ITEM.HOOK,         expense: 1_200,      effect: 2,    description: DESC.HOOKING_XP,       revealAt: 50_000 },
-  { name: ITEM.BAIT,         expense: 6_000,      effect: 2.25, description: DESC.FISHING_SKILL_XP, revealAt: 300_000 },
+  { name: ITEM.BAIT,         expense: 6_000,      effect: 2.25, description: DESC.TECHNIQUE_XP, revealAt: 300_000 },
   { name: ITEM.HAM_SANDWICH, expense: 30_000,     effect: 2.5,  description: DESC.BOATING_XP,       revealAt: 500_000 },
   // Pliers are what you reach for with a toothy fish alongside the boat.
   { name: ITEM.PLIERS,       expense: 200_000,    effect: 2.75, description: DESC.BARRACUDA_XP,     revealAt: 1_000_000 },
@@ -1189,7 +1189,7 @@ export const skillBaseData: Map<string, SkillBaseData> = new Map([
   // Fundamentals stay broad - they're qualities, not techniques.
   skill(SKILL.STRENGTH,           CATEGORY.FUNDAMENTALS, EFFECT.BASIC,            DESC.FISHING_PAY),
   skill(SKILL.CONCENTRATION,      CATEGORY.FUNDAMENTALS, EFFECT.BASIC,            DESC.SKILL_XP),
-  skill(SKILL.INTELLIGENCE,       CATEGORY.FUNDAMENTALS, EFFECT.BASIC,            DESC.FISHING_SKILL_XP),
+  skill(SKILL.INTELLIGENCE,       CATEGORY.FUNDAMENTALS, EFFECT.BASIC,            DESC.TECHNIQUE_XP),
   skill(SKILL.PATIENCE,           CATEGORY.FUNDAMENTALS, EFFECT.BASIC,            DESC.FISHING_XP),
   skill(SKILL.AMBITION,           CATEGORY.FUNDAMENTALS, EFFECT.BASIC,            DESC.RIVER_PAY),
   skill(SKILL.COMMUNICATION,      CATEGORY.FUNDAMENTALS, EFFECT.BASIC,            DESC.OCEAN_PAY),

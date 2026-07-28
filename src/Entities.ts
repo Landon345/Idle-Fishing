@@ -3,7 +3,11 @@ import type { Requirement } from "src/gameData.svelte";
 
 export type Description =
   | "All Xp"
-  | "Fishing Skill Xp"
+  // The fishing-skills category, i.e. the counterpart to "Boating Xp". Named
+  // for what those skills are rather than "Fishing Skill Xp", which sat
+  // between "Fishing Xp" (every fish) and "Skill Xp" (every skill) and was
+  // unreadable next to either.
+  | "Technique Xp"
   | "Fishing Xp"
   | "Skill Xp"
   | "Lake Xp"
