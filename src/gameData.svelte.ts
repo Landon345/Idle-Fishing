@@ -229,14 +229,15 @@ const EFFECT = {
   BASIC: 0.01,
   // Fishing skills + river: ~3x the xp cost of BASIC, ~2x the payoff.
   ADEPT: 0.02,
-  // Boating skills + early ocean: ~5x the xp cost, ~5x the payoff.
-  DEEP: 0.05,
-  // Mid ocean.
-  DEEPER: 0.1,
-  // Late ocean.
-  ABYSSAL: 0.25,
-  // Apex (Shark, Whale): the "All Xp" payoff that carries the endgame.
-  APEX: 0.5,
+  // Boating skills, per balance feedback: lowered on their own rather than as
+  // part of the ocean-fish tiering below, even though the two used to share a
+  // rate.
+  BOATING: 0.03,
+  // Every ocean fish, Cod through Whale. Previously staged across four bands
+  // (DEEP/DEEPER/ABYSSAL/APEX, 0.05 up to 0.5, escalating with depth so late
+  // fish paid off more than early ones); flattened to a single rate per
+  // balance feedback, so a Whale level is worth the same payoff as a Cod one.
+  OCEAN: 0.03,
   // Lifespan and legend lines deliberately keep the old 0.01 band: retuning
   // them means retuning the rebirth/ascension economy alongside, which is a
   // separate pass.
@@ -490,10 +491,10 @@ const MASTERY_NAMES: { [target: string]: string } = {
 // soon". Slots are bought with gold, so the cap loosens as you get richer.
 //
 // The price climbs an order of magnitude a slot because it is competing with
-// exponential income: 10k, 100k, 1M and so on. This is a mid-game sink by
+// exponential income: 100k, 1M, 10M and so on. This is a mid-game sink by
 // design - nothing priced in flat coins stays relevant against late income.
 export const TACKLE_SLOTS_BASE = 2;
-const TACKLE_SLOT_PRICE_BASE = 10_000;
+const TACKLE_SLOT_PRICE_BASE = 100_000;
 const TACKLE_SLOT_PRICE_GROWTH = 10;
 
 // ─── Ageing Stone ──────────────────────────────────────────────────────────
@@ -1699,13 +1700,13 @@ export const fishBaseData: Map<string, FishBaseData> = new Map([
   fish(FISH.PACU, CATEGORY.RIVER, 5, 3000, EFFECT.ADEPT, DESC.PATIENCE_XP), // slow, careful bait fishing
   fish(FISH.PAYARA, CATEGORY.RIVER, 6, 15000, EFFECT.ADEPT, DESC.RIVER_PAY), // the river trophy
 
-  fish(FISH.COD, CATEGORY.OCEAN, 0, 100, EFFECT.DEEP, DESC.COMMUNICATION_XP), // the fish that built the ports
+  fish(FISH.COD, CATEGORY.OCEAN, 0, 100, EFFECT.OCEAN, DESC.COMMUNICATION_XP), // the fish that built the ports
   fish(
     FISH.MACKEREL,
     CATEGORY.OCEAN,
     1,
     1000,
-    EFFECT.DEEP,
+    EFFECT.OCEAN,
     DESC.COMMUNICATION_XP,
   ), // sold by the crate, dockside
   fish(
@@ -1713,16 +1714,16 @@ export const fishBaseData: Map<string, FishBaseData> = new Map([
     CATEGORY.OCEAN,
     2,
     7500,
-    EFFECT.DEEP,
+    EFFECT.OCEAN,
     DESC.INTELLIGENCE_XP,
   ), // studying the deep
-  fish(FISH.GROUPER, CATEGORY.OCEAN, 3, 50000, EFFECT.DEEPER, DESC.STRENGTH_XP), // hauled bodily off the reef
+  fish(FISH.GROUPER, CATEGORY.OCEAN, 3, 50000, EFFECT.OCEAN, DESC.STRENGTH_XP), // hauled bodily off the reef
   fish(
     FISH.STINGRAY,
     CATEGORY.OCEAN,
     4,
     100000,
-    EFFECT.DEEPER,
+    EFFECT.OCEAN,
     DESC.PATIENCE_XP,
   ), // worked slowly over the flats
   fish(
@@ -1730,7 +1731,7 @@ export const fishBaseData: Map<string, FishBaseData> = new Map([
     CATEGORY.OCEAN,
     5,
     200000,
-    EFFECT.DEEPER,
+    EFFECT.OCEAN,
     DESC.AMBITION_XP,
   ), // it takes what it wants
   fish(
@@ -1738,7 +1739,7 @@ export const fishBaseData: Map<string, FishBaseData> = new Map([
     CATEGORY.OCEAN,
     6,
     400000,
-    EFFECT.ABYSSAL,
+    EFFECT.OCEAN,
     DESC.STRENGTH_XP,
   ), // hours in the fighting chair
   fish(
@@ -1746,7 +1747,7 @@ export const fishBaseData: Map<string, FishBaseData> = new Map([
     CATEGORY.OCEAN,
     7,
     800000,
-    EFFECT.ABYSSAL,
+    EFFECT.OCEAN,
     DESC.AMBITION_XP,
   ), // the one every angler is after
   fish(
@@ -1754,11 +1755,11 @@ export const fishBaseData: Map<string, FishBaseData> = new Map([
     CATEGORY.OCEAN,
     8,
     1600000,
-    EFFECT.ABYSSAL,
+    EFFECT.OCEAN,
     DESC.INTELLIGENCE_XP,
   ), // deep-drop marks, found at night
-  fish(FISH.SHARK, CATEGORY.OCEAN, 9, 2400000, EFFECT.APEX, DESC.OCEAN_PAY), // chummed, and it pays
-  fish(FISH.WHALE, CATEGORY.OCEAN, 10, 3200000, EFFECT.APEX, DESC.ALL_XP), // the apex of the trade
+  fish(FISH.SHARK, CATEGORY.OCEAN, 9, 2400000, EFFECT.OCEAN, DESC.OCEAN_PAY), // chummed, and it pays
+  fish(FISH.WHALE, CATEGORY.OCEAN, 10, 3200000, EFFECT.OCEAN, DESC.ALL_XP), // the apex of the trade
 ]);
 
 export const skillBaseData: Map<string, SkillBaseData> = new Map([
@@ -1796,12 +1797,12 @@ export const skillBaseData: Map<string, SkillBaseData> = new Map([
   skill(SKILL.WHALING, CATEGORY.FISHING, EFFECT.ADEPT, DESC.WHALE_XP),
 
   // Boat handling: what the boat lets you hold, chase, or reach.
-  skill(SKILL.DOCKING, CATEGORY.BOATING, EFFECT.DEEP, DESC.OCEAN_PAY),
-  skill(SKILL.TURNING, CATEGORY.BOATING, EFFECT.DEEP, DESC.BARRACUDA_XP),
-  skill(SKILL.ANCHORING, CATEGORY.BOATING, EFFECT.DEEP, DESC.GROUPER_XP),
-  skill(SKILL.SAILING, CATEGORY.BOATING, EFFECT.DEEP, DESC.OCEAN_XP),
-  skill(SKILL.NAVIGATION, CATEGORY.BOATING, EFFECT.DEEP, DESC.BLUE_MARLIN_XP),
-  skill(SKILL.STABILITY, CATEGORY.BOATING, EFFECT.DEEP, DESC.BLUEFIN_TUNA_XP),
+  skill(SKILL.DOCKING, CATEGORY.BOATING, EFFECT.BOATING, DESC.OCEAN_PAY),
+  skill(SKILL.TURNING, CATEGORY.BOATING, EFFECT.BOATING, DESC.BARRACUDA_XP),
+  skill(SKILL.ANCHORING, CATEGORY.BOATING, EFFECT.BOATING, DESC.GROUPER_XP),
+  skill(SKILL.SAILING, CATEGORY.BOATING, EFFECT.BOATING, DESC.OCEAN_XP),
+  skill(SKILL.NAVIGATION, CATEGORY.BOATING, EFFECT.BOATING, DESC.BLUE_MARLIN_XP),
+  skill(SKILL.STABILITY, CATEGORY.BOATING, EFFECT.BOATING, DESC.BLUEFIN_TUNA_XP),
 
   // Reachable through ordinary progression (unlike the legend line below) -
   // these are the only way to extend your lifespan past the natural Age 70
