@@ -493,6 +493,24 @@ export const TACKLE_SLOTS_BASE = 2;
 const TACKLE_SLOT_PRICE_BASE = 10_000;
 const TACKLE_SLOT_PRICE_GROWTH = 10;
 
+// ─── Ageing Stone ──────────────────────────────────────────────────────────
+// Ascension needs gameState.day >= ageToDay(200), which is otherwise pure
+// calendar time: nothing buys it faster, so a player who has pushed every
+// other system to an absurd height still has to sit and wait for the clock.
+// An Ageing Stone instantly adds AGING_STONE_YEARS to `day`, letting gold
+// substitute for the wait once there is enough of it to spend.
+export const AGING_STONE_YEARS = 20;
+// Priced to read as the single most expensive purchase in the game: 500M
+// clears every boat (Whaling Ship, the top one, is 60M) and the first upgrade
+// on every item (House, the top one, is 80M) outright. Growth of 5x/stone
+// means the run of stones needed to cross the whole gate - roughly six, from
+// the natural Age 70 wall to Age 200 - totals about 9.8T, on the order of a
+// few days of late-game income (Whale plus a full build was measured at
+// ~3.2e12/day). A steep but reachable ask for the "upgraded everything"
+// player this is aimed at, not a casual one.
+const AGING_STONE_BASE_PRICE = 500_000_000;
+const AGING_STONE_PRICE_GROWTH = 5;
+
 // ─── Crew ──────────────────────────────────────────────────────────────────
 // Three candidates turn up at each rebirth and you may keep one. Crew carry
 // across rebirths - they are the thing that persists while everything else
@@ -1101,6 +1119,7 @@ export const gameState: GameDataType = $state({
   crewOffer: [],
 
   tackleSlotsBought: 0,
+  agingStonesBought: 0,
 });
 
 export const update = (
@@ -1239,6 +1258,25 @@ export const enforceTackleCapacity = () => {
     item.deselect();
     overflow -= 1;
   }
+};
+
+// ─── Ageing Stone ──────────────────────────────────────────────────────────
+export const getAgingStonePrice = (): number =>
+  AGING_STONE_BASE_PRICE *
+  Math.pow(AGING_STONE_PRICE_GROWTH, gameState.agingStonesBought);
+
+// No cap on how many can be bought, and no guard against overshooting
+// getLifespan(): if that happens before day reaches ageToDay(200), the clock
+// simply stops (isAlive() goes false, see getGameSpeed in functions.ts) the
+// same way it would from natural old age - the player is not stuck, Rebirth
+// is already available by then. The Reincarnation tab surfaces the risk
+// before it happens rather than the data layer blocking it after the fact.
+export const buyAgingStone = () => {
+  const price = getAgingStonePrice();
+  if (price > gameState.coins) return;
+  subtractCoins(price);
+  gameState.agingStonesBought += 1;
+  gameState.day += AGING_STONE_YEARS * DAYS_PER_YEAR;
 };
 
 // ─── Mastery ───────────────────────────────────────────────────────────────
@@ -1478,6 +1516,9 @@ const applyBaseReset = () => {
   gameState.coins = 0;
   // Bought tackle slots go with the boats and items they were paid for.
   gameState.tackleSlotsBought = 0;
+  // Same reasoning: the years already came off gameState.day (reset to 0
+  // below), so nothing would be gained by remembering the count.
+  gameState.agingStonesBought = 0;
   // Mastery picks are per-run: reincarnation clears every stack earned.
   gameState.masteryTaken = [];
   gameState.masteryOffer = [];

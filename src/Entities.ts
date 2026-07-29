@@ -181,4 +181,10 @@ export interface GameDataType {
   // Extra tackle-box slots bought this run, on top of TACKLE_SLOTS_BASE. Reset
   // by reincarnation like every other gold purchase.
   tackleSlotsBought: number;
+
+  // Ageing Stones bought this run - see AGING_STONE_* in gameData.svelte.ts.
+  // Each instantly adds AGING_STONE_YEARS to gameState.day, so a rich enough
+  // player can reach the Age 200 Ascension gate without waiting out the
+  // calendar. Resets with everything else on reincarnation.
+  agingStonesBought: number;
 }
