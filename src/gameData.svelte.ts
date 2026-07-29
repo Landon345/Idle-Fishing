@@ -292,9 +292,16 @@ const SKILL_XP: Record<string, number> = {
   [CATEGORY.FUNDAMENTALS]: 100,
   [CATEGORY.FISHING]: 300,
   [CATEGORY.BOATING]: 500,
-  // Unchanged: these two lines drive the reset loop itself, and slowing them
-  // without reworking rebirth/ascension would stall progression.
-  [CATEGORY.IMMORTALITY]: 100,
+  // Raised per balance feedback: Immortality/Super Immortality/Time Warping
+  // used to share the cheapest (fundamentals) tier, which was left alone
+  // specifically because slowing the skill line that grants lifespan - and so
+  // gates Ascension - would have stalled progression outright. The Ageing
+  // Stone (buyable in Reincarnation) now covers exactly that gap: a player
+  // behind on Immortality can pay gold for the years instead of waiting on
+  // levels, so a real cost here no longer risks a hard stall.
+  [CATEGORY.IMMORTALITY]: 400,
+  // Unchanged: still drives the ascension reset loop, and the legend-point
+  // economy (getLegendPointGain) is tuned separately from this base.
   [CATEGORY.LEGEND]: 100,
 };
 
