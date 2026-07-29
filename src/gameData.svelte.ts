@@ -1052,14 +1052,38 @@ export const requirements = new Map<string, Requirement[]>([
     ],
   ],
   // ─── FISHING SKILLS ──────────────────────────────────────────────────────
-  [SKILL.CASTING, []],
-  [SKILL.JIGGING, [needSkills([SKILL.STRENGTH, GATE.APPRENTICE])]],
-  [SKILL.TROLLING, [needSkills([SKILL.CONCENTRATION, GATE.COMPETENT])]],
-  [SKILL.REELING, [needSkills([SKILL.STRENGTH, GATE.SKILLED])]],
-  [SKILL.HOOKING, [needSkills([SKILL.JIGGING, GATE.COMPETENT])]],
-  [SKILL.NETTING, [needSkills([SKILL.CONCENTRATION, GATE.SEASONED])]],
-  [SKILL.WHALING, [needSkills([SKILL.STRENGTH, GATE.MASTER])]],
+  // Each of these targets one fish's xp (see skillBaseData) - Casting boosts
+  // Bass, Jigging boosts Perch, and so on. Their own unlock is now tied to
+  // having already reached the fish just before that target, so a skill never
+  // sits trainable (and visibly "boosting" something) long before its target
+  // is even reachable. Previously these unlocked off an unrelated fundamental
+  // or another skill entirely - Whaling, for one, needed only Strength 250 and
+  // so could be trained the length of the game before Whale itself opened up.
+  //
+  // Checked every one of these against every OTHER place the same skill gates
+  // something, not just its own target, so the new gate can't create a cycle:
+  // Turning also gates Angle Fish (ocean#2) ahead of its own target Barracuda
+  // (ocean#5) - gating Turning on Stingray (ocean#4, just before Barracuda)
+  // would have made Angle Fish/Turning/Stingray/Grouper mutually unreachable,
+  // so Turning is anchored to Mackerel (ocean#1, just before its *earliest*
+  // use) instead.
+  [SKILL.CASTING, [afterFish(FISH.PERCH)]],
+  [SKILL.JIGGING, [afterFish(FISH.SUN_FISH)]],
+  // Trolling is the one exception: besides Northern Pike, it also gates Pacu
+  // (river) and Navigation - lake and river progress in this game with the
+  // rest, tying Trolling's own unlock to a *lake* fish risks blocking a
+  // river-focused run on an unrelated region. Its fundamentals-based gate is
+  // raised instead (Concentration is fed by every region), rather than
+  // switched to a fish.
+  [SKILL.TROLLING, [needSkills([SKILL.CONCENTRATION, GATE.SEASONED])]],
+  [SKILL.REELING, [afterFish(FISH.PIRANA)]],
+  [SKILL.HOOKING, [afterFish(FISH.PACU)]],
+  [SKILL.NETTING, [afterFish(FISH.COD, FISH_ADEPT_LEVEL)]],
+  [SKILL.WHALING, [afterFish(FISH.SHARK)]],
   // ─── BOATING SKILLS ──────────────────────────────────────────────────────
+  // Docking and Sailing keep their existing gates: both target a broad kind
+  // (Ocean Pay, Ocean Xp respectively) rather than one fish, so there's
+  // nothing for them to unlock "too early" relative to.
   [
     SKILL.DOCKING,
     [
@@ -1069,26 +1093,16 @@ export const requirements = new Map<string, Requirement[]>([
       ),
     ],
   ],
-  [
-    SKILL.TURNING,
-    [
-      needSkills(
-        [SKILL.CONCENTRATION, GATE.MASTER],
-        [SKILL.PATIENCE, GATE.EXPERT],
-      ),
-    ],
-  ],
-  [SKILL.ANCHORING, [afterFish(FISH.COD, FISH_ADEPT_LEVEL)]],
+  [SKILL.TURNING, [afterFish(FISH.MACKEREL)]],
+  [SKILL.ANCHORING, [afterFish(FISH.ANGLE_FISH)]],
   // Owning the boat is what teaches you to sail. This used to need Angle Fish
   // at level 10 - three fish *into* the ocean - which meant "Ocean Xp", the
   // region's own multiplier, could not help you enter the region. Cod was left
   // with almost nothing boosting it, and took longer to clear than any fish
   // before it. The lake and river have no equivalent gap.
   [SKILL.SAILING, [needBoat(BOAT.SAIL_BOAT)]],
-  // Both down from 400/500: these are prerequisites for skills that are
-  // themselves gates, so stacking two 400+ grinds compounded badly.
-  [SKILL.NAVIGATION, [needSkills([SKILL.TROLLING, GATE.MASTER])]],
-  [SKILL.STABILITY, [needSkills([SKILL.ANCHORING, GATE.GRANDMASTER])]],
+  [SKILL.NAVIGATION, [afterFish(FISH.BLUEFIN_TUNA)]],
+  [SKILL.STABILITY, [afterFish(FISH.BARRACUDA)]],
   // ─── IMMORTALITY ─────────────────────────────────────────────────────────
   [SKILL.IMMORTALITY, [needSkills([SKILL.AMBITION, GATE.ACCOMPLISHED])]],
   // Deliberately left near their old levels. Immortality is the engine that
