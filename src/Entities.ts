@@ -131,6 +131,17 @@ export interface CrewMember {
   wageFraction: number;
 }
 
+// What a single ascend() call actually granted, so the UI can summarize it in
+// a popup rather than the player having to notice the Legend Points counter
+// ticked up and cross-reference which legend skills that happened to unlock.
+export interface AscensionResult {
+  pointsGained: number;
+  newTotal: number;
+  // Names of legend skills whose point threshold this ascension's gain
+  // crossed - empty if the gain didn't reach a new one.
+  newlyUnlockedLegendSkills: string[];
+}
+
 export interface RequirementObj {
   name: string;
   requirement: number | boolean;

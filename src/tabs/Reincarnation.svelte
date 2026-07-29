@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { AscensionResult } from "src/Entities";
   import {
     gameState,
     rebirth,
@@ -7,6 +8,7 @@
     getLifespan,
     getAgingStonePrice,
     buyAgingStone,
+    skillBaseData,
     STARTING_AGE,
     DAYS_PER_YEAR,
     AGING_STONE_YEARS,
@@ -15,6 +17,28 @@
   import Coins from "src/components/Coins.svelte";
 
   const legendGain = $derived(getLegendPointGain());
+
+  // Set only right after clicking Ascend, and only for the popup summarizing
+  // what that specific ascension unlocked - ascend() reports it back rather
+  // than the player having to notice the Legend Points counter moved and
+  // cross-reference which legend skill that happened to cross.
+  let ascensionResult: AscensionResult | null = $state(null);
+  const handleAscend = () => {
+    ascensionResult = ascend();
+  };
+
+  // A `div` with tabindex=-1 doesn't receive focus just by rendering, so a
+  // keydown handler on it would never fire without an explicit focus() call.
+  // Listening on window while the popup is open is the reliable way to
+  // support closing it with Escape.
+  $effect(() => {
+    if (!ascensionResult) return;
+    const onKeydown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") ascensionResult = null;
+    };
+    window.addEventListener("keydown", onKeydown);
+    return () => window.removeEventListener("keydown", onKeydown);
+  });
   // Matches Progress Knight's Age-200 gate: reaching day 200 requires
   // Immortality/Super Immortality to have already extended the base (Age 70)
   // lifespan far enough that isAlive() doesn't freeze the game before then.
@@ -106,8 +130,66 @@
       </p>
       <button
         class="btn w-fit rounded-lg border-2 border-rose-500 bg-slate-800 font-bold text-rose-300"
-        onclick={ascend}>Ascend</button
+        onclick={handleAscend}>Ascend</button
       >
     </div>
   {/if}
 </div>
+
+{#if ascensionResult}
+  {@const unlocked = ascensionResult.newlyUnlockedLegendSkills}
+  <!-- Fixed overlay rather than an inline panel: "popup" was asked for
+       specifically, and an ascension is rare and consequential enough to
+       warrant interrupting the view rather than sitting alongside everything
+       else on the page. -->
+  <!-- svelte-ignore a11y_click_events_have_key_events -- the backdrop is
+       click-to-dismiss for mouse users only; keyboard dismissal goes through
+       the global Escape listener above and the focusable Continue button
+       below, not this decorative div. -->
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4"
+    role="presentation"
+    onclick={() => (ascensionResult = null)}
+  >
+    <div
+      class="flex w-full max-w-md flex-col gap-4 rounded-xl border-2 border-amber-500/70 bg-slate-900 p-6 shadow-xl"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="ascension-popup-title"
+      tabindex="-1"
+      onclick={(e) => e.stopPropagation()}
+    >
+      <p id="ascension-popup-title" class="text-xl font-bold text-amber-300">You have ascended</p>
+
+      <p class="text-slate-300">
+        Gained <b class="text-amber-300">{ascensionResult.pointsGained.toFixed(2)} Legend Points</b>
+        &mdash; <b class="text-amber-300">{ascensionResult.newTotal.toFixed(2)}</b> total.
+      </p>
+
+      {#if unlocked.length > 0}
+        <div class="flex flex-col gap-2">
+          <p class="font-bold text-slate-200">
+            New legend skill{unlocked.length === 1 ? "" : "s"} unlocked:
+          </p>
+          <ul class="flex flex-col gap-1">
+            {#each unlocked as name}
+              <li class="rounded-lg border border-amber-700/60 bg-amber-950/30 px-3 py-2 text-sm">
+                <span class="font-semibold text-amber-200">{name}</span>
+                <span class="text-slate-400"> &mdash; {skillBaseData.get(name)?.description}</span>
+              </li>
+            {/each}
+          </ul>
+        </div>
+      {:else}
+        <p class="text-sm text-slate-400">No new legend skills crossed their threshold this time.</p>
+      {/if}
+
+      <button
+        class="btn mt-1 w-fit self-end rounded-lg bg-amber-600 font-bold text-white hover:bg-amber-500"
+        onclick={() => (ascensionResult = null)}
+      >
+        Continue
+      </button>
+    </div>
+  </div>
+{/if}

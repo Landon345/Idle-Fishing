@@ -9,6 +9,7 @@ import {
 } from "src/functions";
 
 import type {
+  AscensionResult,
   BoatBaseData,
   CrewMember,
   Description,
@@ -1618,11 +1619,45 @@ export const rebirth = () => {
   gameState.rebirthCount += 1;
 };
 
+// Which legend skills a legendPoints total of `total` would unlock, per their
+// own LegendRequirement in gameState.requirements - read from there rather
+// than duplicating the LEGEND_GATE thresholds here, so the two can't drift.
+const legendSkillsUnlockedAt = (total: number): Set<string> => {
+  const unlocked = new Set<string>();
+  gameState.skillsData.forEach((skill) => {
+    if (skill.baseData.category !== CATEGORY.LEGEND) return;
+    const legendReq = (gameState.requirements.get(skill.name) ?? []).find(
+      (r) => r.type === "legend"
+    );
+    const threshold = legendReq?.requirements[0]?.requirement as
+      | number
+      | undefined;
+    if (threshold !== undefined && total >= threshold) {
+      unlocked.add(skill.name);
+    }
+  });
+  return unlocked;
+};
+
 // Tier 2 (big): also wipes maxLevel and pays off the crew, but grants
 // legendPoints - a currency that's never reset and unlocks the permanent
-// "legend" skill line.
-export const ascend = () => {
-  gameState.legendPoints += getLegendPointGain();
+// "legend" skill line. Returns a summary of what that grant actually
+// unlocked, since legendPoints is the one thing ascension leaves standing -
+// everything else resets, so it's the only thing worth reporting back.
+export const ascend = (): AscensionResult => {
+  const pointsGained = getLegendPointGain();
+  const oldTotal = gameState.legendPoints;
+  const newTotal = oldTotal + pointsGained;
+
+  // Diffed before either total is mutated: a skill counts as "newly unlocked
+  // by this ascension" only if the old total hadn't already reached it.
+  const before = legendSkillsUnlockedAt(oldTotal);
+  const after = legendSkillsUnlockedAt(newTotal);
+  const newlyUnlockedLegendSkills = [...after].filter(
+    (name) => !before.has(name)
+  );
+
+  gameState.legendPoints = newTotal;
   applyBaseReset();
   gameState.fishingData.forEach((fish) => {
     fish.maxLevel = 0;
@@ -1634,6 +1669,8 @@ export const ascend = () => {
   gameState.crew = [];
   gameState.crewOffer = [];
   gameState.ascensionCount += 1;
+
+  return { pointsGained, newTotal, newlyUnlockedLegendSkills };
 };
 
 export const hardReset = () => {
