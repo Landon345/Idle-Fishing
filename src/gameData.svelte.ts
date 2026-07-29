@@ -2,6 +2,7 @@ import {
   applySpeed,
   daysToYears,
   getTotalExpenses,
+  highestTierFishPerCategory,
   lowestLevelSkill,
   needRequirements,
   roundRobinFish,
@@ -9,6 +10,7 @@ import {
 
 import type {
   BoatBaseData,
+  CrewMember,
   Description,
   FishBaseData,
   GameDataType,
@@ -477,6 +479,54 @@ const MASTERY_NAMES: { [target: string]: string } = {
   [SKILL.SUNKEN_FORTUNE]: "Treasure Sense",
 };
 
+// ─── Crew ──────────────────────────────────────────────────────────────────
+// Three candidates turn up at each rebirth and you may keep one. Crew carry
+// across rebirths - they are the thing that persists while everything else
+// resets - but ascension pays them off along with maxLevel.
+//
+// Each draws a daily wage set as a *share* of your best fish income rather
+// than a fixed sum. A flat price would be outrun by exponential income within
+// a couple of days, which is exactly why every other gold sink in the game
+// stops mattering.
+export const CREW_MAX = 3;
+export const CREW_OFFER_SIZE = 3;
+export const CREW_UPGRADE_COUNT = 3;
+// Perk sizes: x1.5 to x3.00 in x0.25 steps.
+const CREW_EFFECT_MIN = 1.5;
+const CREW_EFFECT_MAX = 3;
+const CREW_EFFECT_STEP = 0.25;
+// Daily wage, as a fraction of the best available fish income.
+const CREW_WAGE_MIN = 0.1;
+const CREW_WAGE_MAX = 0.2;
+
+// Crew perks are drawn from the broad effects only. A single-fish perk would
+// read as a dud on a hire you are paying a fifth of your income for.
+const CREW_UPGRADE_POOL: Description[] = [
+  DESC.ALL_XP,
+  DESC.FISHING_XP,
+  DESC.SKILL_XP,
+  DESC.TECHNIQUE_XP,
+  DESC.BOATING_XP,
+  DESC.LAKE_XP,
+  DESC.RIVER_XP,
+  DESC.OCEAN_XP,
+  DESC.FISHING_PAY,
+  DESC.LAKE_PAY,
+  DESC.RIVER_PAY,
+  DESC.OCEAN_PAY,
+];
+
+const CREW_FIRST_NAMES = [
+  "Abe", "Bess", "Cal", "Dot", "Eli", "Fen", "Gus", "Hank", "Ida", "Jonah",
+  "Kit", "Lars", "Mabel", "Ned", "Ola", "Rusty", "Sal", "Tess", "Vera", "Zeb",
+];
+
+const CREW_LAST_NAMES = [
+  "Ashby", "Barlow", "Creel", "Dunmore", "Ebbs", "Fisk", "Gale", "Harrow",
+  "Ives", "Jessop", "Keel", "Lowe", "Marsh", "Netherby", "Orme", "Quimby",
+  "Rooke", "Salter", "Tarrow", "Vance",
+];
+
 // ─── Boats ─────────────────────────────────────────────────────────────────
 // `revealAt` is the coin total that makes the boat visible in the shop;
 // `price` is what it costs. From Canoe onward revealAt currently sits well
@@ -850,6 +900,9 @@ export const gameState: GameDataType = $state({
 
   masteryTaken: [],
   masteryOffer: [],
+
+  crew: [],
+  crewOffer: [],
 });
 
 export const update = (
@@ -1030,6 +1083,77 @@ export const updateMasteryOffer = () => {
 
 // The ones not chosen are simply not taken: they stay in the pool and can be
 // offered again later.
+// ─── Crew ──────────────────────────────────────────────────────────────────
+const randomOf = <T,>(pool: T[]): T => pool[Math.floor(Math.random() * pool.length)];
+
+// The best income any fish available to you is earning. Taken from the deepest
+// unlocked fish per region rather than a scan of all 25, because fish.income
+// walks every effect source and doing that 25x per tick would be felt.
+export const getHighestFishIncome = (): number => {
+  let highest = 0;
+  for (const fish of highestTierFishPerCategory(gameState)) {
+    if (fish.income > highest) highest = fish.income;
+  }
+  return highest;
+};
+
+export const getCrewWage = (member: CrewMember): number =>
+  member.wageFraction * getHighestFishIncome();
+
+export const getTotalCrewWages = (): number =>
+  gameState.crew.reduce((total, member) => total + getCrewWage(member), 0);
+
+const rollCrewMember = (): CrewMember => {
+  const steps = Math.round((CREW_EFFECT_MAX - CREW_EFFECT_MIN) / CREW_EFFECT_STEP);
+  // Distinct perks: a hire with the same effect twice would read as a bug.
+  const pool = [...CREW_UPGRADE_POOL];
+  const upgrades = Array.from({ length: CREW_UPGRADE_COUNT }, () => ({
+    description: pool.splice(Math.floor(Math.random() * pool.length), 1)[0],
+    effect: CREW_EFFECT_MIN + Math.floor(Math.random() * (steps + 1)) * CREW_EFFECT_STEP,
+  }));
+
+  return {
+    // Date.now() alone collides when three are rolled in the same millisecond.
+    id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+    name: `${randomOf(CREW_FIRST_NAMES)} ${randomOf(CREW_LAST_NAMES)}`,
+    upgrades,
+    wageFraction:
+      CREW_WAGE_MIN + Math.random() * (CREW_WAGE_MAX - CREW_WAGE_MIN),
+  };
+};
+
+// Rolled once and stored, so the three candidates survive a reload rather than
+// being re-rolled - otherwise refreshing would be a free re-draw.
+export const rollCrewOffer = () => {
+  gameState.crewOffer = Array.from({ length: CREW_OFFER_SIZE }, rollCrewMember);
+};
+
+export const hireCrew = (id: string) => {
+  if (gameState.crew.length >= CREW_MAX) return;
+  const hired = gameState.crewOffer.find((member) => member.id === id);
+  if (!hired) return;
+  gameState.crew.push(hired);
+  // The candidates not taken are gone: the offer is the decision.
+  gameState.crewOffer = [];
+};
+
+export const fireCrew = (id: string) => {
+  gameState.crew = gameState.crew.filter((member) => member.id !== id);
+};
+
+// Flattened one entry per perk, since an effect source carries exactly one
+// description. Keyed by id rather than name so two hires who happen to roll
+// the same name cannot overwrite each other in the multiplier map.
+export const crewEffectSources = () =>
+  gameState.crew.flatMap((member) =>
+    member.upgrades.map((upgrade) => ({
+      name: `${member.name} (${upgrade.description})`,
+      key: `${member.id}:${upgrade.description}`,
+      effect: upgrade.effect,
+      baseData: { description: upgrade.description },
+    }))
+  );
+
 export const chooseMastery = (name: string) => {
   if (!gameState.masteryOffer.includes(name)) return;
   gameState.masteryTaken.push(name);
@@ -1122,14 +1246,17 @@ export const getLegendPointGain = (): number => {
 };
 
 // Tier 1 (small): resets progress but keeps maxLevel as a permanent record,
-// which boosts future xpGain via Task.maxLevelMultiplier.
+// which boosts future xpGain via Task.maxLevelMultiplier. Existing crew carry
+// over untouched, and someone new turns up looking for a berth.
 export const rebirth = () => {
   applyBaseReset();
+  rollCrewOffer();
   gameState.rebirthCount += 1;
 };
 
-// Tier 2 (big): also wipes maxLevel, but grants legendPoints - a currency
-// that's never reset and unlocks the permanent "legend" skill line.
+// Tier 2 (big): also wipes maxLevel and pays off the crew, but grants
+// legendPoints - a currency that's never reset and unlocks the permanent
+// "legend" skill line.
 export const ascend = () => {
   gameState.legendPoints += getLegendPointGain();
   applyBaseReset();
@@ -1139,6 +1266,9 @@ export const ascend = () => {
   gameState.skillsData.forEach((skill) => {
     skill.maxLevel = 0;
   });
+  // Crew survive rebirth but not this: ascension starts the whole line over.
+  gameState.crew = [];
+  gameState.crewOffer = [];
   gameState.ascensionCount += 1;
 };
 

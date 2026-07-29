@@ -33,6 +33,8 @@ import {
   FISH,
   SKILL,
   takenMasteries,
+  crewEffectSources,
+  getTotalCrewWages,
 } from "./gameData.svelte";
 
 export const daysToYears = (days: number) => Math.floor(days / DAYS_PER_YEAR);
@@ -53,7 +55,10 @@ export const getTotalExpenses = (game_data: GameDataType): number => {
       totalExpense += item.expense;
     }
   });
-  return totalExpense;
+  // Crew wages are the other half of the daily bill. Unlike items they cannot
+  // be switched off to ride out a bad patch - firing someone is the only way
+  // out, which is what makes hiring a commitment rather than a purchase.
+  return totalExpense + getTotalCrewWages();
 };
 
 export function getBaseLog(x, y) {
@@ -267,15 +272,24 @@ const PAY_SUFFIX = " Pay";
 // Anything that can carry an effect. Boats are in here too now that they're
 // upgrades rather than pure paywalls - a Boat exposes `effect` (flat, and only
 // once bought) and `baseData.description` just like a Task or an Item does.
-type EffectSource = { name: string; effect: number; baseData: { description: Description } };
+type EffectSource = {
+  name: string;
+  effect: number;
+  baseData: { description: Description };
+  // Optional override for the multiplier map's key. Crew need it: a member
+  // contributes one source per perk, and two hires can roll the same name, so
+  // keying by `name` alone would let them overwrite each other.
+  key?: string;
+};
 
 const effectSources = (): EffectSource[] => [
   ...getGameData().fishingData.values(),
   ...getGameData().skillsData.values(),
   ...getGameData().itemData.values(),
   ...getGameData().boatData.values(),
-  // Only the picks actually taken, not the whole ~50-entry Mastery pool.
+  // Only the picks actually taken, not the whole ~57-entry Mastery pool.
   ...takenMasteries(),
+  ...crewEffectSources(),
 ];
 
 // The three collectors below differ only in how they resolve one source's
@@ -287,7 +301,7 @@ const collectMultipliers = (
   for (const source of effectSources()) {
     const effect = resolve(source.baseData.description, source.effect);
     if (effect != 1) {
-      multipliers[source.name] = effect;
+      multipliers[source.key ?? source.name] = effect;
     }
   }
   return multipliers;

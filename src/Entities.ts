@@ -119,6 +119,27 @@ export interface MasteryData {
   baseData: MasteryBaseData;
 }
 
+// One of a crew member's three perks.
+export interface CrewUpgrade {
+  description: Description;
+  effect: number;
+}
+
+// A hired hand. Rolled fresh at each rebirth and carried across them - crew
+// are the one thing that persists between lives. Ascension clears them.
+export interface CrewMember {
+  // Stable across renames and duplicate names: used to key their effects in
+  // the multiplier map, which must be unique per source.
+  id: string;
+  name: string;
+  upgrades: CrewUpgrade[];
+  // Their daily wage as a share of the best fish income available, rather than
+  // a fixed number of coins. That is the whole point of crew as a gold sink:
+  // a flat price would be outrun by exponential income within a couple of
+  // days, so the wage tracks earning power instead.
+  wageFraction: number;
+}
+
 export interface RequirementObj {
   name: string;
   requirement: number | boolean;
@@ -156,4 +177,11 @@ export interface GameDataType {
   //   masteryOffer - the choices on the table right now, empty if none pending
   masteryTaken: string[];
   masteryOffer: string[];
+
+  // Crew. These survive rebirth - unlike everything else - but not ascension.
+  //   crew      - hired, up to CREW_MAX, each drawing a daily wage
+  //   crewOffer - the candidates presented at the last rebirth, empty once one
+  //               is hired
+  crew: CrewMember[];
+  crewOffer: CrewMember[];
 }

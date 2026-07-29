@@ -22,6 +22,7 @@
   import Sidebar from "src/Sidebar.svelte";
   import Reincarnation from "src/tabs/Reincarnation.svelte";
   import Mastery from "src/tabs/Mastery.svelte";
+  import Crew from "src/tabs/Crew.svelte";
 
   type Tab =
     | "goneFishing"
@@ -30,7 +31,8 @@
     | "achievements"
     | "settings"
     | "reincarnation"
-    | "mastery";
+    | "mastery"
+    | "crew";
   let selectedTab: Tab = $state("skills");
 
   createData(gameState.fishingData, fishBaseData);
@@ -108,6 +110,18 @@
                 ></span>{/if}
             </button>
           {/if}
+          <!-- Appears with your first rebirth, when someone first turns up
+               looking for a berth. The dot marks a hire waiting on you. -->
+          {#if gameState.crew.length > 0 || gameState.crewOffer.length > 0}
+            <button
+              class={`btn rounded-lg text-sm font-medium ${selectedTab === "crew" ? "bg-teal-700 text-white" : "text-slate-300 hover:bg-slate-800"}`}
+              onclick={() => selectTab("crew")}
+            >
+              Crew{#if gameState.crewOffer.length > 0}<span
+                  class="ml-1 inline-block h-2 w-2 rounded-full bg-teal-400 align-middle"
+                ></span>{/if}
+            </button>
+          {/if}
           <!-- calculatedAge() displays 14 + years-elapsed, so 365*36 here is
                displayed "Age 50" (matches the Reincarnation tab's narrative). -->
           {#if gameState.day > 365 * 36}
@@ -136,6 +150,8 @@
           <Reincarnation />
         {:else if selectedTab == "mastery"}
           <Mastery />
+        {:else if selectedTab == "crew"}
+          <Crew />
         {:else}
           <Settings />
         {/if}
