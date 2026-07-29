@@ -263,10 +263,17 @@ export const FISH_INCOME_LEVEL_SCALE = 0.5;
 // ocean stepped 10x/tier, and the last three ocean fish were all flat at
 // 10^13). 10x/tier over 11 ocean fish put Shark/Whale beyond any reachable
 // xp total; a regular ~3x keeps the endgame steep but finite.
+//
+// The ocean base used to be 250,000, which made Cod a wall rather than an
+// opening: Cod has no fish prerequisite, so it is commonly reached straight
+// from Lake Sturgeon (3,200) - a 78x step, and still 4x the deepest river
+// fish a player is likely to have levelled. Entry now sits near the middle of
+// the river instead, and the slightly gentler ramp carries the reduction
+// through the whole region rather than only the first fish.
 const REGION_XP: Record<string, { base: number; growth: number }> = {
   [CATEGORY.LAKE]: { base: 50, growth: 2 },
   [CATEGORY.RIVER]: { base: 100, growth: 5 },
-  [CATEGORY.OCEAN]: { base: 250_000, growth: 3 },
+  [CATEGORY.OCEAN]: { base: 60_000, growth: 2.8 },
 };
 
 const regionXp = (region: string, tier: number): number => {
@@ -770,7 +777,12 @@ export const requirements = new Map<string, Requirement[]>([
     [needSkills([SKILL.CONCENTRATION, GATE.MASTER], [SKILL.PATIENCE, GATE.EXPERT])],
   ],
   [SKILL.ANCHORING, [afterFish(FISH.COD, FISH_ADEPT_LEVEL)]],
-  [SKILL.SAILING, [afterFish(FISH.ANGLE_FISH)]],
+  // Owning the boat is what teaches you to sail. This used to need Angle Fish
+  // at level 10 - three fish *into* the ocean - which meant "Ocean Xp", the
+  // region's own multiplier, could not help you enter the region. Cod was left
+  // with almost nothing boosting it, and took longer to clear than any fish
+  // before it. The lake and river have no equivalent gap.
+  [SKILL.SAILING, [needBoat(BOAT.SAIL_BOAT)]],
   // Both down from 400/500: these are prerequisites for skills that are
   // themselves gates, so stacking two 400+ grinds compounded badly.
   [SKILL.NAVIGATION, [needSkills([SKILL.TROLLING, GATE.MASTER])]],
