@@ -7,6 +7,7 @@ import {
   needRequirements,
   roundRobinFish,
 } from "src/functions";
+import { updateAchievements } from "src/achievements";
 
 import type {
   AscensionResult,
@@ -1157,6 +1158,10 @@ export const gameState: GameDataType = $state({
 
   tackleSlotsBought: 0,
   agingStonesBought: 0,
+
+  totalCoinsEarned: 0,
+  totalCrewHired: 0,
+  achievementsEarned: [],
 });
 
 export const update = (
@@ -1174,6 +1179,7 @@ export const update = (
   updateItemExpenses(deltaSeconds);
   enforceTackleCapacity();
   updateMasteryOffer();
+  updateAchievements();
   if (autoTrain) {
     autoSetCurrentSkill();
   }
@@ -1214,7 +1220,12 @@ export const updateCurrentFish = (deltaSeconds: number) => {
   fish.increaseXp(deltaSeconds);
 
   gameState.currentlyFishing = fish;
-  gameState.coins += applySpeed(fish.income, deltaSeconds);
+  const earned = applySpeed(fish.income, deltaSeconds);
+  gameState.coins += earned;
+  // Gross income, not net of expenses - "how much have you ever earned" is a
+  // different question from "how much do you have," and unlike coins this
+  // never resets, so achievements can ask about a whole career.
+  gameState.totalCoinsEarned += earned;
 };
 
 export const setCurrentSkill = (skillKey: string) => {
@@ -1493,6 +1504,7 @@ export const hireCrew = (id: string) => {
   const hired = gameState.crewOffer.find((member) => member.id === id);
   if (!hired) return;
   gameState.crew.push(hired);
+  gameState.totalCrewHired += 1;
   // The candidates not taken are gone: the offer is the decision.
   gameState.crewOffer = [];
 };

@@ -191,6 +191,17 @@ export interface GameDataType {
   // by reincarnation like every other gold purchase.
   tackleSlotsBought: number;
 
+  // Lifetime counters, never reset by rebirth or ascension - unlike almost
+  // everything else in this file, these exist purely so an achievement can
+  // ask "how much, ever" rather than "how much right now."
+  totalCoinsEarned: number;
+  totalCrewHired: number;
+
+  // Ids of earned achievements (see src/achievements.ts). Permanent: once
+  // added, never removed, even by ascension - achievements are a record of
+  // what happened, not a resource to spend.
+  achievementsEarned: string[];
+
   // Ageing Stones bought this run - see AGING_STONE_* in gameData.svelte.ts.
   // Each instantly adds AGING_STONE_YEARS to gameState.day, so a rich enough
   // player can reach the Age 200 Ascension gate without waiting out the
