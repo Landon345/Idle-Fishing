@@ -1356,6 +1356,20 @@ export const takenMasteries = (): MasteryData[] => {
   return taken;
 };
 
+// Whether a Mastery could reasonably be offered right now: the broad ones
+// (no target) always can, since there's nothing to gate; a targeted one needs
+// its fish or skill actually unlocked. Shared by the Mastery offer roll and
+// the Crew perk pool below, so a candidate can never dangle a multiplier for
+// water the player hasn't reached yet - that read as "not unlocked yet" noise
+// rather than a real choice, per balance feedback.
+const isMasteryOfferable = (mastery: MasteryBaseData): boolean => {
+  if (mastery.target === undefined) return true;
+  const target =
+    gameState.fishingData.get(mastery.target) ??
+    gameState.skillsData.get(mastery.target);
+  return !!target && !needRequirements(gameState, target);
+};
+
 // Drawn from whatever the player has actually unlocked, so an offer is never
 // dead weight. Masteries already taken stay in the pool - offering one again
 // is how stacking happens - but `splice` keeps a single offer from showing the
@@ -1363,14 +1377,7 @@ export const takenMasteries = (): MasteryData[] => {
 const rollMasteryOffer = (): string[] => {
   const candidates: string[] = [];
   masteryData.forEach((mastery, name) => {
-    // The broad Masteries have no target, so nothing can gate them.
-    if (mastery.target !== undefined) {
-      const target =
-        gameState.fishingData.get(mastery.target) ??
-        gameState.skillsData.get(mastery.target);
-      if (!target || needRequirements(gameState, target)) return;
-    }
-    candidates.push(name);
+    if (isMasteryOfferable(mastery)) candidates.push(name);
   });
 
   const offer: string[] = [];
@@ -1424,14 +1431,18 @@ export const getCrewWage = (member: CrewMember): number =>
 export const getTotalCrewWages = (): number =>
   gameState.crew.reduce((total, member) => total + getCrewWage(member), 0);
 
-// Crew perks mirror the Mastery pool exactly - every per-fish and per-skill
-// target plus the broad ones - with no unlock filter, so a hire can turn up
-// offering a perk for water you have not reached yet. Resolved on demand
-// rather than as a module-level constant: masteryData is built further down
-// this file, and reading it while this module body is still evaluating would
-// throw, the same import-order trap the Requirement classes sit here to avoid.
+// Crew perks are drawn from the same pool Mastery is (every per-fish and
+// per-skill target plus the broad ones), filtered by the same
+// isMasteryOfferable rule - a hire should never dangle a multiplier for a
+// fish or skill still locked, which read as noise rather than a real choice
+// and broke the sense of a linear progression. Resolved on demand rather than
+// as a module-level constant: masteryData is built further down this file,
+// and reading it while this module body is still evaluating would throw, the
+// same import-order trap the Requirement classes sit here to avoid.
 const crewUpgradePool = (): Description[] =>
-  [...masteryData.values()].map((mastery) => mastery.description);
+  [...masteryData.values()]
+    .filter(isMasteryOfferable)
+    .map((mastery) => mastery.description);
 
 const rollCrewMember = (): CrewMember => {
   const steps = Math.round(
