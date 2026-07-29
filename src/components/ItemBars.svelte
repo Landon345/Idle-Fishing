@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Item } from "src/classes.svelte";
-  import { gameState } from "src/gameData.svelte";
+  import { gameState, hasFreeTackleSlot } from "src/gameData.svelte";
   import Coins from "src/components/Coins.svelte";
   import { needRequirements } from "src/functions";
 
@@ -17,6 +17,10 @@
 <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
   {#each items as item}
     {#if !needRequirements(gameState, item)}
+      <!-- With a full tackle box, equipping is refused by Item.select(), so
+           say so rather than letting the click quietly do nothing. `{@const}`
+           has to sit directly inside the `{#if}`, not inside the card div. -->
+      {@const blocked = !item.selected && !hasFreeTackleSlot()}
       <div
         class={`flex flex-col overflow-hidden rounded-xl border transition-colors ${item.selected ? "border-emerald-600 bg-emerald-950/30" : "border-slate-700 bg-slate-800/40"}`}
       >
@@ -27,7 +31,8 @@
         <button
           type="button"
           aria-pressed={item.selected}
-          class="flex w-full cursor-pointer flex-col gap-2 p-4 text-left transition-colors hover:bg-white/5"
+          disabled={blocked}
+          class={`flex w-full flex-col gap-2 p-4 text-left transition-colors ${blocked ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:bg-white/5"}`}
           onclick={() => item.select()}
         >
           <span class="flex w-full items-start justify-between gap-2">
@@ -35,9 +40,9 @@
               {item.name}
             </span>
             <span
-              class={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${item.selected ? "bg-emerald-600 text-white" : "bg-slate-700 text-slate-400"}`}
+              class={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${item.selected ? "bg-emerald-600 text-white" : blocked ? "bg-amber-900/70 text-amber-300" : "bg-slate-700 text-slate-400"}`}
             >
-              {item.selected ? "Equipped" : "Unequipped"}
+              {item.selected ? "Equipped" : blocked ? "No slot" : "Unequipped"}
             </span>
           </span>
 

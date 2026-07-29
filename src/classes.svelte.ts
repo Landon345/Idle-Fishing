@@ -10,6 +10,7 @@ import {
 import {
   getGameData,
   subtractCoins,
+  hasFreeTackleSlot,
   BASE_XP_PER_DAY,
   CATEGORY,
   LEGEND_POINT_XP_BONUS,
@@ -229,7 +230,10 @@ export class Item {
     return this.baseData.selected;
   }
 
+  // Unequipping is always allowed; equipping needs a free tackle slot. The
+  // guard lives here rather than in the UI so every caller is covered.
   select() {
+    if (!this.selected && !hasFreeTackleSlot()) return;
     this.baseData.selected = !this.baseData.selected;
   }
 

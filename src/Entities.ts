@@ -184,4 +184,8 @@ export interface GameDataType {
   //               is hired
   crew: CrewMember[];
   crewOffer: CrewMember[];
+
+  // Extra tackle-box slots bought this run, on top of TACKLE_SLOTS_BASE. Reset
+  // by reincarnation like every other gold purchase.
+  tackleSlotsBought: number;
 }

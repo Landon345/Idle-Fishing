@@ -479,6 +479,19 @@ const MASTERY_NAMES: { [target: string]: string } = {
   [SKILL.SUNKEN_FORTUNE]: "Treasure Sense",
 };
 
+// ─── Tackle box ────────────────────────────────────────────────────────────
+// A cap on how many items can be equipped at once. Without it you simply
+// equip everything the moment you can afford it, which is why running costs
+// stopped meaning anything - the choice was never "which items", only "how
+// soon". Slots are bought with gold, so the cap loosens as you get richer.
+//
+// The price climbs an order of magnitude a slot because it is competing with
+// exponential income: 10k, 100k, 1M and so on. This is a mid-game sink by
+// design - nothing priced in flat coins stays relevant against late income.
+export const TACKLE_SLOTS_BASE = 2;
+const TACKLE_SLOT_PRICE_BASE = 10_000;
+const TACKLE_SLOT_PRICE_GROWTH = 10;
+
 // ─── Crew ──────────────────────────────────────────────────────────────────
 // Three candidates turn up at each rebirth and you may keep one. Crew carry
 // across rebirths - they are the thing that persists while everything else
@@ -886,6 +899,8 @@ export const gameState: GameDataType = $state({
 
   crew: [],
   crewOffer: [],
+
+  tackleSlotsBought: 0,
 });
 
 export const update = (
@@ -901,6 +916,7 @@ export const update = (
   updateCurrentFish(deltaSeconds);
   updateCurrentSkill(deltaSeconds);
   updateItemExpenses(deltaSeconds);
+  enforceTackleCapacity();
   updateMasteryOffer();
   if (autoTrain) {
     autoSetCurrentSkill();
@@ -968,6 +984,54 @@ export const updateCurrentSkill = (deltaSeconds: number) => {
 
 export const subtractCoins = (amount: number) => {
   gameState.coins -= amount;
+};
+
+// ─── Tackle box ────────────────────────────────────────────────────────────
+// Capped at the number of items that exist, so the last slot buys the cap away
+// entirely rather than leaving something permanently unequippable.
+export const getMaxTackleSlots = (): number => itemBaseData.size;
+
+export const getTackleSlots = (): number =>
+  Math.min(TACKLE_SLOTS_BASE + gameState.tackleSlotsBought, getMaxTackleSlots());
+
+export const getEquippedItemCount = (): number => {
+  let equipped = 0;
+  gameState.itemData.forEach((item) => {
+    if (item.selected) equipped += 1;
+  });
+  return equipped;
+};
+
+export const hasFreeTackleSlot = (): boolean =>
+  getEquippedItemCount() < getTackleSlots();
+
+export const tackleSlotsMaxed = (): boolean =>
+  getTackleSlots() >= getMaxTackleSlots();
+
+export const getTackleSlotPrice = (): number =>
+  TACKLE_SLOT_PRICE_BASE *
+  Math.pow(TACKLE_SLOT_PRICE_GROWTH, gameState.tackleSlotsBought);
+
+export const buyTackleSlot = () => {
+  if (tackleSlotsMaxed()) return;
+  const price = getTackleSlotPrice();
+  if (price > gameState.coins) return;
+  subtractCoins(price);
+  gameState.tackleSlotsBought += 1;
+};
+
+// Deselects anything over the cap, newest first. Needed because a save written
+// before the tackle box existed can have every item equipped against a base of
+// two slots - and because reincarnation resets bought slots.
+export const enforceTackleCapacity = () => {
+  let overflow = getEquippedItemCount() - getTackleSlots();
+  if (overflow <= 0) return;
+  const equipped = [...gameState.itemData.values()].filter((item) => item.selected);
+  for (const item of equipped.reverse()) {
+    if (overflow <= 0) break;
+    item.deselect();
+    overflow -= 1;
+  }
 };
 
 // ─── Mastery ───────────────────────────────────────────────────────────────
@@ -1194,6 +1258,8 @@ const applyBaseReset = () => {
     });
   });
   gameState.coins = 0;
+  // Bought tackle slots go with the boats and items they were paid for.
+  gameState.tackleSlotsBought = 0;
   // Mastery picks are per-run: reincarnation clears every stack earned.
   gameState.masteryTaken = [];
   gameState.masteryOffer = [];
