@@ -24,12 +24,13 @@
     gameState.masteryOffer
       .filter((name) => masteryData.has(name))
       .map((name) => {
+        const base = masteryData.get(name)!;
         const stacks = getMasteryStacks(name);
         return {
-          base: masteryData.get(name)!,
+          base,
           stacks,
-          current: masteryEffect(stacks),
-          next: masteryEffect(stacks + 1),
+          current: masteryEffect(base, stacks),
+          next: masteryEffect(base, stacks + 1),
         };
       })
   );

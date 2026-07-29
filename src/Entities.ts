@@ -93,7 +93,13 @@ export interface SkillBaseData {
 // functions.ts already resolves - see masteryData.
 export interface MasteryBaseData {
   name: string;
-  target: string;
+  // The single fish or skill this is bound to, absent on the broad Masteries
+  // that hit a whole category. A Mastery with no target is never gated, since
+  // there is nothing that could be locked.
+  target?: string;
+  // Per-stack rate. Kept per-Mastery rather than global because the broad ones
+  // have to be far gentler than the single-entity ones.
+  effectPerStack: number;
   description: Description;
 }
 

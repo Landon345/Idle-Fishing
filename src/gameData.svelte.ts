@@ -386,18 +386,37 @@ const LEGEND_GATE = {
 // reset on reincarnation, unlike legendPoints.
 export const MASTERY_LEVELS_PER_PICK = 200;
 export const MASTERY_OFFER_SIZE = 3;
-// Picks stack: taking the same Mastery again raises its multiplier by this
-// much rather than being wasted, so pouring every choice into one fish is a
-// real strategy. Additive rather than compounding - at one pick per 200 levels
-// a run yields enough choices that x2 per stack would run away.
-// One stack is x2, two is x3, three is x4.
+// Picks stack: taking the same Mastery again raises its multiplier rather than
+// being wasted, so pouring every choice into one target is a real strategy.
+// Additive rather than compounding - at one pick per 200 levels a run yields
+// enough choices that compounding would run away.
+//
+// This is the rate for the entity Masteries, which are bound to a single fish
+// or skill and so can afford to be steep: one stack is x2, two x3, three x4.
+// The broad Masteries below carry their own, much smaller rates.
 export const MASTERY_EFFECT_PER_STACK = 1;
 
-// Every Mastery targets one entity and multiplies its xp. The description is
-// always "<target> Xp", which the generic per-entity rule in functions.ts
-// resolves without any switch case - so the cast is safe by construction:
-// `target` always comes from the FISH/SKILL tables, never a hand-typed string.
+// An entity Mastery targets one fish or skill and multiplies its xp. The
+// description is always "<target> Xp", which the generic per-entity rule in
+// functions.ts resolves without any switch case - so the cast is safe by
+// construction: `target` always comes from the FISH/SKILL tables, never a
+// hand-typed string.
 const masteryXpOf = (target: string) => `${target} Xp` as Description;
+
+// Masteries bound to no single entity. They hit one of the broad effects
+// instead, so they are always on offer - there is no target that could be
+// locked - and each carries its own per-stack rate, well under the entity
+// rate: x2 on one fish is a nudge, x2 on everything is a different game.
+const MASTERY_BROAD: {
+  name: string;
+  description: Description;
+  effectPerStack: number;
+}[] = [
+  { name: "Sea Change", description: DESC.ALL_XP, effectPerStack: 0.15 },
+  { name: "Quick Study", description: DESC.SKILL_XP, effectPerStack: 0.4 },
+  { name: "Fisher's Instinct", description: DESC.FISHING_XP, effectPerStack: 0.4 },
+  { name: "Good Haul", description: DESC.FISHING_PAY, effectPerStack: 0.5 },
+];
 
 // One named pick per fish and per skill. The name is the flavour; the key it
 // maps from is the entity whose xp it doubles.
@@ -939,10 +958,11 @@ export const masteryUnlocked = (): boolean =>
 export const getMasteryStacks = (name: string): number =>
   gameState.masteryTaken.filter((taken) => taken === name).length;
 
-// The multiplier a given number of stacks is worth. Zero stacks is x1, i.e.
-// no effect at all, which is what an unpicked Mastery is.
-export const masteryEffect = (stacks: number): number =>
-  1 + MASTERY_EFFECT_PER_STACK * stacks;
+// The multiplier a given number of stacks is worth, at that Mastery's own
+// rate. Zero stacks is x1, i.e. no effect at all, which is what an unpicked
+// Mastery is.
+export const masteryEffect = (base: MasteryBaseData, stacks: number): number =>
+  1 + base.effectPerStack * stacks;
 
 // One entry per *distinct* Mastery taken, with its stacks already folded into
 // a single multiplier. It has to be aggregated rather than emitted per pick:
@@ -958,7 +978,7 @@ export const takenMasteries = (): MasteryData[] => {
   stacks.forEach((count, name) => {
     const base = masteryData.get(name);
     if (!base) return;
-    taken.push({ name, effect: masteryEffect(count), stacks: count, baseData: base });
+    taken.push({ name, effect: masteryEffect(base, count), stacks: count, baseData: base });
   });
   return taken;
 };
@@ -970,10 +990,13 @@ export const takenMasteries = (): MasteryData[] => {
 const rollMasteryOffer = (): string[] => {
   const candidates: string[] = [];
   masteryData.forEach((mastery, name) => {
-    const target =
-      gameState.fishingData.get(mastery.target) ??
-      gameState.skillsData.get(mastery.target);
-    if (!target || needRequirements(gameState, target)) return;
+    // The broad Masteries have no target, so nothing can gate them.
+    if (mastery.target !== undefined) {
+      const target =
+        gameState.fishingData.get(mastery.target) ??
+        gameState.skillsData.get(mastery.target);
+      if (!target || needRequirements(gameState, target)) return;
+    }
     candidates.push(name);
   });
 
@@ -1269,12 +1292,18 @@ export const itemBaseData: Map<string, ItemBaseData> = new Map(
 
 // Static: the pool never changes. How many times each has been picked - and
 // so what it is currently worth - lives in gameState.masteryTaken.
-export const masteryData: Map<string, MasteryBaseData> = new Map(
-  Object.entries(MASTERY_NAMES).map(([target, name]): [string, MasteryBaseData] => [
+export const masteryData: Map<string, MasteryBaseData> = new Map([
+  ...Object.entries(MASTERY_NAMES).map(([target, name]): [string, MasteryBaseData] => [
     name,
-    { name, target, description: masteryXpOf(target) },
-  ])
-);
+    {
+      name,
+      target,
+      effectPerStack: MASTERY_EFFECT_PER_STACK,
+      description: masteryXpOf(target),
+    },
+  ]),
+  ...MASTERY_BROAD.map((broad): [string, MasteryBaseData] => [broad.name, { ...broad }]),
+]);
 
 export const fishCategories: { [category: string]: string[] } = {};
 fishBaseData.forEach((base) => {
