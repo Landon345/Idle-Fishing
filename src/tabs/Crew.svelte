@@ -40,6 +40,7 @@
               <span class="text-lg font-bold text-teal-200">{candidate.name}</span>
               <span class="flex items-center gap-1 text-sm text-rose-300">
                 Wants <Coins amount={getCrewWage(candidate)} /> / day
+                <span class="text-rose-400/70">({(candidate.wageFraction * 100).toFixed(0)}% of top income)</span>
               </span>
             </div>
             <ul class="flex flex-col gap-1">
@@ -72,6 +73,7 @@
               <span class="text-lg font-bold text-emerald-200">{member.name}</span>
               <span class="flex items-center gap-1 text-sm text-rose-300">
                 <Coins amount={getCrewWage(member)} /> / day
+                <span class="text-rose-400/70">({(member.wageFraction * 100).toFixed(0)}% of top income)</span>
               </span>
             </div>
             <ul class="flex flex-col gap-1">

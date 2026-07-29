@@ -13,8 +13,6 @@ export type Description =
   | "Lake Xp"
   | "River Xp"
   | "Ocean Xp"
-  | "Casting Xp"
-  | "Hooking Xp"
   | "Strength Xp"
   | "Concentration Xp"
   | "Intelligence Xp"

@@ -89,9 +89,12 @@ const DESC = {
   COMMUNICATION_XP: "Communication Xp",
   AMBITION_XP: "Ambition Xp",
   PATIENCE_XP: "Patience Xp",
-  // Still owned by skills pointing at a fish's technique - see skillBaseData.
-  CASTING_XP: "Casting Xp",
-  HOOKING_XP: "Hooking Xp",
+  // Netting and Whaling are each boosted by one boat (Airboat, Whaling Ship
+  // respectively) rather than a fish or an item - items are broad-only, see
+  // the comment above the ITEMS table. Casting Xp and Hooking Xp were removed
+  // alongside the other per-skill kinds below: Rod and Hook were their sole
+  // owners, and both moved to a broad target when items stopped targeting
+  // single skills.
   NETTING_XP: "Netting Xp",
   WHALING_XP: "Whaling Xp",
   // Single-fish xp. Owned by the skill or tool you'd actually use to land
@@ -529,7 +532,7 @@ const CREW_EFFECT_MAX = 3;
 const CREW_EFFECT_STEP = 0.25;
 // Daily wage, as a fraction of the best available fish income.
 const CREW_WAGE_MIN = 0.1;
-const CREW_WAGE_MAX = 0.2;
+const CREW_WAGE_MAX = 0.3;
 
 const CREW_FIRST_NAMES = [
   "Abe",
@@ -652,11 +655,13 @@ const BOATS: {
 ];
 
 // ─── Items ─────────────────────────────────────────────────────────────────
-// `expense` is charged per day while the item is selected. The ladder runs
-// narrow-and-cheap to broad-and-expensive, and no two items share a target -
-// previously Book, Pliers and Fish Finder all bought "Skill Xp", which made
-// Fish Finder strictly dominated (10x the cost of Pliers for a *smaller*
-// multiplier on the same thing) rather than a choice.
+// `expense` is charged per day while the item is selected. Every item targets
+// a broad kind - a whole region or category - rather than one fish or skill:
+// gear should feel like general-purpose equipment, not a tool for one specific
+// catch. No two items share a target - previously Book, Pliers and Fish
+// Finder all bought "Skill Xp", which made Fish Finder strictly dominated
+// (10x the cost of Pliers for a *smaller* multiplier on the same thing)
+// rather than a choice.
 //
 // Item.upgradePrice compounds from a base of ITEM_UPGRADE_PRICE_DAYS days of
 // the item's own expense, so the upgrade ladder stays proportional to what the
@@ -683,7 +688,7 @@ const ITEMS: {
     name: ITEM.ROD,
     expense: 5,
     effect: 2,
-    description: DESC.CASTING_XP,
+    description: DESC.LAKE_XP,
     revealAt: 500,
   },
   {
@@ -704,7 +709,7 @@ const ITEMS: {
     name: ITEM.HOOK,
     expense: 1_200,
     effect: 2,
-    description: DESC.HOOKING_XP,
+    description: DESC.RIVER_XP,
     revealAt: 50_000,
   },
   {
@@ -721,12 +726,11 @@ const ITEMS: {
     description: DESC.BOATING_XP,
     revealAt: 500_000,
   },
-  // Pliers are what you reach for with a toothy fish alongside the boat.
   {
     name: ITEM.PLIERS,
     expense: 200_000,
     effect: 2.75,
-    description: DESC.BARRACUDA_XP,
+    description: DESC.OCEAN_XP,
     revealAt: 1_000_000,
   },
   {
