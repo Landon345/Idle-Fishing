@@ -610,10 +610,20 @@ const BOATS: {
   description: Description;
 }[] = [
   //  name                    price        effect  target
-  { name: BOAT.ROW_BOAT, price: 600, effect: 1.25, description: DESC.LAKE_XP },
+  // Row Boat and Silver Bullet raised 10x (600 -> 6,000; 3,000 -> 30,000) per
+  // balance feedback: the earliest boats should be a bigger commitment. Bass
+  // Boat is left alone rather than scaled the same way - a 10x bump there
+  // would push it past Canoe/River Skiff's prices despite gating earlier
+  // (lake, not river) content, breaking the ladder's price order.
+  {
+    name: BOAT.ROW_BOAT,
+    price: 6_000,
+    effect: 1.25,
+    description: DESC.LAKE_XP,
+  },
   {
     name: BOAT.SILVER_BULLET,
-    price: 3_000,
+    price: 30_000,
     effect: 1.5,
     description: DESC.LAKE_PAY,
   },
