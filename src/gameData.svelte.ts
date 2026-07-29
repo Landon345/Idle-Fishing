@@ -499,23 +499,6 @@ const CREW_EFFECT_STEP = 0.25;
 const CREW_WAGE_MIN = 0.1;
 const CREW_WAGE_MAX = 0.2;
 
-// Crew perks are drawn from the broad effects only. A single-fish perk would
-// read as a dud on a hire you are paying a fifth of your income for.
-const CREW_UPGRADE_POOL: Description[] = [
-  DESC.ALL_XP,
-  DESC.FISHING_XP,
-  DESC.SKILL_XP,
-  DESC.TECHNIQUE_XP,
-  DESC.BOATING_XP,
-  DESC.LAKE_XP,
-  DESC.RIVER_XP,
-  DESC.OCEAN_XP,
-  DESC.FISHING_PAY,
-  DESC.LAKE_PAY,
-  DESC.RIVER_PAY,
-  DESC.OCEAN_PAY,
-];
-
 const CREW_FIRST_NAMES = [
   "Abe", "Bess", "Cal", "Dot", "Eli", "Fen", "Gus", "Hank", "Ida", "Jonah",
   "Kit", "Lars", "Mabel", "Ned", "Ola", "Rusty", "Sal", "Tess", "Vera", "Zeb",
@@ -1103,10 +1086,19 @@ export const getCrewWage = (member: CrewMember): number =>
 export const getTotalCrewWages = (): number =>
   gameState.crew.reduce((total, member) => total + getCrewWage(member), 0);
 
+// Crew perks mirror the Mastery pool exactly - every per-fish and per-skill
+// target plus the broad ones - with no unlock filter, so a hire can turn up
+// offering a perk for water you have not reached yet. Resolved on demand
+// rather than as a module-level constant: masteryData is built further down
+// this file, and reading it while this module body is still evaluating would
+// throw, the same import-order trap the Requirement classes sit here to avoid.
+const crewUpgradePool = (): Description[] =>
+  [...masteryData.values()].map((mastery) => mastery.description);
+
 const rollCrewMember = (): CrewMember => {
   const steps = Math.round((CREW_EFFECT_MAX - CREW_EFFECT_MIN) / CREW_EFFECT_STEP);
   // Distinct perks: a hire with the same effect twice would read as a bug.
-  const pool = [...CREW_UPGRADE_POOL];
+  const pool = crewUpgradePool();
   const upgrades = Array.from({ length: CREW_UPGRADE_COUNT }, () => ({
     description: pool.splice(Math.floor(Math.random() * pool.length), 1)[0],
     effect: CREW_EFFECT_MIN + Math.floor(Math.random() * (steps + 1)) * CREW_EFFECT_STEP,
