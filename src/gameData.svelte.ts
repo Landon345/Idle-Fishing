@@ -310,8 +310,6 @@ const SKILL_XP: Record<string, number> = {
 // ─── Unlock gates ──────────────────────────────────────────────────────────
 // Level a fish must reach before the next fish in its region unlocks.
 const NEXT_FISH_LEVEL = 10;
-// A deeper fish gate, used where a skill unlocks off fishing progress.
-const FISH_ADEPT_LEVEL = 15;
 
 // Skill level gates, as one deliberate ladder rather than ad-hoc numbers.
 //
@@ -975,18 +973,22 @@ export const requirements = new Map<string, Requirement[]>([
       needBoat(BOAT.SAIL_BOAT),
     ],
   ],
+  // Netting used to also gate Mackerel, its own effect target - which meant
+  // Netting had to unlock *before* Mackerel to ever reach the level Mackerel
+  // demanded, no matter how the two skills' own gates were arranged. Dropped
+  // so Netting's own unlock (below) can require Mackerel outright instead.
   [
     FISH.MACKEREL,
-    [
-      afterFish(FISH.COD),
-      needSkills([SKILL.DOCKING, GATE.EXPERT], [SKILL.NETTING, GATE.VETERAN]),
-    ],
+    [afterFish(FISH.COD), needSkills([SKILL.DOCKING, GATE.EXPERT])],
   ],
+  // Second condition moved from Turning to Netting (freed up by the Mackerel
+  // change above) at the same level: Turning is no longer available this
+  // early, for the same reason it had to stop gating Barracuda below.
   [
     FISH.ANGLE_FISH,
     [
       afterFish(FISH.MACKEREL),
-      needSkills([SKILL.DOCKING, GATE.MASTER], [SKILL.TURNING, GATE.EXPERT]),
+      needSkills([SKILL.DOCKING, GATE.MASTER], [SKILL.NETTING, GATE.EXPERT]),
     ],
   ],
   [
@@ -1000,9 +1002,13 @@ export const requirements = new Map<string, Requirement[]>([
     FISH.STINGRAY,
     [afterFish(FISH.GROUPER), needSkills([SKILL.DOCKING, GATE.RENOWNED])],
   ],
+  // Turning used to also gate Barracuda, its own effect target - the same
+  // problem Netting/Mackerel had. Replaced with another step of Docking
+  // (already escalating Mackerel -> Angle Fish -> Stingray) so Turning's own
+  // unlock (below) can require Barracuda outright instead.
   [
     FISH.BARRACUDA,
-    [afterFish(FISH.STINGRAY), needSkills([SKILL.TURNING, GATE.RENOWNED])],
+    [afterFish(FISH.STINGRAY), needSkills([SKILL.DOCKING, GATE.LEGENDARY])],
   ],
   [
     FISH.BLUEFIN_TUNA,
@@ -1055,20 +1061,16 @@ export const requirements = new Map<string, Requirement[]>([
   ],
   // ─── FISHING SKILLS ──────────────────────────────────────────────────────
   // Each of these targets one fish's xp (see skillBaseData) - Casting boosts
-  // Bass, Jigging boosts Perch, and so on. Their own unlock is now tied to
-  // having already reached the fish just before that target, so a skill never
-  // sits trainable (and visibly "boosting" something) long before its target
-  // is even reachable. Previously these unlocked off an unrelated fundamental
-  // or another skill entirely - Whaling, for one, needed only Strength 250 and
-  // so could be trained the length of the game before Whale itself opened up.
+  // Bass, Jigging boosts Perch, and so on. Previously these unlocked off an
+  // unrelated fundamental or another skill entirely - Whaling, for one,
+  // needed only Strength 250 and so could be trained the length of the game
+  // before Whale itself opened up.
   //
-  // Checked every one of these against every OTHER place the same skill gates
-  // something, not just its own target, so the new gate can't create a cycle:
-  // Turning also gates Angle Fish (ocean#2) ahead of its own target Barracuda
-  // (ocean#5) - gating Turning on Stingray (ocean#4, just before Barracuda)
-  // would have made Angle Fish/Turning/Stingray/Grouper mutually unreachable,
-  // so Turning is anchored to Mackerel (ocean#1, just before its *earliest*
-  // use) instead.
+  // Most are anchored to the fish just *before* their target, so the skill is
+  // trainable a little ahead of when it becomes useful rather than sitting
+  // inert for most of the game. Checked every one of these against every
+  // OTHER place the same skill gates something, not just its own target, so
+  // the new gate can't create a cycle.
   [SKILL.CASTING, [afterFish(FISH.PERCH)]],
   [SKILL.JIGGING, [afterFish(FISH.SUN_FISH)]],
   // Trolling is the one exception: besides Northern Pike, it also gates Pacu
@@ -1079,8 +1081,15 @@ export const requirements = new Map<string, Requirement[]>([
   // switched to a fish.
   [SKILL.TROLLING, [needSkills([SKILL.CONCENTRATION, GATE.SEASONED])]],
   [SKILL.REELING, [afterFish(FISH.PIRANA)]],
-  [SKILL.HOOKING, [afterFish(FISH.PACU)]],
-  [SKILL.NETTING, [afterFish(FISH.COD, FISH_ADEPT_LEVEL)]],
+  // Hooking, Netting and Turning unlock strictly *after* their own target
+  // instead - each used to also gate the very fish it targets (Mackerel
+  // required Netting, Barracuda required Turning), so anchoring the skill's
+  // unlock to that same fish would have been circular. Now that the fish's
+  // own requirement no longer depends on the skill, the skill can safely
+  // depend on the fish. Hooking never gated anything else, so it moves from
+  // Pacu (just before Payara) to Payara itself with no cycle to check.
+  [SKILL.HOOKING, [afterFish(FISH.PAYARA)]],
+  [SKILL.NETTING, [afterFish(FISH.MACKEREL)]],
   [SKILL.WHALING, [afterFish(FISH.SHARK)]],
   // ─── BOATING SKILLS ──────────────────────────────────────────────────────
   // Docking and Sailing keep their existing gates: both target a broad kind
@@ -1095,7 +1104,10 @@ export const requirements = new Map<string, Requirement[]>([
       ),
     ],
   ],
-  [SKILL.TURNING, [afterFish(FISH.MACKEREL)]],
+  // Anchored to its own target rather than the preceding fish (Stingray) -
+  // Turning used to also gate Barracuda itself, so it has the same fix as
+  // Hooking/Netting above (see the comment over the fishing skills).
+  [SKILL.TURNING, [afterFish(FISH.BARRACUDA)]],
   [SKILL.ANCHORING, [afterFish(FISH.ANGLE_FISH)]],
   // Owning the boat is what teaches you to sail. This used to need Angle Fish
   // at level 10 - three fish *into* the ocean - which meant "Ocean Xp", the
