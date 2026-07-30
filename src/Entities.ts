@@ -22,19 +22,23 @@ export type Description =
   | "Boating Xp"
   | "Netting Xp"
   | "Whaling Xp"
-  // Per-fish xp. Each is owned by the skill (or tool) you'd actually use to
-  // land that fish, so a technique makes its quarry easier to catch.
-  | "Perch Xp"
+  // Per-fish xp. Fishing skills each own one river fish's kind one to one, in
+  // order; boating skills each own one of the first six ocean fish's kind,
+  // the same way. Bass Xp is the one exception with two owners (Bass Boat).
   | "Bass Xp"
-  | "Northern Pike Xp"
+  | "Pirana Xp"
   | "Salmon Xp"
+  | "Silver Drum Xp"
+  | "Armoured Catfish Xp"
+  | "Electric Eel Xp"
+  | "Pacu Xp"
   | "Payara Xp"
+  | "Cod Xp"
   | "Mackerel Xp"
+  | "Angle Fish Xp"
   | "Grouper Xp"
+  | "Stingray Xp"
   | "Barracuda Xp"
-  | "Bluefin Tuna Xp"
-  | "Blue Marlin Xp"
-  | "Whale Xp"
   | "Fishing Pay"
   | "Lake Pay"
   | "River Pay"

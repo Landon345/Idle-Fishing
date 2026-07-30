@@ -99,24 +99,31 @@ const DESC = {
   // single skills.
   NETTING_XP: "Netting Xp",
   WHALING_XP: "Whaling Xp",
-  // Single-fish xp. Owned by the skill or tool you'd actually use to land
-  // that fish, so practising a technique makes its quarry easier to catch.
-  PERCH_XP: "Perch Xp",
+  // Single-fish xp. Fishing skills each own one river fish's kind, one to one
+  // (Casting->Pirana, Jigging->Salmon, ... Whaling->Payara, matching the seven
+  // skills to the seven river fish in order); boating skills each own one of
+  // the first six ocean fish's kind, one to one, in the same way. Bass Xp
+  // keeps a single owner (Bass Boat) even though Casting moved off it.
   BASS_XP: "Bass Xp",
-  NORTHERN_PIKE_XP: "Northern Pike Xp",
+  PIRANA_XP: "Pirana Xp",
   SALMON_XP: "Salmon Xp",
+  SILVER_DRUM_XP: "Silver Drum Xp",
+  ARMOURED_CATFISH_XP: "Armoured Catfish Xp",
+  ELECTRIC_EEL_XP: "Electric Eel Xp",
+  PACU_XP: "Pacu Xp",
   PAYARA_XP: "Payara Xp",
+  COD_XP: "Cod Xp",
   MACKEREL_XP: "Mackerel Xp",
+  ANGLE_FISH_XP: "Angle Fish Xp",
   GROUPER_XP: "Grouper Xp",
+  STINGRAY_XP: "Stingray Xp",
   BARRACUDA_XP: "Barracuda Xp",
-  BLUEFIN_TUNA_XP: "Bluefin Tuna Xp",
-  BLUE_MARLIN_XP: "Blue Marlin Xp",
-  WHALE_XP: "Whale Xp",
   // Income. Effects generally avoid stacking more than a few owners deep, so
   // that no two things the player is choosing between do the same job - but
-  // OCEAN_PAY is deliberately the exception, carried by Communication,
-  // Docking, Shark and the Yacht at once. The ocean is late game, and it is
-  // meant to pay out disproportionately once you get there.
+  // OCEAN_PAY is deliberately the exception, carried by Communication, Shark
+  // and the Yacht at once (Docking moved to Cod Xp, dropping it to three
+  // owners). The ocean is late game, and it is meant to pay out
+  // disproportionately once you get there.
   FISHING_PAY: "Fishing Pay",
   LAKE_PAY: "Lake Pay",
   RIVER_PAY: "River Pay",
@@ -1050,73 +1057,71 @@ export const requirements = new Map<string, Requirement[]>([
   [SKILL.INTELLIGENCE, [needSkills([SKILL.CONCENTRATION, GATE.DABBLING])]],
   [SKILL.PATIENCE, [needSkills([SKILL.CONCENTRATION, GATE.NOVICE])]],
   [SKILL.AMBITION, [needSkills([SKILL.INTELLIGENCE, GATE.APPRENTICE])]],
+  // Matches Cod's own requirement exactly (see the ocean section below), so
+  // the two unlock in the same instant - talking the trade up with other
+  // sailors is a saltwater thing, not a lakeside one, and it's a genuinely
+  // difficult gate rather than the early Intelligence/Strength check this
+  // used to be.
   [
     SKILL.COMMUNICATION,
     [
       needSkills(
-        [SKILL.INTELLIGENCE, GATE.APPRENTICE],
-        [SKILL.STRENGTH, GATE.COMPETENT],
+        [SKILL.PATIENCE, GATE.MASTER],
+        [SKILL.CONCENTRATION, GATE.MASTER],
       ),
+      needBoat(BOAT.SAIL_BOAT),
     ],
   ],
   // ─── FISHING SKILLS ──────────────────────────────────────────────────────
-  // Each of these targets one fish's xp (see skillBaseData) - Casting boosts
-  // Bass, Jigging boosts Perch, and so on. Previously these unlocked off an
-  // unrelated fundamental or another skill entirely - Whaling, for one,
-  // needed only Strength 250 and so could be trained the length of the game
-  // before Whale itself opened up.
+  // Each now targets one river fish's xp one to one, in order (see
+  // skillBaseData) - Casting boosts Pirana, Jigging boosts Salmon, and so on
+  // down to Whaling boosting Payara. Their own unlock is anchored to the
+  // river fish just *before* that target, so a skill is trainable a little
+  // ahead of when it becomes useful rather than sitting inert for most of
+  // the game (the fault with the old fundamental-based gates - Whaling, for
+  // one, needed only Strength 250 and so could be trained the length of the
+  // game before its target ever opened up).
   //
-  // Most are anchored to the fish just *before* their target, so the skill is
-  // trainable a little ahead of when it becomes useful rather than sitting
-  // inert for most of the game. Checked every one of these against every
-  // OTHER place the same skill gates something, not just its own target, so
-  // the new gate can't create a cycle.
-  [SKILL.CASTING, [afterFish(FISH.PERCH)]],
-  [SKILL.JIGGING, [afterFish(FISH.SUN_FISH)]],
-  // Trolling is the one exception: besides Northern Pike, it also gates Pacu
-  // (river) and Navigation - lake and river progress in this game with the
-  // rest, tying Trolling's own unlock to a *lake* fish risks blocking a
-  // river-focused run on an unrelated region. Its fundamentals-based gate is
-  // raised instead (Concentration is fed by every region), rather than
-  // switched to a fish.
-  [SKILL.TROLLING, [needSkills([SKILL.CONCENTRATION, GATE.SEASONED])]],
-  [SKILL.REELING, [afterFish(FISH.PIRANA)]],
-  // Hooking, Netting and Turning unlock strictly *after* their own target
-  // instead - each used to also gate the very fish it targets (Mackerel
-  // required Netting, Barracuda required Turning), so anchoring the skill's
-  // unlock to that same fish would have been circular. Now that the fish's
-  // own requirement no longer depends on the skill, the skill can safely
-  // depend on the fish. Hooking never gated anything else, so it moves from
-  // Pacu (just before Payara) to Payara itself with no cycle to check.
-  [SKILL.HOOKING, [afterFish(FISH.PAYARA)]],
-  [SKILL.NETTING, [afterFish(FISH.MACKEREL)]],
-  [SKILL.WHALING, [afterFish(FISH.SHARK)]],
+  // Checked every one of these against every OTHER place the same skill
+  // gates something, not just its own target, so the new gate can't create a
+  // cycle - none of these are also required by a fish earlier than their new
+  // anchor, unlike Turning below.
+  //
+  // Pirana has no preceding river fish (it's the first), so Casting mirrors
+  // Pirana's own requirement exactly instead - the same trick Communication
+  // and Docking use below for Cod.
+  [SKILL.CASTING, [needSkills([SKILL.STRENGTH, GATE.DABBLING])]],
+  [SKILL.JIGGING, [afterFish(FISH.PIRANA)]],
+  [SKILL.TROLLING, [afterFish(FISH.SALMON)]],
+  [SKILL.REELING, [afterFish(FISH.SILVER_DRUM)]],
+  [SKILL.HOOKING, [afterFish(FISH.ARMOURED_CATFISH)]],
+  [SKILL.NETTING, [afterFish(FISH.ELECTRIC_EEL)]],
+  [SKILL.WHALING, [afterFish(FISH.PACU)]],
   // ─── BOATING SKILLS ──────────────────────────────────────────────────────
-  // Docking and Sailing keep their existing gates: both target a broad kind
-  // (Ocean Pay, Ocean Xp respectively) rather than one fish, so there's
-  // nothing for them to unlock "too early" relative to.
+  // Each now targets one of the first six ocean fish's xp one to one, in
+  // order, the same way. Docking mirrors Cod's own requirement (Cod, like
+  // Pirana, is the first fish in its region with nothing to anchor before
+  // it) - the same "exact match" trick as Communication above.
   [
     SKILL.DOCKING,
     [
       needSkills(
-        [SKILL.CONCENTRATION, GATE.EXPERT],
-        [SKILL.INTELLIGENCE, GATE.EXPERT],
+        [SKILL.PATIENCE, GATE.MASTER],
+        [SKILL.CONCENTRATION, GATE.MASTER],
       ),
+      needBoat(BOAT.SAIL_BOAT),
     ],
   ],
-  // Anchored to its own target rather than the preceding fish (Stingray) -
-  // Turning used to also gate Barracuda itself, so it has the same fix as
-  // Hooking/Netting above (see the comment over the fishing skills).
-  [SKILL.TURNING, [afterFish(FISH.BARRACUDA)]],
-  [SKILL.ANCHORING, [afterFish(FISH.ANGLE_FISH)]],
-  // Owning the boat is what teaches you to sail. This used to need Angle Fish
-  // at level 10 - three fish *into* the ocean - which meant "Ocean Xp", the
-  // region's own multiplier, could not help you enter the region. Cod was left
-  // with almost nothing boosting it, and took longer to clear than any fish
-  // before it. The lake and river have no equivalent gap.
-  [SKILL.SAILING, [needBoat(BOAT.SAIL_BOAT)]],
-  [SKILL.NAVIGATION, [afterFish(FISH.BLUEFIN_TUNA)]],
-  [SKILL.STABILITY, [afterFish(FISH.BARRACUDA)]],
+  [SKILL.TURNING, [afterFish(FISH.COD)]],
+  [SKILL.ANCHORING, [afterFish(FISH.MACKEREL)]],
+  // Sailing used to stay on needBoat(SAIL_BOAT) specifically so its old
+  // broad "Ocean Xp" effect could help Cod - the ocean's entry fish - as soon
+  // as the boat was bought. That reasoning no longer applies now that
+  // Sailing's effect targets Grouper alone, so it moves to the same
+  // preceding-fish anchor as everything else here.
+  [SKILL.SAILING, [afterFish(FISH.ANGLE_FISH)]],
+  [SKILL.NAVIGATION, [afterFish(FISH.GROUPER)]],
+  [SKILL.STABILITY, [afterFish(FISH.STINGRAY)]],
   // ─── IMMORTALITY ─────────────────────────────────────────────────────────
   [SKILL.IMMORTALITY, [needSkills([SKILL.AMBITION, GATE.ACCOMPLISHED])]],
   // Deliberately left near their old levels. Immortality is the engine that
@@ -1890,22 +1895,28 @@ export const skillBaseData: Map<string, SkillBaseData> = new Map([
     DESC.OCEAN_PAY,
   ),
 
-  // Each technique boosts the fish you'd actually use it on.
-  skill(SKILL.CASTING, CATEGORY.FISHING, EFFECT.ADEPT, DESC.BASS_XP),
-  skill(SKILL.JIGGING, CATEGORY.FISHING, EFFECT.ADEPT, DESC.PERCH_XP),
-  skill(SKILL.TROLLING, CATEGORY.FISHING, EFFECT.ADEPT, DESC.NORTHERN_PIKE_XP),
-  skill(SKILL.REELING, CATEGORY.FISHING, EFFECT.ADEPT, DESC.SALMON_XP),
-  skill(SKILL.HOOKING, CATEGORY.FISHING, EFFECT.ADEPT, DESC.PAYARA_XP),
-  skill(SKILL.NETTING, CATEGORY.FISHING, EFFECT.ADEPT, DESC.MACKEREL_XP),
-  skill(SKILL.WHALING, CATEGORY.FISHING, EFFECT.ADEPT, DESC.WHALE_XP),
+  // Each fishing technique now maps one-to-one onto the seven river fish, in
+  // order: whatever you're training lands the river fish sitting at the same
+  // depth. Previously these were scattered across all three regions (Casting
+  // boosted a lake fish, Whaling an ocean one) with no consistent pattern.
+  skill(SKILL.CASTING, CATEGORY.FISHING, EFFECT.ADEPT, DESC.PIRANA_XP),
+  skill(SKILL.JIGGING, CATEGORY.FISHING, EFFECT.ADEPT, DESC.SALMON_XP),
+  skill(SKILL.TROLLING, CATEGORY.FISHING, EFFECT.ADEPT, DESC.SILVER_DRUM_XP),
+  skill(SKILL.REELING, CATEGORY.FISHING, EFFECT.ADEPT, DESC.ARMOURED_CATFISH_XP),
+  skill(SKILL.HOOKING, CATEGORY.FISHING, EFFECT.ADEPT, DESC.ELECTRIC_EEL_XP),
+  skill(SKILL.NETTING, CATEGORY.FISHING, EFFECT.ADEPT, DESC.PACU_XP),
+  skill(SKILL.WHALING, CATEGORY.FISHING, EFFECT.ADEPT, DESC.PAYARA_XP),
 
-  // Boat handling: what the boat lets you hold, chase, or reach.
-  skill(SKILL.DOCKING, CATEGORY.BOATING, EFFECT.BOATING, DESC.OCEAN_PAY),
-  skill(SKILL.TURNING, CATEGORY.BOATING, EFFECT.BOATING, DESC.BARRACUDA_XP),
-  skill(SKILL.ANCHORING, CATEGORY.BOATING, EFFECT.BOATING, DESC.GROUPER_XP),
-  skill(SKILL.SAILING, CATEGORY.BOATING, EFFECT.BOATING, DESC.OCEAN_XP),
-  skill(SKILL.NAVIGATION, CATEGORY.BOATING, EFFECT.BOATING, DESC.BLUE_MARLIN_XP),
-  skill(SKILL.STABILITY, CATEGORY.BOATING, EFFECT.BOATING, DESC.BLUEFIN_TUNA_XP),
+  // Boating skills map one-to-one onto the first six ocean fish, the same
+  // way - six skills can't cover all eleven, so the back half of the ocean
+  // (Bluefin Tuna onward) keeps no boating-skill-specific target and relies
+  // on the broad Ocean Xp/Ocean Pay/All Xp effects elsewhere instead.
+  skill(SKILL.DOCKING, CATEGORY.BOATING, EFFECT.BOATING, DESC.COD_XP),
+  skill(SKILL.TURNING, CATEGORY.BOATING, EFFECT.BOATING, DESC.MACKEREL_XP),
+  skill(SKILL.ANCHORING, CATEGORY.BOATING, EFFECT.BOATING, DESC.ANGLE_FISH_XP),
+  skill(SKILL.SAILING, CATEGORY.BOATING, EFFECT.BOATING, DESC.GROUPER_XP),
+  skill(SKILL.NAVIGATION, CATEGORY.BOATING, EFFECT.BOATING, DESC.STINGRAY_XP),
+  skill(SKILL.STABILITY, CATEGORY.BOATING, EFFECT.BOATING, DESC.BARRACUDA_XP),
 
   // Reachable through ordinary progression (unlike the legend line below) -
   // these are the only way to extend your lifespan past the natural Age 70
