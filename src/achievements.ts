@@ -83,10 +83,10 @@ export const achievements: AchievementDefinition[] = [
     check: () => fish(FISH.WHALE).level >= 10,
   },
   {
-    id: "shark-week",
-    name: "Shark Week",
-    description: "Reach level 10 on Shark.",
-    check: () => fish(FISH.SHARK).level >= 10,
+    id: "barracuda-bite",
+    name: "Barracuda Bite",
+    description: "Reach level 10 on Barracuda.",
+    check: () => fish(FISH.BARRACUDA).level >= 10,
   },
   {
     id: "shocking-development",

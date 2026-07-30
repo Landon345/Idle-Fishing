@@ -102,13 +102,11 @@ const DESC = {
   // Single-fish xp. Fishing skills each own one river fish's kind, one to one
   // (Casting->Pirana, Jigging->Salmon, ... Gaffing->Payara, matching the seven
   // skills to the seven river fish in order); boating skills each own one
-  // ocean fish's kind the same way - the first six in order (Docking->Cod,
-  // ..., Stability->Barracuda), plus Whaling on Whale as a capstone rather
-  // than the next fish in line, since Whale already requires Whaling at
-  // Legendary to unlock (see the requirement graph) and a skill named
-  // "Whaling" targeting anything but the whale itself never read right.
-  // Bluefin Tuna/Blue Marlin/Swordfish/Shark are left uncovered, same as
-  // before, and rely on the broad Ocean Xp/Ocean Pay/All Xp effects instead.
+  // ocean fish's kind the same way - Docking->Cod, ..., Stability->Barracuda,
+  // then Whaling on Whale as a capstone. Every ocean fish now has one: Bluefin
+  // Tuna/Blue Marlin/Swordfish/Shark, the four with no boating skill of their
+  // own, were removed outright rather than left dangling on the broad Ocean
+  // Xp/Ocean Pay/All Xp effects.
   // Bass Xp keeps a single owner (Bass Boat) even though Casting moved off it.
   BASS_XP: "Bass Xp",
   PIRANA_XP: "Pirana Xp",
@@ -127,10 +125,10 @@ const DESC = {
   WHALE_XP: "Whale Xp",
   // Income. Effects generally avoid stacking more than a few owners deep, so
   // that no two things the player is choosing between do the same job - but
-  // OCEAN_PAY is deliberately the exception, carried by Communication, Shark
-  // and the Yacht at once (Docking moved to Cod Xp, dropping it to three
-  // owners). The ocean is late game, and it is meant to pay out
-  // disproportionately once you get there.
+  // OCEAN_PAY is deliberately the exception, carried by Communication and the
+  // Yacht at once (Docking moved to Cod Xp, and Shark - its third owner - was
+  // removed outright, see fishBaseData). The ocean is late game, and it is
+  // meant to pay out disproportionately once you get there.
   FISHING_PAY: "Fishing Pay",
   LAKE_PAY: "Lake Pay",
   RIVER_PAY: "River Pay",
@@ -167,10 +165,6 @@ export const FISH = {
   GROUPER: "Grouper",
   STINGRAY: "Stingray",
   BARRACUDA: "Barracuda",
-  BLUEFIN_TUNA: "Bluefin Tuna",
-  BLUE_MARLIN: "Blue Marlin",
-  SWORDFISH: "Swordfish",
-  SHARK: "Shark",
   WHALE: "Whale",
 } as const;
 
@@ -469,10 +463,6 @@ const MASTERY_NAMES: { [target: string]: string } = {
   [FISH.GROUPER]: "Reef Wrestler",
   [FISH.STINGRAY]: "Barb Handler",
   [FISH.BARRACUDA]: "Cuda Catcher",
-  [FISH.BLUEFIN_TUNA]: "Bluefin Specialist",
-  [FISH.BLUE_MARLIN]: "Marlin Master",
-  [FISH.SWORDFISH]: "Broadbill Hunter",
-  [FISH.SHARK]: "Shark Baiter",
   [FISH.WHALE]: "Leviathan Seeker",
 
   [SKILL.STRENGTH]: "Iron Grip",
@@ -1024,33 +1014,15 @@ export const requirements = new Map<string, Requirement[]>([
     FISH.BARRACUDA,
     [afterFish(FISH.STINGRAY), needSkills([SKILL.DOCKING, GATE.LEGENDARY])],
   ],
-  [
-    FISH.BLUEFIN_TUNA,
-    [
-      afterFish(FISH.BARRACUDA),
-      needSkills([SKILL.SAILING, GATE.RENOWNED]),
-      needBoat(BOAT.YACHT),
-    ],
-  ],
-  [
-    FISH.BLUE_MARLIN,
-    [afterFish(FISH.BLUEFIN_TUNA), needSkills([SKILL.SAILING, GATE.ELITE])],
-  ],
-  [
-    FISH.SWORDFISH,
-    [afterFish(FISH.BLUE_MARLIN), needSkills([SKILL.NAVIGATION, GATE.ELITE])],
-  ],
-  [
-    FISH.SHARK,
-    [afterFish(FISH.SWORDFISH), needSkills([SKILL.STABILITY, GATE.LEGENDARY])],
-  ],
   // Whaling gates the Whale. It previously gated nothing at all - the skill
   // was unlockable, trainable, and completely inert, and its "Whale Pay"
-  // effect duplicated Navigation's.
+  // effect duplicated Navigation's. Anchored to Barracuda now that Bluefin
+  // Tuna/Blue Marlin/Swordfish/Shark - the ocean fish with no boating skill
+  // of their own - are gone (see skillBaseData/fishBaseData for why).
   [
     FISH.WHALE,
     [
-      afterFish(FISH.SHARK),
+      afterFish(FISH.BARRACUDA),
       needSkills(
         [SKILL.STABILITY, GATE.MYTHIC],
         [SKILL.WHALING, GATE.LEGENDARY],
@@ -1106,8 +1078,8 @@ export const requirements = new Map<string, Requirement[]>([
   [SKILL.GAFFING, [afterFish(FISH.PACU)]],
   // ─── BOATING SKILLS ──────────────────────────────────────────────────────
   // Each now targets one ocean fish's xp one to one, the same way - the
-  // first six in order, plus Whaling further down, anchored to Shark rather
-  // than the next fish in line since its target moved to Whale (see
+  // first six in order, plus Whaling further down, anchored to Barracuda
+  // rather than the next fish in line since its target moved to Whale (see
   // skillBaseData). Docking mirrors Cod's own requirement (Cod, like
   // Pirana, is the first fish in its region with nothing to anchor before
   // it) - the same "exact match" trick as Communication above.
@@ -1131,12 +1103,13 @@ export const requirements = new Map<string, Requirement[]>([
   [SKILL.SAILING, [afterFish(FISH.ANGLE_FISH)]],
   [SKILL.NAVIGATION, [afterFish(FISH.GROUPER)]],
   [SKILL.STABILITY, [afterFish(FISH.STINGRAY)]],
-  // Whaling now targets Whale (see skillBaseData), so it's anchored to Shark
-  // - the ocean fish just before Whale - rather than Pacu, its old anchor
-  // from when it was a river-fishing technique. Whale's own gate separately
+  // Whaling now targets Whale (see skillBaseData), so it's anchored to
+  // Barracuda - the ocean fish just before Whale now that Bluefin Tuna/Blue
+  // Marlin/Swordfish/Shark are gone - rather than Pacu, its old anchor from
+  // when it was a river-fishing technique. Whale's own gate separately
   // requires Whaling at Legendary (below); anchoring the unlock itself to
-  // Shark rather than Whale keeps that from being circular.
-  [SKILL.WHALING, [afterFish(FISH.SHARK)]],
+  // Barracuda rather than Whale keeps that from being circular.
+  [SKILL.WHALING, [afterFish(FISH.BARRACUDA)]],
   // ─── IMMORTALITY ─────────────────────────────────────────────────────────
   [SKILL.IMMORTALITY, [needSkills([SKILL.AMBITION, GATE.ACCOMPLISHED])]],
   // Deliberately left near its old level. Immortality is the engine that
@@ -1855,32 +1828,15 @@ export const fishBaseData: Map<string, FishBaseData> = new Map([
     EFFECT.OCEAN,
     DESC.AMBITION_XP,
   ), // it takes what it wants
-  fish(
-    FISH.BLUEFIN_TUNA,
-    CATEGORY.OCEAN,
-    6,
-    400000,
-    EFFECT.OCEAN,
-    DESC.STRENGTH_XP,
-  ), // hours in the fighting chair
-  fish(
-    FISH.BLUE_MARLIN,
-    CATEGORY.OCEAN,
-    7,
-    800000,
-    EFFECT.OCEAN,
-    DESC.AMBITION_XP,
-  ), // the one every angler is after
-  fish(
-    FISH.SWORDFISH,
-    CATEGORY.OCEAN,
-    8,
-    1600000,
-    EFFECT.OCEAN,
-    DESC.INTELLIGENCE_XP,
-  ), // deep-drop marks, found at night
-  fish(FISH.SHARK, CATEGORY.OCEAN, 9, 2400000, EFFECT.OCEAN, DESC.OCEAN_PAY), // chummed, and it pays
-  fish(FISH.WHALE, CATEGORY.OCEAN, 10, 3200000, EFFECT.OCEAN, DESC.ALL_XP), // the apex of the trade
+  // Bluefin Tuna, Blue Marlin, Swordfish and Shark used to fill tiers 6-9
+  // here. Removed along with everything that only existed to gate them
+  // (Yacht's needBoat, the Sailing/Navigation levels checked below) since
+  // none of them had a boating skill of their own pointing at their xp -
+  // every other ocean fish does, one to one (see skillBaseData). Whale drops
+  // straight to tier 6 and its income to 400,000 (2x Barracuda, continuing
+  // the ratio the two tiers before it already used) so neither the level
+  // curve nor the payout jumps to cover the four missing tiers.
+  fish(FISH.WHALE, CATEGORY.OCEAN, 6, 400000, EFFECT.OCEAN, DESC.ALL_XP), // the apex of the trade
 ]);
 
 export const skillBaseData: Map<string, SkillBaseData> = new Map([
@@ -1922,13 +1878,15 @@ export const skillBaseData: Map<string, SkillBaseData> = new Map([
   skill(SKILL.NETTING, CATEGORY.FISHING, EFFECT.ADEPT, DESC.PACU_XP),
   skill(SKILL.GAFFING, CATEGORY.FISHING, EFFECT.ADEPT, DESC.PAYARA_XP),
 
-  // Boating skills map one-to-one onto ocean fish, the same way - the first
-  // six in order, plus Whaling as a capstone on Whale itself rather than the
-  // next fish in line: Whale already requires Whaling at Legendary to unlock
-  // (see the requirement graph below), so the skill's own effect now matches
-  // what it gates instead of a river fish it has no business boosting.
-  // Bluefin Tuna/Blue Marlin/Swordfish/Shark stay uncovered by a dedicated
-  // skill and rely on the broad Ocean Xp/Ocean Pay/All Xp effects instead.
+  // Boating skills map one-to-one onto every ocean fish - six in order, plus
+  // Whaling as a capstone on Whale itself rather than the next fish in line:
+  // Whale already requires Whaling at Legendary to unlock (see the
+  // requirement graph below), so the skill's own effect now matches what it
+  // gates instead of a river fish it has no business boosting. Bluefin
+  // Tuna/Blue Marlin/Swordfish/Shark used to sit uncovered by a dedicated
+  // skill between Barracuda and Whale; removed outright rather than left
+  // relying only on the broad Ocean Xp/Ocean Pay/All Xp effects (see
+  // fishBaseData).
   skill(SKILL.DOCKING, CATEGORY.BOATING, EFFECT.BOATING, DESC.COD_XP),
   skill(SKILL.TURNING, CATEGORY.BOATING, EFFECT.BOATING, DESC.MACKEREL_XP),
   skill(SKILL.ANCHORING, CATEGORY.BOATING, EFFECT.BOATING, DESC.ANGLE_FISH_XP),
