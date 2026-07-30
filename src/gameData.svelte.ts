@@ -1168,22 +1168,22 @@ export const requirements = new Map<string, Requirement[]>([
   // cycle - none of these are also required by a fish earlier than their new
   // anchor, unlike Turning below.
   //
-  // Pirana has no preceding river fish (it's the first), so Casting mirrors
-  // Pirana's own requirement exactly instead - the same trick Communication
-  // and Docking use below for Cod.
-  //
-  // The other six still anchor to the preceding river fish (kept in parallel
-  // with river progression rather than decoupled onto a flat level/coin
-  // gate), but at half the default afterFish() threshold (level 5, not 10)
-  // per balance feedback - the techniques were sitting locked a little too
-  // long relative to how quickly the river fish under them level.
-  [SKILL.CASTING, [needSkills([SKILL.STRENGTH, GATE.DABBLING])]],
-  [SKILL.JIGGING, [afterFish(FISH.PIRANA, 5)]],
-  [SKILL.TROLLING, [afterFish(FISH.SALMON, 5)]],
-  [SKILL.REELING, [afterFish(FISH.SILVER_DRUM, 5)]],
-  [SKILL.HOOKING, [afterFish(FISH.ARMOURED_CATFISH, 5)]],
-  [SKILL.NETTING, [afterFish(FISH.ELECTRIC_EEL, 5)]],
-  [SKILL.GAFFING, [afterFish(FISH.PACU, 5)]],
+  // Pirana has no preceding river fish (it's the first), so Casting would
+  // otherwise mirror Pirana's own requirement exactly - the same trick
+  // Communication and Docking use below for Cod. Deliberately *not* mirrored
+  // here though: halved to Strength 5 (half of GATE.DABBLING) per balance
+  // feedback, so Casting is trainable a little ahead of Pirana itself rather
+  // than in exact lockstep with it.
+  [SKILL.CASTING, [needSkills([SKILL.STRENGTH, 5])]],
+  // The other six stay anchored to the preceding river fish at the default
+  // afterFish() threshold (level 10) - kept in parallel with river
+  // progression, not decoupled onto a flat level/coin gate.
+  [SKILL.JIGGING, [afterFish(FISH.PIRANA)]],
+  [SKILL.TROLLING, [afterFish(FISH.SALMON)]],
+  [SKILL.REELING, [afterFish(FISH.SILVER_DRUM)]],
+  [SKILL.HOOKING, [afterFish(FISH.ARMOURED_CATFISH)]],
+  [SKILL.NETTING, [afterFish(FISH.ELECTRIC_EEL)]],
+  [SKILL.GAFFING, [afterFish(FISH.PACU)]],
   // ─── BOATING SKILLS ──────────────────────────────────────────────────────
   // Each now targets one ocean fish's xp one to one, the same way - the
   // first six in order, plus Whaling further down, anchored to Barracuda
