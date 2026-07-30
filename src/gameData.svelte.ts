@@ -40,8 +40,12 @@ const BASE_LIFESPAN_YEARS = 56;
 // The natural, unmodified end of life: displayed "Age 70".
 export const baseLifespan = DAYS_PER_YEAR * BASE_LIFESPAN_YEARS;
 export const baseGameSpeed = 10;
-// Xp every task earns per in-game day before any multipliers.
-export const BASE_XP_PER_DAY = 20;
+// Xp every task earns per in-game day before any multipliers. Halved back to
+// 10 per balance feedback: the multiplier stack (crew, Mastery, boating
+// skills all landing on top of each other now) had grown enough that the
+// doubled base was compounding into levels far faster than the xp curves
+// were tuned to expect.
+export const BASE_XP_PER_DAY = 10;
 // How long autoFish spends on one region before rotating to the next. At the
 // base game speed of 10 days/second this is ~3 real seconds per region.
 export const AUTO_FISH_ROTATION_DAYS = 30;
