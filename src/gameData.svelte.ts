@@ -139,7 +139,11 @@ export const CATEGORY = {
   RIVER: "river",
   OCEAN: "ocean",
   FUNDAMENTALS: "fundamentals",
-  FISHING: "fishing",
+  // Renamed from FISHING/"fishing": the Skills tab table header is this
+  // string, capitalized (see ProgressTable.svelte) - "Technique" reads
+  // better next to "Boating" than "Fishing" did, and matches the "Technique
+  // Xp" broad-effect name already used elsewhere for this same skill group.
+  TECHNIQUE: "technique",
   BOATING: "boating",
   IMMORTALITY: "immortality",
   LEGEND: "legend",
@@ -385,7 +389,7 @@ const regionXp = (region: string, tier: number): number => {
 // down without making the skills themselves trivial.
 const SKILL_XP: Record<string, number> = {
   [CATEGORY.FUNDAMENTALS]: 100,
-  [CATEGORY.FISHING]: 300,
+  [CATEGORY.TECHNIQUE]: 300,
   [CATEGORY.BOATING]: 500,
   // Raised per balance feedback: Immortality/Time Warping used to share the
   // cheapest (fundamentals) tier, which was left alone
@@ -601,8 +605,9 @@ const TACKLE_SLOT_PRICE_GROWTH = 10;
 // substitute for the wait once there is enough of it to spend.
 export const AGING_STONE_YEARS = 20;
 // Priced to read as the single most expensive purchase in the game: 500M
-// clears every boat (Whaling Ship, the top one, is 60M) and the first upgrade
-// on every item (House, the top one, is 80M) outright. Growth of 5x/stone
+// clears every boat (Whaling Ship, the top one, is 180M after the later 3x
+// boat-price pass) and the first upgrade on every item (House, the top one,
+// is 80M) outright. Growth of 5x/stone
 // means the run of stones needed to cross the whole gate - roughly six, from
 // the natural Age 70 wall to Age 200 - totals about 9.8T, on the order of a
 // few days of late-game income (Whale plus a full build was measured at
@@ -709,62 +714,65 @@ const BOATS: {
 }[] = [
   //  name                    price        effect  target
   // Row Boat and Silver Bullet raised 10x (600 -> 6,000; 3,000 -> 30,000) per
-  // balance feedback: the earliest boats should be a bigger commitment. Bass
-  // Boat is left alone rather than scaled the same way - a 10x bump there
-  // would push it past Canoe/River Skiff's prices despite gating earlier
-  // (lake, not river) content, breaking the ladder's price order.
+  // earlier balance feedback: the earliest boats should be a bigger
+  // commitment. Bass Boat was left alone at the time rather than scaled the
+  // same way - a 10x bump there would have pushed it past Canoe/River
+  // Skiff's prices despite gating earlier (lake, not river) content,
+  // breaking the ladder's price order. Every price below is additionally
+  // 3x'd per the most recent balance pass, applied uniformly across the
+  // whole ladder so that ordering is preserved.
   {
     name: BOAT.ROW_BOAT,
-    price: 6_000,
+    price: 18_000,
     effect: 1.25,
     description: DESC.LAKE_XP,
   },
   {
     name: BOAT.SILVER_BULLET,
-    price: 30_000,
+    price: 90_000,
     effect: 1.5,
     description: DESC.LAKE_PAY,
   },
   {
     name: BOAT.BASS_BOAT,
-    price: 60_000,
+    price: 180_000,
     effect: 1.5,
     description: DESC.BASS_XP,
   },
   {
     name: BOAT.CANOE,
-    price: 200_000,
+    price: 600_000,
     effect: 1.75,
     description: DESC.RIVER_XP,
   },
   {
     name: BOAT.RIVER_SKIFF,
-    price: 600_000,
+    price: 1_800_000,
     effect: 2,
     description: DESC.RIVER_PAY,
   },
   {
     name: BOAT.AIRBOAT,
-    price: 1_800_000,
+    price: 5_400_000,
     effect: 2,
     description: DESC.NETTING_XP,
   },
   {
     name: BOAT.SAIL_BOAT,
-    price: 5_400_000,
+    price: 16_200_000,
     effect: 2.5,
     description: DESC.OCEAN_XP,
   },
   {
     name: BOAT.YACHT,
-    price: 16_200_000,
+    price: 48_600_000,
     effect: 3,
     description: DESC.OCEAN_PAY,
   },
   // The ship is where you learn the trade; the skill is what lands the whale.
   {
     name: BOAT.WHALING_SHIP,
-    price: 60_000_000,
+    price: 180_000_000,
     effect: 3,
     description: DESC.WHALING_XP,
   },
@@ -1163,13 +1171,19 @@ export const requirements = new Map<string, Requirement[]>([
   // Pirana has no preceding river fish (it's the first), so Casting mirrors
   // Pirana's own requirement exactly instead - the same trick Communication
   // and Docking use below for Cod.
+  //
+  // The other six still anchor to the preceding river fish (kept in parallel
+  // with river progression rather than decoupled onto a flat level/coin
+  // gate), but at half the default afterFish() threshold (level 5, not 10)
+  // per balance feedback - the techniques were sitting locked a little too
+  // long relative to how quickly the river fish under them level.
   [SKILL.CASTING, [needSkills([SKILL.STRENGTH, GATE.DABBLING])]],
-  [SKILL.JIGGING, [afterFish(FISH.PIRANA)]],
-  [SKILL.TROLLING, [afterFish(FISH.SALMON)]],
-  [SKILL.REELING, [afterFish(FISH.SILVER_DRUM)]],
-  [SKILL.HOOKING, [afterFish(FISH.ARMOURED_CATFISH)]],
-  [SKILL.NETTING, [afterFish(FISH.ELECTRIC_EEL)]],
-  [SKILL.GAFFING, [afterFish(FISH.PACU)]],
+  [SKILL.JIGGING, [afterFish(FISH.PIRANA, 5)]],
+  [SKILL.TROLLING, [afterFish(FISH.SALMON, 5)]],
+  [SKILL.REELING, [afterFish(FISH.SILVER_DRUM, 5)]],
+  [SKILL.HOOKING, [afterFish(FISH.ARMOURED_CATFISH, 5)]],
+  [SKILL.NETTING, [afterFish(FISH.ELECTRIC_EEL, 5)]],
+  [SKILL.GAFFING, [afterFish(FISH.PACU, 5)]],
   // ─── BOATING SKILLS ──────────────────────────────────────────────────────
   // Each now targets one ocean fish's xp one to one, the same way - the
   // first six in order, plus Whaling further down, anchored to Barracuda
@@ -1992,13 +2006,13 @@ export const skillBaseData: Map<string, SkillBaseData> = new Map([
   // has nothing to do with a river - it's been replaced with Gaffing (landing
   // a fierce, toothy fish like Payara with a gaff) and moved to boating,
   // below, where it belongs.
-  skill(SKILL.CASTING, CATEGORY.FISHING, EFFECT.ADEPT, DESC.PIRANA_XP),
-  skill(SKILL.JIGGING, CATEGORY.FISHING, EFFECT.ADEPT, DESC.SALMON_XP),
-  skill(SKILL.TROLLING, CATEGORY.FISHING, EFFECT.ADEPT, DESC.SILVER_DRUM_XP),
-  skill(SKILL.REELING, CATEGORY.FISHING, EFFECT.ADEPT, DESC.ARMOURED_CATFISH_XP),
-  skill(SKILL.HOOKING, CATEGORY.FISHING, EFFECT.ADEPT, DESC.ELECTRIC_EEL_XP),
-  skill(SKILL.NETTING, CATEGORY.FISHING, EFFECT.ADEPT, DESC.PACU_XP),
-  skill(SKILL.GAFFING, CATEGORY.FISHING, EFFECT.ADEPT, DESC.PAYARA_XP),
+  skill(SKILL.CASTING, CATEGORY.TECHNIQUE, EFFECT.ADEPT, DESC.PIRANA_XP),
+  skill(SKILL.JIGGING, CATEGORY.TECHNIQUE, EFFECT.ADEPT, DESC.SALMON_XP),
+  skill(SKILL.TROLLING, CATEGORY.TECHNIQUE, EFFECT.ADEPT, DESC.SILVER_DRUM_XP),
+  skill(SKILL.REELING, CATEGORY.TECHNIQUE, EFFECT.ADEPT, DESC.ARMOURED_CATFISH_XP),
+  skill(SKILL.HOOKING, CATEGORY.TECHNIQUE, EFFECT.ADEPT, DESC.ELECTRIC_EEL_XP),
+  skill(SKILL.NETTING, CATEGORY.TECHNIQUE, EFFECT.ADEPT, DESC.PACU_XP),
+  skill(SKILL.GAFFING, CATEGORY.TECHNIQUE, EFFECT.ADEPT, DESC.PAYARA_XP),
 
   // Boating skills map one-to-one onto every ocean fish - six in order, plus
   // Whaling as a capstone on Whale itself rather than the next fish in line:

@@ -133,8 +133,8 @@ export const achievements: AchievementDefinition[] = [
   {
     id: "technique-master",
     name: "Technique Master",
-    description: "Unlock every fishing skill.",
-    check: () => unlocked(skillCategories, CATEGORY.FISHING),
+    description: "Unlock every fishing technique skill.",
+    check: () => unlocked(skillCategories, CATEGORY.TECHNIQUE),
   },
   {
     id: "renaissance-angler",
@@ -142,7 +142,7 @@ export const achievements: AchievementDefinition[] = [
     description: "Unlock every skill in the game, legend line included.",
     check: () =>
       unlocked(skillCategories, CATEGORY.FUNDAMENTALS) &&
-      unlocked(skillCategories, CATEGORY.FISHING) &&
+      unlocked(skillCategories, CATEGORY.TECHNIQUE) &&
       unlocked(skillCategories, CATEGORY.BOATING) &&
       unlocked(skillCategories, CATEGORY.IMMORTALITY) &&
       unlocked(skillCategories, CATEGORY.LEGEND),
