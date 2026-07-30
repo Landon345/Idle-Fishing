@@ -8,6 +8,7 @@ import {
   roundRobinFish,
 } from "src/functions";
 import { updateAchievements } from "src/achievements";
+import type { Fishing } from "src/classes.svelte";
 
 import type {
   AscensionResult,
@@ -49,6 +50,86 @@ export const BASE_XP_PER_DAY = 10;
 // How long autoFish spends on one region before rotating to the next. At the
 // base game speed of 10 days/second this is ~3 real seconds per region.
 export const AUTO_FISH_ROTATION_DAYS = 30;
+
+// ─── Active fishing minigame ────────────────────────────────────────────────
+// A Stardew-style optional minigame: cast, wait for a bite, then hold to keep a
+// bar overlapping a drifting fish icon until a catch meter fills. Positions are
+// percent of track height (0 = bottom, 100 = top), matching the percentage
+// convention XpBar.svelte already uses for its fill. A win pays out
+// ACTIVE_FISHING_REWARD_BASE_SECONDS (scaled by catch quality) worth of the
+// target fish's *existing* xpGain/income rates - see grantActiveFishingReward -
+// so a harder/deeper fish already pays more per catch for free, without a
+// separate difficulty-to-reward multiplier.
+export const ACTIVE_FISHING_BITE_DELAY_MIN_MS = 1000;
+export const ACTIVE_FISHING_BITE_DELAY_MAX_MS = 3000;
+
+export const ACTIVE_FISHING_GRAVITY = -110; // %/s², always applied
+export const ACTIVE_FISHING_THRUST = 230; // %/s², added while held
+export const ACTIVE_FISHING_MAX_BAR_SPEED = 90; // %/s, clamp
+
+// Easy/hard pairs below are lerp'd by getFishingDifficulty()'s 0..1 result.
+export const ACTIVE_FISHING_BAR_HEIGHT_EASY = 30; // % of track
+export const ACTIVE_FISHING_BAR_HEIGHT_HARD = 16;
+
+export const ACTIVE_FISHING_FISH_SPEED_EASY = 18; // %/s
+export const ACTIVE_FISHING_FISH_SPEED_HARD = 48;
+export const ACTIVE_FISHING_FISH_RETARGET_EASY_MS = 1800;
+export const ACTIVE_FISHING_FISH_RETARGET_HARD_MS = 700;
+
+// How far a single fish's difficulty can swing from its depth-based baseline
+// (see getFishingDifficulty), in either direction - the reason two fish at
+// the same depth aren't identically hard.
+export const ACTIVE_FISHING_DIFFICULTY_JITTER = 0.12;
+
+// Training a fish's matching fishing/boating technique subtracts
+// ln(1 + level) * this from its difficulty - see getFishingDifficulty. At
+// 0.12: level 10 -> -0.29, level 100 -> -0.55, level 500 -> -0.75, level
+// 900 -> -0.82 - big early gains that keep taper off rather than a flat
+// per-level discount, matching "logarithmic scale."
+export const ACTIVE_FISHING_SKILL_DIFFICULTY_LOG_SCALE = 0.12;
+// Difficulty never drops below this, no matter how easy the fish or how
+// trained the matching skill - always some challenge left, never literally 0.
+export const ACTIVE_FISHING_MIN_DIFFICULTY = 0.1;
+
+// Per-species personality, layered on top of the depth-based difficulty
+// above rather than replacing it - two fish at the same depth still swim
+// differently. Deterministic per fish (see getFishBehavior/hashFraction
+// below, keyed on the fish's name), so it's stable across rounds without
+// needing a new persisted field. speedMultiplier/retargetMultiplier jitter
+// every fish's baseline pace up or down; dashChance is how often a species
+// suddenly bursts at dashSpeedMultiplier'x speed on a retarget rather than
+// drifting normally - a "smooth" fish rolls near 0, a "mixed"/erratic one
+// rolls high, mirroring the range of movement styles Stardew's fish have.
+export const ACTIVE_FISHING_SPEED_JITTER_MIN = 0.75;
+export const ACTIVE_FISHING_SPEED_JITTER_MAX = 1.35;
+export const ACTIVE_FISHING_RETARGET_JITTER_MIN = 0.7;
+export const ACTIVE_FISHING_RETARGET_JITTER_MAX = 1.5;
+export const ACTIVE_FISHING_MAX_DASH_CHANCE = 0.35; // per-retarget probability
+export const ACTIVE_FISHING_DASH_SPEED_MULTIPLIER = 2.2;
+
+// Starts above 0 so a slow first input doesn't insta-fail the round.
+export const ACTIVE_FISHING_METER_START = 25; // %
+// Fill halved twice over per balance feedback (originally 55/40, then
+// 27.5/20): a perfectly-tracked catch at the original rate filled in
+// ~1.4-1.9s, which read as "catching way too quickly" rather than a real
+// minigame. Halving roughly doubles time-to-catch at any given overlap ratio
+// each time. Drain halved once alongside it, to bring fill back above drain
+// at every difficulty (two fill halvings with a fixed drain had tipped hard
+// fish to 5x drain-over-fill, punishing a brief lapse far harder than an
+// on-target moment paid off).
+export const ACTIVE_FISHING_FILL_RATE_EASY = 13.75; // %/s while overlapping
+export const ACTIVE_FISHING_FILL_RATE_HARD = 10;
+export const ACTIVE_FISHING_DRAIN_RATE_EASY = 14; // %/s while not overlapping
+export const ACTIVE_FISHING_DRAIN_RATE_HARD = 25;
+
+// rewardSeconds = this * quality, where quality is
+// clamp(ACTIVE_FISHING_QUALITY_PAR_SECONDS / reelSeconds, 0.5, 2.0) - a par
+// catch is 1.0x; faster/cleaner catches pay more, a slow grind still floors at
+// 0.5x rather than dropping further.
+export const ACTIVE_FISHING_REWARD_BASE_SECONDS = 30;
+// Raised alongside the fill-rate halvings above so "par" still means a normal
+// catch, not one that's now finishing well under the old cap.
+export const ACTIVE_FISHING_QUALITY_PAR_SECONDS = 24;
 
 // ─── Categories ────────────────────────────────────────────────────────────
 // These strings key both the base-data tables and the per-category multiplier
@@ -1245,6 +1326,29 @@ export const updateCurrentFish = (deltaSeconds: number) => {
   gameState.totalCoinsEarned += earned;
 };
 
+// A win in the active-fishing minigame (see ActiveFishingModal.svelte) pays out
+// rewardSeconds worth of the target fish's *current* xpGain/income - the same
+// functions the passive per-tick loop above uses, just with a hand-picked
+// rewardSeconds instead of real elapsed time. That means every existing
+// multiplier (skills, Mastery, crew, items, boats) already applies for free,
+// and a harder/deeper fish already pays more per catch without a separate
+// difficulty-to-reward multiplier. Returns the coins earned so the modal can
+// display it.
+export const grantActiveFishingReward = (
+  fish: Fishing,
+  rewardSeconds: number,
+): number => {
+  // Re-resolve the canonical instance, same reason updateCurrentFish does -
+  // safe even if a reload replaced fishingData's instances while the modal
+  // was open (the fish is captured by reference when the player casts).
+  fish = gameState.fishingData.get(fish.name)!;
+  fish.increaseXp(rewardSeconds);
+  const earned = applySpeed(fish.income, rewardSeconds);
+  gameState.coins += earned;
+  gameState.totalCoinsEarned += earned;
+  return earned;
+};
+
 export const setCurrentSkill = (skillKey: string) => {
   let currentSkill = gameState.skillsData.get(skillKey)!;
   if (gameState.autoTrain) {
@@ -2015,6 +2119,115 @@ export const fishCategories: { [category: string]: string[] } = {};
 fishBaseData.forEach((base) => {
   (fishCategories[base.category] ??= []).push(base.name);
 });
+
+// How hard a fish is to actively reel in (see ActiveFishingModal.svelte), 0..1.
+// Derived from fishCategories rather than a new per-fish field: a fish's
+// position in its category's array is already shallow-to-deep order, so no new
+// data is needed to know Whale is harder than Cod. Lives here rather than in
+// functions.ts because fishCategories is a module-eval-time value, and the
+// functions.ts/gameData.svelte.ts import cycle is only safe when cross-module
+// reads happen inside function bodies, not at top level (see the
+// skillClassFor comment in functions.ts for the same rule).
+const ACTIVE_FISHING_CATEGORY_BASE_DIFFICULTY: Record<string, number> = {
+  [CATEGORY.LAKE]: 0,
+  [CATEGORY.RIVER]: 0.35,
+  [CATEGORY.OCEAN]: 0.7,
+};
+
+// Reverse of the fishing/boating skill -> fish effect mapping in
+// skillBaseData (Casting -> Pirana Xp, Docking -> Cod Xp, etc.) - built by
+// matching each skill's own "<Fish> Xp" description against a real fish name,
+// rather than hand-listing the pairing a second time here. Lake fish have no
+// technique of their own (fishing techniques target river fish, boating
+// targets ocean), so they're simply absent from this map.
+const SKILL_FOR_FISH: Record<string, string> = {};
+skillBaseData.forEach((base, skillName) => {
+  if (!base.description.endsWith(" Xp")) return;
+  const target = base.description.slice(0, -3);
+  if (fishBaseData.has(target)) SKILL_FOR_FISH[target] = skillName;
+});
+
+// FNV-1a: a small, dependency-free string hash, good enough for "give this
+// fish a stable-but-unpredictable-looking number," not for anything
+// security-sensitive.
+const hashString = (value: string): number => {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < value.length; i++) {
+    hash ^= value.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return hash >>> 0;
+};
+// Re-hashes with a salt per trait so a fish's difficulty jitter isn't
+// correlated with its dash chance etc. - two different-feeling traits
+// shouldn't move together just because they're derived from the same name.
+const hashFraction = (name: string, salt: string): number =>
+  (hashString(`${name}:${salt}`) % 10_000) / 10_000;
+
+// depthFraction/category set the overall progression trend (deeper/further
+// out is harder on average), but without the jitter term every fish at the
+// same position in its category would be identically hard - "each kind of
+// fish has its own difficulty" needs the specific fish, not just its depth,
+// to matter. ACTIVE_FISHING_DIFFICULTY_JITTER caps how far a single fish can
+// swing from its depth-based baseline in either direction.
+export const getFishingDifficulty = (fish: Fishing): number => {
+  const category = fish.baseData.category;
+  const names = fishCategories[category] ?? [fish.name];
+  const depthFraction =
+    names.length > 1 ? names.indexOf(fish.name) / (names.length - 1) : 0;
+  const base = ACTIVE_FISHING_CATEGORY_BASE_DIFFICULTY[category] ?? 0;
+  const jitter =
+    (hashFraction(fish.name, "difficulty") - 0.5) *
+    2 *
+    ACTIVE_FISHING_DIFFICULTY_JITTER;
+  const rawDifficulty = base + depthFraction * 0.3 + jitter;
+
+  // Training the matching fishing/boating technique makes its one fish
+  // easier to actively reel in, on a log scale: big early gains that taper
+  // off rather than a flat per-level discount, so a heavily-trained skill
+  // still feels earned even as the gains shrink (ln(1+level) keeps climbing,
+  // but ever more slowly). Floored at ACTIVE_FISHING_MIN_DIFFICULTY rather
+  // than 0 - an already-easy fish (a low base difficulty plus a modest
+  // amount of training) would otherwise hit 0 within the first several
+  // levels and stay there for the rest of the game, making the minigame
+  // trivial rather than just easy.
+  const skillName = SKILL_FOR_FISH[fish.name];
+  const skillLevel = skillName ? (gameState.skillsData.get(skillName)?.level ?? 0) : 0;
+  const skillReduction = Math.log(1 + skillLevel) * ACTIVE_FISHING_SKILL_DIFFICULTY_LOG_SCALE;
+
+  return Math.max(
+    ACTIVE_FISHING_MIN_DIFFICULTY,
+    Math.min(1, rawDifficulty - skillReduction),
+  );
+};
+
+export interface FishBehavior {
+  speedMultiplier: number;
+  retargetMultiplier: number;
+  dashChance: number;
+  dashSpeedMultiplier: number;
+}
+
+// Per-species movement personality, layered on top of getFishingDifficulty's
+// depth-based baseline rather than replacing it - see the balance-constants
+// comment above ACTIVE_FISHING_SPEED_JITTER_MIN for the intent. Deterministic
+// per fish (same inputs every round), so no new persisted field is needed -
+// the same reasoning getFishingDifficulty already uses.
+export const getFishBehavior = (fish: Fishing): FishBehavior => {
+  const speedT = hashFraction(fish.name, "speed");
+  const retargetT = hashFraction(fish.name, "retarget");
+  const dashT = hashFraction(fish.name, "dash");
+  return {
+    speedMultiplier:
+      ACTIVE_FISHING_SPEED_JITTER_MIN +
+      (ACTIVE_FISHING_SPEED_JITTER_MAX - ACTIVE_FISHING_SPEED_JITTER_MIN) * speedT,
+    retargetMultiplier:
+      ACTIVE_FISHING_RETARGET_JITTER_MIN +
+      (ACTIVE_FISHING_RETARGET_JITTER_MAX - ACTIVE_FISHING_RETARGET_JITTER_MIN) * retargetT,
+    dashChance: dashT * ACTIVE_FISHING_MAX_DASH_CHANCE,
+    dashSpeedMultiplier: ACTIVE_FISHING_DASH_SPEED_MULTIPLIER,
+  };
+};
 
 export const skillCategories: { [category: string]: string[] } = {};
 skillBaseData.forEach((base) => {

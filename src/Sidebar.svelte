@@ -1,9 +1,11 @@
 <script lang="ts">
   import { calculatedAge, daysToYears, getTotalExpenses, isAlive, needRequirements } from "src/functions";
   import { togglePause, gameState, getLifespan } from "src/gameData.svelte";
+  import type { Fishing } from "src/classes.svelte";
 
   import Coins from "src/components/Coins.svelte";
   import XpBar from "src/components/XpBar.svelte";
+  import ActiveFishingModal from "src/components/ActiveFishingModal.svelte";
 
   const getNet = (income: number, expense: number): number =>
     negative(income, expense) ? expense - income : income - expense;
@@ -16,6 +18,23 @@
     const timeWarping = gameState.skillsData.get("Time Warping");
     return !!timeWarping && !needRequirements(gameState, timeWarping);
   });
+
+  // Deliberately not gameState.currentlyFishing: part of the fun is not
+  // knowing what's about to bite. Drawn fresh from whatever's unlocked right
+  // now each time Cast is clicked, then captured by reference so an autoFish
+  // swap mid-round can't retarget an in-progress catch.
+  let activeFishingTarget: Fishing | null = $state(null);
+  const pickRandomUnlockedFish = (): Fishing | null => {
+    const unlocked: Fishing[] = [];
+    gameState.fishingData.forEach((fish) => {
+      if (!needRequirements(gameState, fish)) unlocked.push(fish);
+    });
+    if (unlocked.length === 0) return null;
+    return unlocked[Math.floor(Math.random() * unlocked.length)];
+  };
+  const startCast = () => {
+    activeFishingTarget = pickRandomUnlockedFish();
+  };
 </script>
 
 <aside class="flex w-full flex-col gap-4 rounded-xl border border-slate-800 bg-slate-950/60 p-4 shadow-lg md:w-72 md:shrink-0">
@@ -100,4 +119,16 @@
       </label>
     {/if}
   </div>
+
+  <button
+    class={`btn rounded-lg text-sm font-medium ${!gameState.paused && alive ? "cursor-pointer bg-sky-700 text-white hover:bg-sky-600" : "cursor-not-allowed bg-slate-700 text-slate-500"}`}
+    disabled={gameState.paused || !alive}
+    onclick={startCast}
+  >
+    🎣 Cast!
+  </button>
 </aside>
+
+{#if activeFishingTarget}
+  <ActiveFishingModal fish={activeFishingTarget} onClose={() => (activeFishingTarget = null)} />
+{/if}
