@@ -23,8 +23,9 @@ export type Description =
   | "Netting Xp"
   | "Whaling Xp"
   // Per-fish xp. Fishing skills each own one river fish's kind one to one, in
-  // order; boating skills each own one of the first six ocean fish's kind,
-  // the same way. Bass Xp is the one exception with two owners (Bass Boat).
+  // order; boating skills each own one ocean fish's kind the same way - the
+  // first six in order, plus Whaling on Whale as a capstone. Bass Xp is the
+  // one exception with two owners (Bass Boat).
   | "Bass Xp"
   | "Pirana Xp"
   | "Salmon Xp"
@@ -39,6 +40,7 @@ export type Description =
   | "Grouper Xp"
   | "Stingray Xp"
   | "Barracuda Xp"
+  | "Whale Xp"
   | "Fishing Pay"
   | "Lake Pay"
   | "River Pay"

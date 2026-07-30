@@ -40,8 +40,8 @@
     return () => window.removeEventListener("keydown", onKeydown);
   });
   // Matches Progress Knight's Age-200 gate: reaching day 200 requires
-  // Immortality/Super Immortality to have already extended the base (Age 70)
-  // lifespan far enough that isAlive() doesn't freeze the game before then.
+  // Immortality to have already extended the base (Age 70) lifespan far
+  // enough that isAlive() doesn't freeze the game before then.
   const canAscend = $derived(gameState.day >= ageToDay(200));
 
   const currentAge = $derived(STARTING_AGE + daysToYears(gameState.day));

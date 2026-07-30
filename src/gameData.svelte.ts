@@ -100,10 +100,16 @@ const DESC = {
   NETTING_XP: "Netting Xp",
   WHALING_XP: "Whaling Xp",
   // Single-fish xp. Fishing skills each own one river fish's kind, one to one
-  // (Casting->Pirana, Jigging->Salmon, ... Whaling->Payara, matching the seven
-  // skills to the seven river fish in order); boating skills each own one of
-  // the first six ocean fish's kind, one to one, in the same way. Bass Xp
-  // keeps a single owner (Bass Boat) even though Casting moved off it.
+  // (Casting->Pirana, Jigging->Salmon, ... Gaffing->Payara, matching the seven
+  // skills to the seven river fish in order); boating skills each own one
+  // ocean fish's kind the same way - the first six in order (Docking->Cod,
+  // ..., Stability->Barracuda), plus Whaling on Whale as a capstone rather
+  // than the next fish in line, since Whale already requires Whaling at
+  // Legendary to unlock (see the requirement graph) and a skill named
+  // "Whaling" targeting anything but the whale itself never read right.
+  // Bluefin Tuna/Blue Marlin/Swordfish/Shark are left uncovered, same as
+  // before, and rely on the broad Ocean Xp/Ocean Pay/All Xp effects instead.
+  // Bass Xp keeps a single owner (Bass Boat) even though Casting moved off it.
   BASS_XP: "Bass Xp",
   PIRANA_XP: "Pirana Xp",
   SALMON_XP: "Salmon Xp",
@@ -118,6 +124,7 @@ const DESC = {
   GROUPER_XP: "Grouper Xp",
   STINGRAY_XP: "Stingray Xp",
   BARRACUDA_XP: "Barracuda Xp",
+  WHALE_XP: "Whale Xp",
   // Income. Effects generally avoid stacking more than a few owners deep, so
   // that no two things the player is choosing between do the same job - but
   // OCEAN_PAY is deliberately the exception, carried by Communication, Shark
@@ -180,15 +187,15 @@ export const SKILL = {
   REELING: "Reeling",
   HOOKING: "Hooking",
   NETTING: "Netting",
-  WHALING: "Whaling",
+  GAFFING: "Gaffing",
   DOCKING: "Docking",
   TURNING: "Turning",
   ANCHORING: "Anchoring",
   SAILING: "Sailing",
   NAVIGATION: "Navigation",
   STABILITY: "Stability",
+  WHALING: "Whaling",
   IMMORTALITY: "Immortality",
-  SUPER_IMMORTALITY: "Super Immortality",
   TIME_WARPING: "Time Warping",
   SEA_LEGEND: "Sea Legend",
   TIDAL_FOCUS: "Tidal Focus",
@@ -301,8 +308,8 @@ const SKILL_XP: Record<string, number> = {
   [CATEGORY.FUNDAMENTALS]: 100,
   [CATEGORY.FISHING]: 300,
   [CATEGORY.BOATING]: 500,
-  // Raised per balance feedback: Immortality/Super Immortality/Time Warping
-  // used to share the cheapest (fundamentals) tier, which was left alone
+  // Raised per balance feedback: Immortality/Time Warping used to share the
+  // cheapest (fundamentals) tier, which was left alone
   // specifically because slowing the skill line that grants lifespan - and so
   // gates Ascension - would have stalled progression outright. The Ageing
   // Stone (buyable in Reincarnation) now covers exactly that gap: a player
@@ -480,15 +487,15 @@ const MASTERY_NAMES: { [target: string]: string } = {
   [SKILL.REELING]: "Smooth Retrieve",
   [SKILL.HOOKING]: "Sharp Set",
   [SKILL.NETTING]: "Clean Scoop",
-  [SKILL.WHALING]: "Harpoon Form",
+  [SKILL.GAFFING]: "Gaff Strike",
   [SKILL.DOCKING]: "Tight Berth",
   [SKILL.TURNING]: "Hard Rudder",
   [SKILL.ANCHORING]: "Sure Hold",
   [SKILL.SAILING]: "Wind Sense",
   [SKILL.NAVIGATION]: "Dead Reckoning",
   [SKILL.STABILITY]: "Sea Legs",
+  [SKILL.WHALING]: "Harpoon Form",
   [SKILL.IMMORTALITY]: "Old Salt",
-  [SKILL.SUPER_IMMORTALITY]: "Ageless Mariner",
   [SKILL.TIME_WARPING]: "Tide Bender",
   [SKILL.SEA_LEGEND]: "Living Legend",
   [SKILL.TIDAL_FOCUS]: "Moon Pull",
@@ -1075,12 +1082,12 @@ export const requirements = new Map<string, Requirement[]>([
   // ─── FISHING SKILLS ──────────────────────────────────────────────────────
   // Each now targets one river fish's xp one to one, in order (see
   // skillBaseData) - Casting boosts Pirana, Jigging boosts Salmon, and so on
-  // down to Whaling boosting Payara. Their own unlock is anchored to the
+  // down to Gaffing boosting Payara. Their own unlock is anchored to the
   // river fish just *before* that target, so a skill is trainable a little
   // ahead of when it becomes useful rather than sitting inert for most of
-  // the game (the fault with the old fundamental-based gates - Whaling, for
-  // one, needed only Strength 250 and so could be trained the length of the
-  // game before its target ever opened up).
+  // the game (the fault with the old fundamental-based gates - Whaling, the
+  // skill Gaffing replaced here, needed only Strength 250 and so could be
+  // trained the length of the game before its target ever opened up).
   //
   // Checked every one of these against every OTHER place the same skill
   // gates something, not just its own target, so the new gate can't create a
@@ -1096,10 +1103,12 @@ export const requirements = new Map<string, Requirement[]>([
   [SKILL.REELING, [afterFish(FISH.SILVER_DRUM)]],
   [SKILL.HOOKING, [afterFish(FISH.ARMOURED_CATFISH)]],
   [SKILL.NETTING, [afterFish(FISH.ELECTRIC_EEL)]],
-  [SKILL.WHALING, [afterFish(FISH.PACU)]],
+  [SKILL.GAFFING, [afterFish(FISH.PACU)]],
   // ─── BOATING SKILLS ──────────────────────────────────────────────────────
-  // Each now targets one of the first six ocean fish's xp one to one, in
-  // order, the same way. Docking mirrors Cod's own requirement (Cod, like
+  // Each now targets one ocean fish's xp one to one, the same way - the
+  // first six in order, plus Whaling further down, anchored to Shark rather
+  // than the next fish in line since its target moved to Whale (see
+  // skillBaseData). Docking mirrors Cod's own requirement (Cod, like
   // Pirana, is the first fish in its region with nothing to anchor before
   // it) - the same "exact match" trick as Communication above.
   [
@@ -1122,12 +1131,17 @@ export const requirements = new Map<string, Requirement[]>([
   [SKILL.SAILING, [afterFish(FISH.ANGLE_FISH)]],
   [SKILL.NAVIGATION, [afterFish(FISH.GROUPER)]],
   [SKILL.STABILITY, [afterFish(FISH.STINGRAY)]],
+  // Whaling now targets Whale (see skillBaseData), so it's anchored to Shark
+  // - the ocean fish just before Whale - rather than Pacu, its old anchor
+  // from when it was a river-fishing technique. Whale's own gate separately
+  // requires Whaling at Legendary (below); anchoring the unlock itself to
+  // Shark rather than Whale keeps that from being circular.
+  [SKILL.WHALING, [afterFish(FISH.SHARK)]],
   // ─── IMMORTALITY ─────────────────────────────────────────────────────────
   [SKILL.IMMORTALITY, [needSkills([SKILL.AMBITION, GATE.ACCOMPLISHED])]],
-  // Deliberately left near their old levels. Immortality is the engine that
+  // Deliberately left near its old level. Immortality is the engine that
   // buys the lifespan every other gate is measured against, so hardening it
-  // alongside them would compound into a stall rather than a grind.
-  [SKILL.SUPER_IMMORTALITY, [needSkills([SKILL.IMMORTALITY, GATE.MASTER])]],
+  // would compound into a stall rather than a grind.
   [SKILL.TIME_WARPING, [needSkills([SKILL.IMMORTALITY, GATE.VETERAN])]],
   // ─── BOATS & ITEMS ───────────────────────────────────────────────────────
   ...BOATS.map((b): [string, Requirement[]] => [
@@ -1708,13 +1722,12 @@ export const hardReset = () => {
 };
 
 // Mirrors Progress Knight: your actual lifespan is the base lifespan
-// multiplied by the Immortality/Super Immortality skills' effects, so
-// investing in them (across ordinary Rebirths) is the only way to survive
-// past the natural Age 70 wall and eventually reach Ascension.
+// multiplied by the Immortality skill's effect, so investing in it (across
+// ordinary Rebirths) is the only way to survive past the natural Age 70 wall
+// and eventually reach Ascension.
 export const getLifespan = (): number => {
   let immortality = gameState.skillsData.get(SKILL.IMMORTALITY)!;
-  let superImmortality = gameState.skillsData.get(SKILL.SUPER_IMMORTALITY)!;
-  return baseLifespan * immortality.effect * superImmortality.effect;
+  return baseLifespan * immortality.effect;
 };
 
 // ─── Base-data builders ────────────────────────────────────────────────────
@@ -1895,40 +1908,40 @@ export const skillBaseData: Map<string, SkillBaseData> = new Map([
     DESC.OCEAN_PAY,
   ),
 
-  // Each fishing technique now maps one-to-one onto the seven river fish, in
+  // Each fishing technique maps one-to-one onto the seven river fish, in
   // order: whatever you're training lands the river fish sitting at the same
-  // depth. Previously these were scattered across all three regions (Casting
-  // boosted a lake fish, Whaling an ocean one) with no consistent pattern.
+  // depth. Whaling used to close out this list on Payara, but hunting whales
+  // has nothing to do with a river - it's been replaced with Gaffing (landing
+  // a fierce, toothy fish like Payara with a gaff) and moved to boating,
+  // below, where it belongs.
   skill(SKILL.CASTING, CATEGORY.FISHING, EFFECT.ADEPT, DESC.PIRANA_XP),
   skill(SKILL.JIGGING, CATEGORY.FISHING, EFFECT.ADEPT, DESC.SALMON_XP),
   skill(SKILL.TROLLING, CATEGORY.FISHING, EFFECT.ADEPT, DESC.SILVER_DRUM_XP),
   skill(SKILL.REELING, CATEGORY.FISHING, EFFECT.ADEPT, DESC.ARMOURED_CATFISH_XP),
   skill(SKILL.HOOKING, CATEGORY.FISHING, EFFECT.ADEPT, DESC.ELECTRIC_EEL_XP),
   skill(SKILL.NETTING, CATEGORY.FISHING, EFFECT.ADEPT, DESC.PACU_XP),
-  skill(SKILL.WHALING, CATEGORY.FISHING, EFFECT.ADEPT, DESC.PAYARA_XP),
+  skill(SKILL.GAFFING, CATEGORY.FISHING, EFFECT.ADEPT, DESC.PAYARA_XP),
 
-  // Boating skills map one-to-one onto the first six ocean fish, the same
-  // way - six skills can't cover all eleven, so the back half of the ocean
-  // (Bluefin Tuna onward) keeps no boating-skill-specific target and relies
-  // on the broad Ocean Xp/Ocean Pay/All Xp effects elsewhere instead.
+  // Boating skills map one-to-one onto ocean fish, the same way - the first
+  // six in order, plus Whaling as a capstone on Whale itself rather than the
+  // next fish in line: Whale already requires Whaling at Legendary to unlock
+  // (see the requirement graph below), so the skill's own effect now matches
+  // what it gates instead of a river fish it has no business boosting.
+  // Bluefin Tuna/Blue Marlin/Swordfish/Shark stay uncovered by a dedicated
+  // skill and rely on the broad Ocean Xp/Ocean Pay/All Xp effects instead.
   skill(SKILL.DOCKING, CATEGORY.BOATING, EFFECT.BOATING, DESC.COD_XP),
   skill(SKILL.TURNING, CATEGORY.BOATING, EFFECT.BOATING, DESC.MACKEREL_XP),
   skill(SKILL.ANCHORING, CATEGORY.BOATING, EFFECT.BOATING, DESC.ANGLE_FISH_XP),
   skill(SKILL.SAILING, CATEGORY.BOATING, EFFECT.BOATING, DESC.GROUPER_XP),
   skill(SKILL.NAVIGATION, CATEGORY.BOATING, EFFECT.BOATING, DESC.STINGRAY_XP),
   skill(SKILL.STABILITY, CATEGORY.BOATING, EFFECT.BOATING, DESC.BARRACUDA_XP),
+  skill(SKILL.WHALING, CATEGORY.BOATING, EFFECT.BOATING, DESC.WHALE_XP),
 
   // Reachable through ordinary progression (unlike the legend line below) -
-  // these are the only way to extend your lifespan past the natural Age 70
-  // wall, mirroring Progress Knight's Immortality/Super immortality skills.
+  // the only way to extend your lifespan past the natural Age 70 wall,
+  // mirroring Progress Knight's Immortality skill.
   skill(
     SKILL.IMMORTALITY,
-    CATEGORY.IMMORTALITY,
-    EFFECT.LIFESPAN,
-    DESC.LONGER_LIFESPAN,
-  ),
-  skill(
-    SKILL.SUPER_IMMORTALITY,
     CATEGORY.IMMORTALITY,
     EFFECT.LIFESPAN,
     DESC.LONGER_LIFESPAN,
