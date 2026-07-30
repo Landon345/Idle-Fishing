@@ -1039,9 +1039,11 @@ export const requirements = new Map<string, Requirement[]>([
       needBoat(BOAT.CANOE),
     ],
   ],
+  // Casting level requirement halved (VETERAN 200 -> ACCOMPLISHED 100) per
+  // balance feedback.
   [
     FISH.ARMOURED_CATFISH,
-    [afterFish(FISH.SILVER_DRUM), needSkills([SKILL.CASTING, GATE.VETERAN])],
+    [afterFish(FISH.SILVER_DRUM), needSkills([SKILL.CASTING, GATE.ACCOMPLISHED])],
   ],
   [
     FISH.ELECTRIC_EEL,
@@ -1168,16 +1170,10 @@ export const requirements = new Map<string, Requirement[]>([
   // cycle - none of these are also required by a fish earlier than their new
   // anchor, unlike Turning below.
   //
-  // Pirana has no preceding river fish (it's the first), so Casting would
-  // otherwise mirror Pirana's own requirement exactly - the same trick
-  // Communication and Docking use below for Cod. Deliberately *not* mirrored
-  // here though: halved to Strength 5 (half of GATE.DABBLING) per balance
-  // feedback, so Casting is trainable a little ahead of Pirana itself rather
-  // than in exact lockstep with it.
-  [SKILL.CASTING, [needSkills([SKILL.STRENGTH, 5])]],
-  // The other six stay anchored to the preceding river fish at the default
-  // afterFish() threshold (level 10) - kept in parallel with river
-  // progression, not decoupled onto a flat level/coin gate.
+  // Pirana has no preceding river fish (it's the first), so Casting mirrors
+  // Pirana's own requirement exactly instead - the same trick Communication
+  // and Docking use below for Cod.
+  [SKILL.CASTING, [needSkills([SKILL.STRENGTH, GATE.DABBLING])]],
   [SKILL.JIGGING, [afterFish(FISH.PIRANA)]],
   [SKILL.TROLLING, [afterFish(FISH.SALMON)]],
   [SKILL.REELING, [afterFish(FISH.SILVER_DRUM)]],
