@@ -538,10 +538,19 @@ const AGING_STONE_PRICE_GROWTH = 5;
 export const CREW_MAX = 3;
 export const CREW_OFFER_SIZE = 3;
 export const CREW_UPGRADE_COUNT = 3;
-// Perk sizes: x1.5 to x3.00 in x0.25 steps.
+// Perk sizes: x1.5 to x3.00 in x0.25 steps - for a perk bound to one fish or
+// skill, same as an entity Mastery is allowed to be steep.
 const CREW_EFFECT_MIN = 1.5;
 const CREW_EFFECT_MAX = 3;
 const CREW_EFFECT_STEP = 0.25;
+// Broad perks (All Xp, Skill Xp, Fishing Xp, Fishing Pay) hit every task of
+// their kind at once rather than one target, so they get the same treatment
+// as the broad Masteries above: a much smaller range than an entity perk,
+// x1.10 to x1.40 in x0.05 steps, so a lucky roll on a hire's perk can't do
+// what should take several roguelite picks to earn.
+const CREW_BROAD_EFFECT_MIN = 1.1;
+const CREW_BROAD_EFFECT_MAX = 1.4;
+const CREW_BROAD_EFFECT_STEP = 0.05;
 // Daily wage, as a fraction of the best available fish income.
 const CREW_WAGE_MIN = 0.1;
 const CREW_WAGE_MAX = 0.3;
@@ -1469,23 +1478,28 @@ export const getTotalCrewWages = (): number =>
 // as a module-level constant: masteryData is built further down this file,
 // and reading it while this module body is still evaluating would throw, the
 // same import-order trap the Requirement classes sit here to avoid.
-const crewUpgradePool = (): Description[] =>
-  [...masteryData.values()]
-    .filter(isMasteryOfferable)
-    .map((mastery) => mastery.description);
+//
+// Kept as full MasteryBaseData (not just the description) so rollCrewMember
+// below can tell a broad pick apart from an entity one and roll its effect
+// from the right range.
+const crewUpgradePool = (): MasteryBaseData[] =>
+  [...masteryData.values()].filter(isMasteryOfferable);
 
 const rollCrewMember = (): CrewMember => {
-  const steps = Math.round(
-    (CREW_EFFECT_MAX - CREW_EFFECT_MIN) / CREW_EFFECT_STEP,
-  );
   // Distinct perks: a hire with the same effect twice would read as a bug.
   const pool = crewUpgradePool();
-  const upgrades = Array.from({ length: CREW_UPGRADE_COUNT }, () => ({
-    description: pool.splice(Math.floor(Math.random() * pool.length), 1)[0],
-    effect:
-      CREW_EFFECT_MIN +
-      Math.floor(Math.random() * (steps + 1)) * CREW_EFFECT_STEP,
-  }));
+  const upgrades = Array.from({ length: CREW_UPGRADE_COUNT }, () => {
+    const picked = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
+    const broad = picked.target === undefined;
+    const min = broad ? CREW_BROAD_EFFECT_MIN : CREW_EFFECT_MIN;
+    const max = broad ? CREW_BROAD_EFFECT_MAX : CREW_EFFECT_MAX;
+    const step = broad ? CREW_BROAD_EFFECT_STEP : CREW_EFFECT_STEP;
+    const steps = Math.round((max - min) / step);
+    return {
+      description: picked.description,
+      effect: min + Math.floor(Math.random() * (steps + 1)) * step,
+    };
+  });
 
   return {
     // Date.now() alone collides when three are rolled in the same millisecond.
