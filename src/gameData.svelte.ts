@@ -546,10 +546,10 @@ const CREW_EFFECT_STEP = 0.25;
 // Broad perks (All Xp, Skill Xp, Fishing Xp, Fishing Pay) hit every task of
 // their kind at once rather than one target, so they get the same treatment
 // as the broad Masteries above: a much smaller range than an entity perk,
-// x1.10 to x1.40 in x0.05 steps, so a lucky roll on a hire's perk can't do
+// x1.10 to x1.70 in x0.05 steps, so a lucky roll on a hire's perk can't do
 // what should take several roguelite picks to earn.
 const CREW_BROAD_EFFECT_MIN = 1.1;
-const CREW_BROAD_EFFECT_MAX = 1.4;
+const CREW_BROAD_EFFECT_MAX = 1.7;
 const CREW_BROAD_EFFECT_STEP = 0.05;
 // Daily wage, as a fraction of the best available fish income.
 const CREW_WAGE_MIN = 0.1;
