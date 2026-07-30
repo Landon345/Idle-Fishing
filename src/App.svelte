@@ -123,8 +123,14 @@
             </button>
           {/if}
           <!-- calculatedAge() displays 14 + years-elapsed, so 365*36 here is
-               displayed "Age 50" (matches the Reincarnation tab's narrative). -->
-          {#if gameState.day > 365 * 36}
+               displayed "Age 50" (matches the Reincarnation tab's narrative).
+               Once rebirthed or ascended at least once, the tab stays visible
+               regardless of age: rebirth/ascend reset `day` to 0, which would
+               otherwise drop this below the threshold and hide the tab again
+               at the start of every new life. rebirthCount/ascensionCount are
+               never reset, so this check stays true forever once it's ever
+               been true. -->
+          {#if gameState.day > 365 * 36 || gameState.rebirthCount > 0 || gameState.ascensionCount > 0}
             <button
               class={`btn rounded-lg text-sm font-medium ${selectedTab === "reincarnation" ? "bg-sky-700 text-white" : "text-slate-300 hover:bg-slate-800"}`}
               onclick={() => selectTab("reincarnation")}>Reincarnation</button
